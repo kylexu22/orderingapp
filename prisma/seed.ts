@@ -435,21 +435,21 @@ const manualDrinksCategory = {
 } as const;
 
 const manualDrinks = [
-  { id: "drink_soft", name: "Soft Drink", basePriceCents: 230 },
-  { id: "drink_hk_milk_tea", name: "HK Style Milk Tea", basePriceCents: 330 },
-  { id: "drink_coffee", name: "Coffee", basePriceCents: 330 },
-  { id: "drink_mixed_coffee_tea", name: "Mixed Coffee & Tea", basePriceCents: 330 },
-  { id: "drink_ovaltine", name: "Ovaltine", basePriceCents: 330 },
-  { id: "drink_horlick", name: "Horlick", basePriceCents: 330 },
-  { id: "drink_chocolate", name: "Chocolate Drink", basePriceCents: 330 },
-  { id: "drink_almond", name: "Almond Drink", basePriceCents: 330 },
-  { id: "drink_lemon_tea", name: "Lemon Tea", basePriceCents: 330 },
-  { id: "drink_lemon_water", name: "Lemon Water", basePriceCents: 330 },
-  { id: "drink_lemon_coffee", name: "Lemon Coffee", basePriceCents: 330 },
-  { id: "drink_lemon_honey", name: "Lemon Honey", basePriceCents: 330 },
-  { id: "drink_lemon_coke", name: "Lemon Coke", basePriceCents: 410 },
-  { id: "drink_lemon_sprite", name: "Lemon Sprite", basePriceCents: 410 },
-  { id: "drink_soy_milk", name: "Soy Milk", basePriceCents: 255 }
+  { id: "drink_soft", name: "汽水 | Soft Drink", basePriceCents: 230 },
+  { id: "drink_hk_milk_tea", name: "港式奶茶 | HK Style Milk Tea", basePriceCents: 330 },
+  { id: "drink_coffee", name: "咖啡 | Coffee", basePriceCents: 330 },
+  { id: "drink_mixed_coffee_tea", name: "鴛鴦 | Mixed Coffee & Tea", basePriceCents: 330 },
+  { id: "drink_ovaltine", name: "阿華田 | Ovaltine", basePriceCents: 330 },
+  { id: "drink_horlick", name: "好立克 | Horlick", basePriceCents: 330 },
+  { id: "drink_chocolate", name: "朱古力 | Chocolate Drink", basePriceCents: 330 },
+  { id: "drink_almond", name: "杏仁露 | Almond Drink", basePriceCents: 330 },
+  { id: "drink_lemon_tea", name: "檸檬茶 | Lemon Tea", basePriceCents: 330 },
+  { id: "drink_lemon_water", name: "檸檬水 | Lemon Water", basePriceCents: 330 },
+  { id: "drink_lemon_coffee", name: "檸檬咖啡 | Lemon Coffee", basePriceCents: 330 },
+  { id: "drink_lemon_honey", name: "檸蜜 | Lemon Honey", basePriceCents: 330 },
+  { id: "drink_lemon_coke", name: "檸檬可樂 | Lemon Coke", basePriceCents: 410 },
+  { id: "drink_lemon_sprite", name: "檸檬雪碧 | Lemon Sprite", basePriceCents: 410 },
+  { id: "drink_soy_milk", name: "豆奶 | Soy Milk", basePriceCents: 255 }
 ] as const;
 
 const noSugarModifierDrinkIds = new Set([
@@ -750,7 +750,7 @@ async function main() {
           {
             id: `modopt_soft_coke_${drink.id}`,
             groupId: softChoiceGroupId,
-            name: "Coke",
+            name: "可口可樂 | Coke",
             priceDeltaCents: 0,
             sortOrder: 1,
             isDefault: true
@@ -758,7 +758,7 @@ async function main() {
           {
             id: `modopt_soft_sprite_${drink.id}`,
             groupId: softChoiceGroupId,
-            name: "Sprite",
+            name: "雪碧 | Sprite",
             priceDeltaCents: 0,
             sortOrder: 2,
             isDefault: false
@@ -766,7 +766,7 @@ async function main() {
           {
             id: `modopt_soft_diet_coke_${drink.id}`,
             groupId: softChoiceGroupId,
-            name: "Diet Coke",
+            name: "健怡可樂 | Diet Coke",
             priceDeltaCents: 0,
             sortOrder: 3,
             isDefault: false
@@ -774,7 +774,7 @@ async function main() {
           {
             id: `modopt_soft_ginger_ale_${drink.id}`,
             groupId: softChoiceGroupId,
-            name: "Ginger Ale",
+            name: "薑汁汽水 | Ginger Ale",
             priceDeltaCents: 0,
             sortOrder: 4,
             isDefault: false
@@ -924,7 +924,7 @@ async function main() {
       create: {
         id: softChoiceGroupId,
         itemId: item.id,
-        name: "Add Drink Soft Drink Choice",
+        name: "加配飲品：汽水選擇 | Add Drink Soft Drink Choice",
         required: false,
         minSelect: 0,
         maxSelect: 1,

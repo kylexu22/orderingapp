@@ -36,6 +36,7 @@ function splitBilingual(text: string) {
 export function localizeText(value: string | null | undefined, lang: Lang): string {
   if (!value) return "";
   const { zh, en } = splitBilingual(value);
-  if (lang === "zh") return zh || en || value;
+  const normalizedZh = zh.includes("中文待翻譯") ? "" : zh;
+  if (lang === "zh") return normalizedZh || en || value;
   return en || zh || value;
 }
