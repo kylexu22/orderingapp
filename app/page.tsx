@@ -3,6 +3,9 @@ import { getMenuData } from "@/lib/menu";
 import { centsToCurrency } from "@/lib/format";
 import { DesktopCartPanel } from "@/components/desktop-cart-panel";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function HomePage() {
   const { categories, combos } = await getMenuData();
   const combosAnchorId = "category-combos";
