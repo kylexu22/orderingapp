@@ -35,13 +35,6 @@ type AdminOrder = {
   }>;
 };
 
-const STATUS_FLOW: OrderStatus[] = [
-  OrderStatus.NEW,
-  OrderStatus.ACCEPTED,
-  OrderStatus.READY,
-  OrderStatus.PICKED_UP
-];
-
 function beep() {
   try {
     const context = new AudioContext();
@@ -61,7 +54,7 @@ function beep() {
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [error, setError] = useState("");
-  const [printMode, setPrintMode] = useState<"BROWSER" | "STAR_WEBPRNT" | "PASSPRNT">("BROWSER");
+  const [tab, setTab] = useState<"CURRENT" | "PAST">("CURRENT");
 
   const loadOrders = useCallback(async () => {
     const res = await fetch("/api/orders");
@@ -89,70 +82,14 @@ export default function AdminOrdersPage() {
     return () => events.close();
   }, [loadOrders]);
 
-  async function setStatus(orderId: string, status: OrderStatus) {
+  async function sendToPastOrders(orderId: string) {
     const res = await fetch(`/api/orders/${orderId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status: OrderStatus.PICKED_UP })
     });
     if (!res.ok) return;
     loadOrders();
-  }
-
-  function printBrowser(orderNumber: string) {
-    const w = window.open(`/api/orders/${orderNumber}/ticket`, "_blank", "noopener,noreferrer");
-    if (!w) {
-      alert("Popup blocked. Please allow popups for printing.");
-      return;
-    }
-    w.onload = () => {
-      try {
-        w.focus();
-        w.print();
-      } catch {
-        alert("Print failed. Please use browser print manually.");
-      }
-    };
-  }
-
-  async function printStarWebPrnt(orderNumber: string) {
-    const endpoint = process.env.NEXT_PUBLIC_STAR_WEBPRNT_URL;
-    if (!endpoint) {
-      alert("NEXT_PUBLIC_STAR_WEBPRNT_URL is not configured. Falling back to browser print.");
-      printBrowser(orderNumber);
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/orders/${orderNumber}/ticket?format=text`);
-      if (!res.ok) throw new Error("Ticket fetch failed");
-      const ticketText = await res.text();
-
-      const esc = (value: string) =>
-        value
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;");
-
-      const xml = `<?xml version="1.0" encoding="utf-8"?>
-<StarWebPrint>
-  <request>
-    <text>${esc(ticketText).replaceAll("\n", "&#10;")}</text>
-    <cut type="partial"/>
-  </request>
-</StarWebPrint>`;
-
-      await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "text/xml; charset=utf-8" },
-        body: xml,
-        mode: "cors"
-      });
-      alert("Sent to Star WebPRNT.");
-    } catch {
-      alert("Star WebPRNT failed. Falling back to browser print.");
-      printBrowser(orderNumber);
-    }
   }
 
   async function printPassPrnt(orderNumber: string) {
@@ -171,24 +108,10 @@ export default function AdminOrdersPage() {
         `&cut=partial` +
         `&popup=no`;
 
-      // Attempt app handoff first. If app isn't installed, user remains in browser.
       window.location.href = passPrntUrl;
     } catch {
-      alert("PassPRNT print failed. Falling back to browser print.");
-      printBrowser(orderNumber);
+      alert("PassPRNT print failed.");
     }
-  }
-
-  function print(orderNumber: string) {
-    if (printMode === "PASSPRNT") {
-      void printPassPrnt(orderNumber);
-      return;
-    }
-    if (printMode === "STAR_WEBPRNT") {
-      void printStarWebPrnt(orderNumber);
-      return;
-    }
-    printBrowser(orderNumber);
   }
 
   const sorted = useMemo(
@@ -201,29 +124,40 @@ export default function AdminOrdersPage() {
     [orders]
   );
 
+  const currentOrders = sorted.filter(
+    (order) => order.status !== OrderStatus.PICKED_UP && order.status !== OrderStatus.CANCELLED
+  );
+  const pastOrders = sorted.filter(
+    (order) => order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.CANCELLED
+  );
+  const visibleOrders = tab === "CURRENT" ? currentOrders : pastOrders;
+
   return (
     <div className="space-y-4 pb-8">
-      <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">
-        <h1 className="text-2xl font-bold text-[var(--brand)]">iPad Order Console</h1>
-        <p className="text-sm text-gray-600">Print each order ticket from the selected print mode.</p>
-        <label className="mt-2 inline-flex items-center gap-2 text-sm">
-          Print Mode
-          <select
-            value={printMode}
-            onChange={(e) =>
-              setPrintMode(e.target.value as "BROWSER" | "STAR_WEBPRNT" | "PASSPRNT")
-            }
-            className="rounded border px-2 py-1"
-          >
-            <option value="BROWSER">Browser Fallback (Default)</option>
-            <option value="STAR_WEBPRNT">Star WebPRNT (Optional)</option>
-            <option value="PASSPRNT">PassPRNT App</option>
-          </select>
-        </label>
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setTab("CURRENT")}
+          className={`border px-4 py-2 text-sm font-semibold ${
+            tab === "CURRENT" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+          }`}
+        >
+          Current Orders
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("PAST")}
+          className={`border px-4 py-2 text-sm font-semibold ${
+            tab === "PAST" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+          }`}
+        >
+          Past Orders
+        </button>
       </div>
 
-      {sorted.map((order) => (
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+
+      {visibleOrders.map((order) => (
         <article
           key={order.id}
           className={`rounded-xl border p-4 shadow-sm ${
@@ -249,16 +183,10 @@ export default function AdminOrdersPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => print(order.orderNumber)}
+                onClick={() => void printPassPrnt(order.orderNumber)}
                 className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
               >
                 Print
-              </button>
-              <button
-                onClick={() => print(order.orderNumber)}
-                className="rounded border px-4 py-2 text-lg font-semibold"
-              >
-                Reprint
               </button>
             </div>
           </div>
@@ -271,32 +199,37 @@ export default function AdminOrdersPage() {
                 </div>
                 {line.selections.map((s) => (
                   <div key={s.id} className="pl-4 text-sm text-gray-700">
-                    - {s.label}: {s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot}
-                    {s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : ""}
+                    {s.selectionKind === "COMBO_PICK" ? (
+                      <>- {s.selectedItemNameSnapshot}</>
+                    ) : (
+                      <>
+                        - {s.label}: {s.selectedModifierOptionNameSnapshot}
+                        {s.priceDeltaSnapshotCents
+                          ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})`
+                          : ""}
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             ))}
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
-            {STATUS_FLOW.map((status) => (
+          {tab === "CURRENT" ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
               <button
-                key={status}
-                onClick={() => setStatus(order.id, status)}
-                className="rounded border px-3 py-1 text-sm"
+                onClick={() => void sendToPastOrders(order.id)}
+                className="rounded border px-3 py-1 text-sm font-semibold"
               >
-                {status}
+                Send to Past Orders
               </button>
-            ))}
-            <button
-              onClick={() => setStatus(order.id, OrderStatus.CANCELLED)}
-              className="rounded border border-red-700 px-3 py-1 text-sm text-red-700"
-            >
-              CANCELLED
-            </button>
-          </div>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
+            </div>
+          )}
 
           <div className="mt-3 text-sm">
             Subtotal {centsToCurrency(order.subtotalCents)} | Tax {centsToCurrency(order.taxCents)} | Total{" "}
@@ -304,7 +237,10 @@ export default function AdminOrdersPage() {
           </div>
         </article>
       ))}
+
+      {visibleOrders.length === 0 ? (
+        <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">No orders in this section.</div>
+      ) : null}
     </div>
   );
 }
-

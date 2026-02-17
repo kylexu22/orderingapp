@@ -41,6 +41,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         .map((s) => {
           const selected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
           const delta = s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : "";
+          if (s.selectionKind === "COMBO_PICK") {
+            return `<div class="subline">- ${esc(selected)}${delta}</div>`;
+          }
           return `<div class="subline">- ${esc(s.label)}: ${esc(selected)}${delta}</div>`;
         })
         .join("");
@@ -67,7 +70,11 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       for (const s of line.selections) {
         const selected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
         const delta = s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : "";
-        lines.push(`  - ${s.label}: ${selected}${delta}`);
+        if (s.selectionKind === "COMBO_PICK") {
+          lines.push(`  - ${selected}${delta}`);
+        } else {
+          lines.push(`  - ${s.label}: ${selected}${delta}`);
+        }
       }
     }
     lines.push("------------------------------");
@@ -88,15 +95,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   <title>Ticket ${esc(order.orderNumber)}</title>
   <style>
     @page { size: 80mm auto; margin: 2mm; }
-    body { font-family: "Arial", sans-serif; width: 100%; margin: 0; font-size: 14px; }
+    body { font-family: "Arial", sans-serif; width: 100%; margin: 0; font-size: 42px; line-height: 1.2; }
     .center { text-align: center; }
-    .title { font-size: 20px; font-weight: 700; }
-    .number { font-size: 24px; font-weight: 800; margin: 6px 0; }
-    .section { margin-top: 8px; border-top: 1px dashed #222; padding-top: 8px; }
-    .line { margin-top: 6px; }
-    .subline { padding-left: 10px; font-size: 13px; }
-    .totals { margin-top: 10px; border-top: 1px dashed #222; padding-top: 8px; }
-    .paid { margin-top: 10px; text-align: center; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+    .title { font-size: 60px; font-weight: 700; }
+    .number { font-size: 72px; font-weight: 800; margin: 18px 0; }
+    .section { margin-top: 24px; border-top: 1px dashed #222; padding-top: 24px; }
+    .line { margin-top: 18px; }
+    .subline { padding-left: 24px; font-size: 39px; }
+    .totals { margin-top: 30px; border-top: 1px dashed #222; padding-top: 24px; }
+    .paid { margin-top: 30px; text-align: center; font-size: 54px; font-weight: 800; letter-spacing: 1px; }
   </style>
 </head>
 <body>

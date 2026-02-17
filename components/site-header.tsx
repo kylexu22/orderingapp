@@ -5,11 +5,14 @@ import { useCart } from "@/lib/cart-store";
 import Image from "next/image";
 import { getClientLang, type Lang } from "@/lib/i18n";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export function SiteHeader() {
   const { lines } = useCart();
   const count = lines.reduce((sum, line) => sum + line.qty, 0);
   const [lang, setLang] = useState<Lang>("en");
+  const pathname = usePathname();
+  const isAdminRoute = pathname.startsWith("/admin");
 
   useEffect(() => {
     setLang(getClientLang());
@@ -53,12 +56,11 @@ export function SiteHeader() {
               EN
             </button>
           </div>
-          <Link href="/cart" className="rounded bg-[var(--brand)] px-3 py-1.5 text-white">
-            Cart ({count})
-          </Link>
-          <Link href="/admin/orders" className="text-[#c4a574] underline">
-            Admin
-          </Link>
+          {!isAdminRoute ? (
+            <Link href="/cart" className="rounded bg-[var(--brand)] px-3 py-1.5 text-white">
+              Cart ({count})
+            </Link>
+          ) : null}
         </nav>
       </div>
     </header>
