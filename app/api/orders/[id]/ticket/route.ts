@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { logInfo } from "@/lib/logger";
+import { localizeText } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,6 +17,7 @@ function esc(value: string) {
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const { searchParams } = new URL(req.url);
   const format = searchParams.get("format");
+  const kitchen = searchParams.get("kitchen") === "1";
   const restaurantName = process.env.RESTAURANT_NAME ?? "Restaurant";
   const order = await prisma.order.findFirst({
     where: { OR: [{ id: params.id }, { orderNumber: params.id }] },
@@ -35,19 +37,33 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   logInfo("order.print_requested", { orderNumber: order.orderNumber });
 
+  const toZh = (value: string | null | undefined) => localizeText(value, "zh");
+  const isDrinkModifier = (selection: (typeof order.lines)[number]["selections"][number]) => {
+    const optionId = selection.selectedModifierOptionId ?? "";
+    const label = selection.label ?? "";
+    return (
+      optionId.startsWith("modopt_add_drink_") ||
+      /add drink|drink surcharge|加配飲品|凍飲/i.test(label)
+    );
+  };
+
   const lineHtml = order.lines
     .map((line) => {
       const selectionHtml = line.selections
+        .filter((s) => !(kitchen && s.selectionKind === "MODIFIER" && isDrinkModifier(s)))
         .map((s) => {
-          const selected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
+          const rawSelected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
+          const selected = kitchen ? toZh(rawSelected) : rawSelected;
           const delta = s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : "";
           if (s.selectionKind === "COMBO_PICK") {
             return `<div class="subline">- ${esc(selected)}${delta}</div>`;
           }
-          return `<div class="subline">- ${esc(s.label)}: ${esc(selected)}${delta}</div>`;
+          const label = kitchen ? toZh(s.label) : s.label;
+          return `<div class="subline">- ${esc(label)}: ${esc(selected)}${delta}</div>`;
         })
         .join("");
-      return `<div class="line"><div><strong>${line.qty} x ${esc(line.nameSnapshot)}</strong></div>${selectionHtml}</div>`;
+      const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
+      return `<div class="line"><div><strong>${line.qty} x ${esc(lineName)}</strong></div>${selectionHtml}</div>`;
     })
     .join("");
 
@@ -59,6 +75,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (format === "text") {
     const lines: string[] = [];
     lines.push(restaurantName);
+    if (kitchen) lines.push("KITCHEN COPY");
     lines.push(`#${order.orderNumber}`);
     lines.push(`Created: ${fmtDateTime(order.createdAt)}`);
     lines.push(`Pickup: ${pickupText}`);
@@ -66,21 +83,28 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     lines.push(`Notes: ${order.notes ?? "-"}`);
     lines.push("------------------------------");
     for (const line of order.lines) {
-      lines.push(`${line.qty} x ${line.nameSnapshot}`);
-      for (const s of line.selections) {
-        const selected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
+      const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
+      lines.push(`${line.qty} x ${lineName}`);
+      for (const s of line.selections.filter(
+        (sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel))
+      )) {
+        const rawSelected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
+        const selected = kitchen ? toZh(rawSelected) : rawSelected;
         const delta = s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : "";
         if (s.selectionKind === "COMBO_PICK") {
           lines.push(`  - ${selected}${delta}`);
         } else {
-          lines.push(`  - ${s.label}: ${selected}${delta}`);
+          const label = kitchen ? toZh(s.label) : s.label;
+          lines.push(`  - ${label}: ${selected}${delta}`);
         }
       }
     }
-    lines.push("------------------------------");
-    lines.push(`Subtotal: ${centsToCurrency(order.subtotalCents)}`);
-    lines.push(`Tax: ${centsToCurrency(order.taxCents)}`);
-    lines.push(`Total: ${centsToCurrency(order.totalCents)}`);
+    if (!kitchen) {
+      lines.push("------------------------------");
+      lines.push(`Subtotal: ${centsToCurrency(order.subtotalCents)}`);
+      lines.push(`Tax: ${centsToCurrency(order.taxCents)}`);
+      lines.push(`Total: ${centsToCurrency(order.totalCents)}`);
+    }
     lines.push("PAY AT PICKUP (CASH)");
     return new Response(lines.join("\n"), {
       headers: { "Content-Type": "text/plain; charset=utf-8" }
@@ -107,6 +131,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 </head>
 <body>
   <div class="center title">${esc(restaurantName)}</div>
+  ${kitchen ? `<div class="center"><strong>KITCHEN COPY</strong></div>` : ""}
   <div class="center number">#${esc(order.orderNumber)}</div>
   <div class="center">Created: ${esc(fmtDateTime(order.createdAt))}</div>
   <div class="center">Pickup: ${esc(pickupText)}</div>
@@ -115,11 +140,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     <div>Notes: ${esc(order.notes ?? "-")}</div>
   </div>
   <div class="section">${lineHtml}</div>
-  <div class="totals">
+  ${
+    kitchen
+      ? ""
+      : `<div class="totals">
     <div>Subtotal: ${centsToCurrency(order.subtotalCents)}</div>
     <div>Tax: ${centsToCurrency(order.taxCents)}</div>
     <div><strong>Total: ${centsToCurrency(order.totalCents)}</strong></div>
-  </div>
+  </div>`
+  }
 </body>
 </html>`;
 

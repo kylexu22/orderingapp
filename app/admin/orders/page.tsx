@@ -92,9 +92,11 @@ export default function AdminOrdersPage() {
     loadOrders();
   }
 
-  async function printPassPrnt(orderNumber: string) {
+  async function printPassPrnt(orderNumber: string, kitchen = false) {
     try {
-      const ticketRes = await fetch(`/api/orders/${orderNumber}/ticket`);
+      const ticketRes = await fetch(
+        `/api/orders/${orderNumber}/ticket${kitchen ? "?kitchen=1" : ""}`
+      );
       if (!ticketRes.ok) {
         throw new Error("Ticket fetch failed");
       }
@@ -187,6 +189,12 @@ export default function AdminOrdersPage() {
                 className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
               >
                 Print
+              </button>
+              <button
+                onClick={() => void printPassPrnt(order.orderNumber, true)}
+                className="rounded border border-black px-4 py-2 text-lg font-semibold text-black"
+              >
+                Print for Kitchen
               </button>
             </div>
           </div>
