@@ -3,6 +3,9 @@ import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { broadcastOrderEvent } from "@/lib/sse";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const validStatuses = new Set(Object.values(OrderStatus));
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {

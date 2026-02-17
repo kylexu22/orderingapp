@@ -7,6 +7,9 @@ import { createOrder } from "@/lib/order-service";
 import { broadcastOrderEvent } from "@/lib/sse";
 import { logError, logInfo } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const modifierSchema = z.object({
   groupId: z.string().min(1),
   optionId: z.string().min(1)

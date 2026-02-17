@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { logInfo } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function esc(value: string) {
   return value
     .replaceAll("&", "&amp;")
