@@ -119,14 +119,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   <title>Ticket ${esc(order.orderNumber)}</title>
   <style>
     @page { size: 80mm auto; margin: 2mm; }
-    body { font-family: "Arial", sans-serif; width: 100%; margin: 0; font-size: ${kitchen ? "22px" : "42px"}; line-height: 1.2; }
+    body { font-family: ${kitchen ? '"Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif' : '"Arial", sans-serif'}; width: 100%; margin: 0; font-size: ${kitchen ? "22px" : "42px"}; line-height: 1.2; }
     .center { text-align: center; }
     .title { font-size: ${kitchen ? "28px" : "40px"}; font-weight: 700; }
     .number { font-size: ${kitchen ? "32px" : "40px"}; font-weight: 800; margin: 18px 0; }
     .section { margin-top: 24px; border-top: 1px dashed #222; padding-top: 24px; }
-    .line { margin-top: 18px; font-size: ${kitchen ? "42px" : "42px"}; }
-    .line strong { font-size: ${kitchen ? "44px" : "42px"}; }
-    .subline { padding-left: 24px; font-size: ${kitchen ? "38px" : "39px"}; }
+    .line { margin-top: 18px; font-size: ${kitchen ? "63px" : "42px"}; }
+    .line strong { font-size: ${kitchen ? "66px" : "42px"}; }
+    .subline { padding-left: 24px; font-size: ${kitchen ? "57px" : "39px"}; }
     .totals { margin-top: 30px; border-top: 1px dashed #222; padding-top: 24px; }
   </style>
 </head>
