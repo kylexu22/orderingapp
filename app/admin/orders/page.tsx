@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OrderStatus } from "@prisma/client";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 
@@ -35,26 +35,61 @@ type AdminOrder = {
   }>;
 };
 
-function beep() {
-  try {
-    const context = new AudioContext();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.frequency.value = 880;
-    gain.gain.value = 0.08;
-    oscillator.start();
-    setTimeout(() => oscillator.stop(), 170);
-  } catch {
-    // Audio can be blocked until user interaction.
-  }
-}
-
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"CURRENT" | "PAST">("CURRENT");
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const ensureAudioReady = useCallback(async () => {
+    try {
+      const Ctx =
+        typeof window !== "undefined"
+          ? (window.AudioContext ||
+              (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)
+          : null;
+      if (!Ctx) return false;
+      if (!audioContextRef.current) {
+        audioContextRef.current = new Ctx();
+      }
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+      const isRunning = audioContextRef.current.state === "running";
+      setSoundEnabled(isRunning);
+      return isRunning;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const playNewOrderSound = useCallback(async () => {
+    const ok = await ensureAudioReady();
+    if (!ok || !audioContextRef.current) return;
+    const context = audioContextRef.current;
+    const now = context.currentTime;
+
+    const gain = context.createGain();
+    gain.connect(context.destination);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+
+    const osc1 = context.createOscillator();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(880, now);
+    osc1.connect(gain);
+    osc1.start(now);
+    osc1.stop(now + 0.12);
+
+    const osc2 = context.createOscillator();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(1040, now + 0.12);
+    osc2.connect(gain);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 0.24);
+  }, [ensureAudioReady]);
 
   const loadOrders = useCallback(async () => {
     const res = await fetch("/api/orders");
@@ -68,9 +103,22 @@ export default function AdminOrdersPage() {
   }, [loadOrders]);
 
   useEffect(() => {
+    void ensureAudioReady();
+    const unlock = () => {
+      void ensureAudioReady();
+    };
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [ensureAudioReady]);
+
+  useEffect(() => {
     const events = new EventSource("/api/orders/stream");
     events.addEventListener("ORDER_CREATED", () => {
-      beep();
+      void playNewOrderSound();
       loadOrders();
     });
     events.addEventListener("ORDER_UPDATED", () => {
@@ -80,7 +128,7 @@ export default function AdminOrdersPage() {
       setError("Realtime disconnected. Retrying...");
     };
     return () => events.close();
-  }, [loadOrders]);
+  }, [loadOrders, playNewOrderSound]);
 
   async function sendToPastOrders(orderId: string) {
     const res = await fetch(`/api/orders/${orderId}`, {
@@ -101,16 +149,14 @@ export default function AdminOrdersPage() {
         throw new Error("Ticket fetch failed");
       }
       const ticketHtml = await ticketRes.text();
-      const backUrl = window.location.href;
       const passPrntUrl =
         `starpassprnt://v1/print/nopreview` +
         `?html=${encodeURIComponent(ticketHtml)}` +
-        `&back=${encodeURIComponent(backUrl)}` +
         `&size=3` +
         `&cut=partial` +
         `&popup=no`;
 
-      window.location.href = passPrntUrl;
+      window.location.replace(passPrntUrl);
     } catch {
       alert("PassPRNT print failed.");
     }
@@ -155,6 +201,17 @@ export default function AdminOrdersPage() {
         >
           Past Orders
         </button>
+        {!soundEnabled ? (
+          <button
+            type="button"
+            onClick={() => void ensureAudioReady()}
+            className="border px-4 py-2 text-sm font-semibold"
+          >
+            Enable Sound Alerts
+          </button>
+        ) : (
+          <span className="text-xs text-green-700">Sound alerts enabled</span>
+        )}
       </div>
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
