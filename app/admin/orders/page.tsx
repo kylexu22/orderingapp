@@ -50,6 +50,8 @@ export default function AdminOrdersPage() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
   const lastRealtimeMessageAtRef = useRef<number>(Date.now());
+  const knownOrderIdsRef = useRef<Set<string>>(new Set());
+  const hasHydratedOrdersRef = useRef(false);
 
   const startSilentKeepAliveLoop = useCallback(async () => {
     try {
@@ -165,8 +167,31 @@ export default function AdminOrdersPage() {
     const res = await fetch("/api/orders");
     if (!res.ok) return;
     const data = await res.json();
-    setOrders(data.orders);
-  }, []);
+    const nextOrders = (data.orders ?? []) as AdminOrder[];
+    setOrders(nextOrders);
+
+    const nextKnownIds = new Set(nextOrders.map((order) => order.id));
+    if (!hasHydratedOrdersRef.current) {
+      knownOrderIdsRef.current = nextKnownIds;
+      hasHydratedOrdersRef.current = true;
+      return;
+    }
+
+    const newlySeenActiveOrders = nextOrders.filter((order) => {
+      const isActive =
+        order.status !== OrderStatus.PICKED_UP && order.status !== OrderStatus.CANCELLED;
+      return isActive && !knownOrderIdsRef.current.has(order.id);
+    });
+
+    if (newlySeenActiveOrders.length > 0) {
+      const newIds = newlySeenActiveOrders.map((order) => order.id);
+      setHighlightedOrderIds((prev) => new Set([...prev, ...newIds]));
+      setAttentionOrderIds((prev) => new Set([...prev, ...newIds]));
+      void playNewOrderSound();
+    }
+
+    knownOrderIdsRef.current = nextKnownIds;
+  }, [playNewOrderSound]);
 
   useEffect(() => {
     loadOrders();
@@ -241,6 +266,7 @@ export default function AdminOrdersPage() {
           if (orderId) {
             setHighlightedOrderIds((prev) => new Set([...prev, orderId]));
             setAttentionOrderIds((prev) => new Set([...prev, orderId]));
+            knownOrderIdsRef.current.add(orderId);
           }
         } catch {
           // ignore payload parse errors
