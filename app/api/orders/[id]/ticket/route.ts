@@ -97,13 +97,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     @page { size: 80mm auto; margin: 2mm; }
     body { font-family: "Arial", sans-serif; width: 100%; margin: 0; font-size: 42px; line-height: 1.2; }
     .center { text-align: center; }
-    .title { font-size: 60px; font-weight: 700; }
-    .number { font-size: 72px; font-weight: 800; margin: 18px 0; }
+    .title { font-size: 40px; font-weight: 700; }
+    .number { font-size: 40px; font-weight: 800; margin: 18px 0; }
     .section { margin-top: 24px; border-top: 1px dashed #222; padding-top: 24px; }
     .line { margin-top: 18px; }
     .subline { padding-left: 24px; font-size: 39px; }
     .totals { margin-top: 30px; border-top: 1px dashed #222; padding-top: 24px; }
-    .paid { margin-top: 30px; text-align: center; font-size: 54px; font-weight: 800; letter-spacing: 1px; }
   </style>
 </head>
 <body>
@@ -121,7 +120,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     <div>Tax: ${centsToCurrency(order.taxCents)}</div>
     <div><strong>Total: ${centsToCurrency(order.totalCents)}</strong></div>
   </div>
-  <div class="paid">PAY AT PICKUP (CASH)</div>
 </body>
 </html>`;
 
