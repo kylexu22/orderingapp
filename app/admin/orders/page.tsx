@@ -135,9 +135,10 @@ export default function AdminOrdersPage() {
     events.addEventListener("ORDER_CREATED", (event) => {
       try {
         const payload = JSON.parse((event as MessageEvent).data ?? "{}") as { id?: string };
-        if (payload.id) {
-          setHighlightedOrderIds((prev) => new Set([...prev, payload.id]));
-          setAttentionOrderIds((prev) => new Set([...prev, payload.id]));
+        const orderId = payload.id;
+        if (orderId) {
+          setHighlightedOrderIds((prev) => new Set([...prev, orderId]));
+          setAttentionOrderIds((prev) => new Set([...prev, orderId]));
         }
       } catch {
         // ignore payload parse errors
