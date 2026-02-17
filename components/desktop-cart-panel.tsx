@@ -53,7 +53,7 @@ function getAddDrinkSurchargeCents(line: any, item: any) {
     coldOnlyDrinkIds.has(selectedDrinkId) ||
     String(selectedTemp?.optionId ?? "").includes(`modopt_add_drink_temp_cold_${item.id}`);
   if (!isCold) return 0;
-  return selectedDrinkId === "drink_soft" ? 0 : 150;
+  return selectedDrinkId === "drink_soft" || selectedDrinkId === "drink_soy_milk" ? 0 : 150;
 }
 
 function getLineTotalCents(line: any, menu: MenuData): number {

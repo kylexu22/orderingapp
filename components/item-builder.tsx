@@ -8,6 +8,15 @@ import { centsToCurrency } from "@/lib/format";
 import { localizeText, type Lang } from "@/lib/i18n";
 
 type GroupWithOptions = ModifierGroup & { options: ModifierOption[] };
+const COLD_ONLY_DRINK_IDS = new Set(["drink_soft", "drink_lemon_coke", "drink_lemon_sprite"]);
+const NO_SUGAR_DRINK_IDS = new Set([
+  "drink_soft",
+  "drink_soy_milk",
+  "drink_lemon_sprite",
+  "drink_lemon_coke",
+  "drink_lemon_honey"
+]);
+const COLD_SURCHARGE_EXEMPT_DRINK_IDS = new Set(["drink_soft", "drink_soy_milk"]);
 
 export function ItemBuilder({
   item,
@@ -44,16 +53,8 @@ export function ItemBuilder({
       ? selectedDrinkOptionId.replace(`modopt_add_drink_${item.id}_`, "")
       : "";
   const selectedDrinkIsNone = selectedDrinkId === "none";
-  const coldOnlyDrinkIds = new Set(["drink_soft", "drink_lemon_coke", "drink_lemon_sprite"]);
-  const noSugarDrinkIds = new Set([
-    "drink_soft",
-    "drink_soy_milk",
-    "drink_lemon_sprite",
-    "drink_lemon_coke",
-    "drink_lemon_honey"
-  ]);
-  const selectedDrinkIsColdOnly = Boolean(selectedDrinkId && coldOnlyDrinkIds.has(selectedDrinkId));
-  const selectedDrinkNoSugar = Boolean(selectedDrinkId && noSugarDrinkIds.has(selectedDrinkId));
+  const selectedDrinkIsColdOnly = Boolean(selectedDrinkId && COLD_ONLY_DRINK_IDS.has(selectedDrinkId));
+  const selectedDrinkNoSugar = Boolean(selectedDrinkId && NO_SUGAR_DRINK_IDS.has(selectedDrinkId));
   const selectedDrinkIsSoft = selectedDrinkId === "drink_soft";
   const canShowDrinkTemp = Boolean(addDrinkTempGroup && selectedDrinkOptionId && !selectedDrinkIsNone);
   const canShowDrinkSugar = Boolean(
@@ -163,7 +164,7 @@ export function ItemBuilder({
       Boolean(selectedDrinkOptionId) &&
       !selectedDrinkIsNone &&
       (selectedDrinkIsColdOnly || selectedTempOptionId === coldTempOptionId);
-    if (isColdSelection && selectedDrinkId !== "drink_soft") {
+    if (isColdSelection && !COLD_SURCHARGE_EXEMPT_DRINK_IDS.has(selectedDrinkId)) {
       sum += 150;
     }
     return sum;
@@ -311,7 +312,9 @@ export function ItemBuilder({
             <div className="mt-2 space-y-2">
               {visibleOptions.map((opt) => {
                 const dynamicDeltaCents =
-                  isDrinkTempGroup && opt.id === coldTempOptionId && selectedDrinkId !== "drink_soft"
+                  isDrinkTempGroup &&
+                  opt.id === coldTempOptionId &&
+                  !COLD_SURCHARGE_EXEMPT_DRINK_IDS.has(selectedDrinkId)
                     ? 150
                     : opt.priceDeltaCents;
                 return (

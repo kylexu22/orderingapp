@@ -666,18 +666,18 @@ async function main() {
           {
             id: `modopt_hot_${drink.id}`,
             groupId,
-            name: "Hot",
-            priceDeltaCents: 0,
+            name: drink.id === "drink_soy_milk" ? "熱 (+$0.35) | Hot (+$0.35)" : "熱 | Hot",
+            priceDeltaCents: drink.id === "drink_soy_milk" ? 35 : 0,
             sortOrder: 1,
-            isDefault: true
+            isDefault: drink.id !== "drink_soy_milk"
           },
           {
             id: `modopt_cold_${drink.id}`,
             groupId,
-            name: "Cold (+$1.10)",
-            priceDeltaCents: 110,
+            name: drink.id === "drink_soy_milk" ? "凍 | Cold" : "凍 (+$1.10) | Cold (+$1.10)",
+            priceDeltaCents: drink.id === "drink_soy_milk" ? 0 : 110,
             sortOrder: 2,
-            isDefault: false
+            isDefault: drink.id === "drink_soy_milk"
           }
         ],
         skipDuplicates: true

@@ -179,8 +179,9 @@ function calculateAddDrinkSurcharge(params: {
     throw new Error("Soft drink options are only available when Soft Drink is selected.");
   }
 
+  const surchargeExemptDrinkIds = new Set(["drink_soft", "drink_soy_milk"]);
   const surchargeCents =
-    effectiveTemp === "COLD" && selectedDrinkId !== "drink_soft" ? 150 : 0;
+    effectiveTemp === "COLD" && !surchargeExemptDrinkIds.has(selectedDrinkId) ? 150 : 0;
 
   return {
     surchargeCents,

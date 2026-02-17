@@ -40,6 +40,8 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"CURRENT" | "PAST">("CURRENT");
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
+  const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
   const isAlertPlayingRef = useRef(false);
 
@@ -130,7 +132,16 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const events = new EventSource("/api/orders/stream");
-    events.addEventListener("ORDER_CREATED", () => {
+    events.addEventListener("ORDER_CREATED", (event) => {
+      try {
+        const payload = JSON.parse((event as MessageEvent).data ?? "{}") as { id?: string };
+        if (payload.id) {
+          setHighlightedOrderIds((prev) => new Set([...prev, payload.id]));
+          setAttentionOrderIds((prev) => new Set([...prev, payload.id]));
+        }
+      } catch {
+        // ignore payload parse errors
+      }
       void playNewOrderSound();
       loadOrders();
     });
@@ -144,6 +155,16 @@ export default function AdminOrdersPage() {
   }, [loadOrders, playNewOrderSound]);
 
   async function sendToPastOrders(orderId: string) {
+    setHighlightedOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
+    setAttentionOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
     const res = await fetch(`/api/orders/${orderId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -153,7 +174,17 @@ export default function AdminOrdersPage() {
     loadOrders();
   }
 
-  async function printPassPrnt(orderNumber: string, kitchen = false) {
+  async function printPassPrnt(orderNumber: string, orderId: string, kitchen = false) {
+    setHighlightedOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
+    setAttentionOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
     try {
       const ticketRes = await fetch(
         `/api/orders/${orderNumber}/ticket${kitchen ? "?kitchen=1" : ""}`
@@ -234,11 +265,9 @@ export default function AdminOrdersPage() {
       {visibleOrders.map((order) => (
         <article
           key={order.id}
-          className={`rounded-xl border p-4 shadow-sm ${
-            order.status === OrderStatus.NEW
-              ? "border-red-600 bg-red-50"
-              : "border-amber-900/20 bg-[var(--card)]"
-          }`}
+          className={`rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm ${
+            highlightedOrderIds.has(order.id) ? "new-order-pulse" : ""
+          } ${attentionOrderIds.has(order.id) ? "border-yellow-500" : ""}`}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -257,13 +286,13 @@ export default function AdminOrdersPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => void printPassPrnt(order.orderNumber)}
+                onClick={() => void printPassPrnt(order.orderNumber, order.id)}
                 className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
               >
                 Print
               </button>
               <button
-                onClick={() => void printPassPrnt(order.orderNumber, true)}
+                onClick={() => void printPassPrnt(order.orderNumber, order.id, true)}
                 className="rounded border border-black px-4 py-2 text-lg font-semibold text-black"
               >
                 Print for Kitchen
@@ -302,7 +331,7 @@ export default function AdminOrdersPage() {
                 onClick={() => void sendToPastOrders(order.id)}
                 className="rounded border px-3 py-1 text-sm font-semibold"
               >
-                Send to Past Orders
+                Complete Order
               </button>
             </div>
           ) : (
@@ -321,6 +350,22 @@ export default function AdminOrdersPage() {
       {visibleOrders.length === 0 ? (
         <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">No orders in this section.</div>
       ) : null}
+      <style jsx global>{`
+        @keyframes newOrderPulseYellow {
+          0% {
+            background-color: #fff9c4;
+          }
+          50% {
+            background-color: #fde68a;
+          }
+          100% {
+            background-color: #fff9c4;
+          }
+        }
+        .new-order-pulse {
+          animation: newOrderPulseYellow 2.2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
