@@ -155,22 +155,33 @@ export default function AdminOrdersPage() {
     }
   }
 
-  function printPassPrnt(orderNumber: string) {
-    const ticketUrl = `${window.location.origin}/api/orders/${orderNumber}/ticket`;
-    const passPrntUrl =
-      `starpassprnt://v1/print/nopreview` +
-      `?url=${encodeURIComponent(ticketUrl)}` +
-      `&size=3` +
-      `&cut=partial` +
-      `&popup=no`;
+  async function printPassPrnt(orderNumber: string) {
+    try {
+      const ticketRes = await fetch(`/api/orders/${orderNumber}/ticket`);
+      if (!ticketRes.ok) {
+        throw new Error("Ticket fetch failed");
+      }
+      const ticketHtml = await ticketRes.text();
+      const backUrl = window.location.href;
+      const passPrntUrl =
+        `starpassprnt://v1/print/nopreview` +
+        `?html=${encodeURIComponent(ticketHtml)}` +
+        `&back=${encodeURIComponent(backUrl)}` +
+        `&size=3` +
+        `&cut=partial` +
+        `&popup=no`;
 
-    // Attempt app handoff first. If app isn't installed, user remains in browser.
-    window.location.href = passPrntUrl;
+      // Attempt app handoff first. If app isn't installed, user remains in browser.
+      window.location.href = passPrntUrl;
+    } catch {
+      alert("PassPRNT print failed. Falling back to browser print.");
+      printBrowser(orderNumber);
+    }
   }
 
   function print(orderNumber: string) {
     if (printMode === "PASSPRNT") {
-      printPassPrnt(orderNumber);
+      void printPassPrnt(orderNumber);
       return;
     }
     if (printMode === "STAR_WEBPRNT") {
