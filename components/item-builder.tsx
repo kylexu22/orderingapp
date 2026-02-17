@@ -28,12 +28,15 @@ export function ItemBuilder({
   const [selected, setSelected] = useState<Record<string, string[]>>({});
   const [error, setError] = useState("");
 
-  const addDrinkGroup = item.modifierGroups.find((group) => group.name === "Add Drink");
-  const addDrinkTempGroup = item.modifierGroups.find(
-    (group) => group.name === "Add Drink Temperature"
-  );
-  const addDrinkSugarGroup = item.modifierGroups.find(
-    (group) => group.name === "Add Drink Sugar Level"
+  const addDrinkGroupId = `modgrp_add_drink_${item.id}`;
+  const addDrinkTempGroupId = `modgrp_add_drink_temp_${item.id}`;
+  const addDrinkSugarGroupId = `modgrp_add_drink_sugar_${item.id}`;
+  const addDrinkSoftChoiceGroupId = `modgrp_add_drink_soft_choice_${item.id}`;
+  const addDrinkGroup = item.modifierGroups.find((group) => group.id === addDrinkGroupId);
+  const addDrinkTempGroup = item.modifierGroups.find((group) => group.id === addDrinkTempGroupId);
+  const addDrinkSugarGroup = item.modifierGroups.find((group) => group.id === addDrinkSugarGroupId);
+  const addDrinkSoftChoiceGroup = item.modifierGroups.find(
+    (group) => group.id === addDrinkSoftChoiceGroupId
   );
   const selectedDrinkOptionId = addDrinkGroup ? (selected[addDrinkGroup.id] ?? [])[0] : undefined;
   const selectedDrinkId =
@@ -51,9 +54,13 @@ export function ItemBuilder({
   ]);
   const selectedDrinkIsColdOnly = Boolean(selectedDrinkId && coldOnlyDrinkIds.has(selectedDrinkId));
   const selectedDrinkNoSugar = Boolean(selectedDrinkId && noSugarDrinkIds.has(selectedDrinkId));
+  const selectedDrinkIsSoft = selectedDrinkId === "drink_soft";
   const canShowDrinkTemp = Boolean(addDrinkTempGroup && selectedDrinkOptionId && !selectedDrinkIsNone);
   const canShowDrinkSugar = Boolean(
     addDrinkSugarGroup && selectedDrinkOptionId && !selectedDrinkIsNone && !selectedDrinkNoSugar
+  );
+  const canShowDrinkSoftChoice = Boolean(
+    addDrinkSoftChoiceGroup && selectedDrinkOptionId && !selectedDrinkIsNone && selectedDrinkIsSoft
   );
   const coldTempOptionId = addDrinkTempGroup?.options.find((o) =>
     o.id.includes(`modopt_add_drink_temp_cold_${item.id}`)
@@ -124,6 +131,24 @@ export function ItemBuilder({
     selectedDrinkNoSugar,
     regularSugarOptionId
   ]);
+
+  useEffect(() => {
+    if (!addDrinkSoftChoiceGroup) return;
+    const current = selected[addDrinkSoftChoiceGroup.id] ?? [];
+    if (!selectedDrinkOptionId || selectedDrinkIsNone || !selectedDrinkIsSoft) {
+      if (current.length > 0) {
+        setSelected((prev) => ({ ...prev, [addDrinkSoftChoiceGroup.id]: [] }));
+      }
+      return;
+    }
+    if (!current.length) {
+      const defaultOption =
+        addDrinkSoftChoiceGroup.options.find((o) => o.isDefault) ?? addDrinkSoftChoiceGroup.options[0];
+      if (defaultOption) {
+        setSelected((prev) => ({ ...prev, [addDrinkSoftChoiceGroup.id]: [defaultOption.id] }));
+      }
+    }
+  }, [addDrinkSoftChoiceGroup, selected, selectedDrinkOptionId, selectedDrinkIsNone, selectedDrinkIsSoft]);
 
   const modifierDelta = useMemo(() => {
     let sum = 0;
@@ -201,6 +226,15 @@ export function ItemBuilder({
         return;
       }
     }
+    if (selectedDrinkOptionId && !selectedDrinkIsNone && selectedDrinkIsSoft) {
+      const softChoicePickedCount = addDrinkSoftChoiceGroup
+        ? (selected[addDrinkSoftChoiceGroup.id] ?? []).length
+        : 0;
+      if (addDrinkSoftChoiceGroup && softChoicePickedCount === 0) {
+        setError("Select a soft drink option.");
+        return;
+      }
+    }
 
     const modifiers = Object.entries(selected).flatMap(([groupId, optionIds]) =>
       optionIds.map((optionId) => ({ groupId, optionId }))
@@ -233,14 +267,17 @@ export function ItemBuilder({
       </label>
 
       {item.modifierGroups.map((group) => {
-        if (group.name === "Add Drink Temperature" && !canShowDrinkTemp) {
+        if (group.id === addDrinkTempGroupId && !canShowDrinkTemp) {
           return null;
         }
-        if (group.name === "Add Drink Sugar Level" && !canShowDrinkSugar) {
+        if (group.id === addDrinkSugarGroupId && !canShowDrinkSugar) {
+          return null;
+        }
+        if (group.id === addDrinkSoftChoiceGroupId && !canShowDrinkSoftChoice) {
           return null;
         }
         const picks = selected[group.id] ?? [];
-        const isDrinkTempGroup = group.name === "Add Drink Temperature";
+        const isDrinkTempGroup = group.id === addDrinkTempGroupId;
         const visibleOptions = isDrinkTempGroup
           ? group.options.filter((opt) =>
               selectedDrinkIsColdOnly ? opt.id === coldTempOptionId : true

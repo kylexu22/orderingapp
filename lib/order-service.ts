@@ -99,12 +99,17 @@ function calculateAddDrinkSurcharge(params: {
   };
   selected: ModifierSelectionInput[];
 }) {
-  const addDrinkGroup = params.item.modifierGroups.find((g) => g.name === "Add Drink");
+  const addDrinkGroup = params.item.modifierGroups.find(
+    (g) => g.id === `modgrp_add_drink_${params.item.id}`
+  );
   const addDrinkTempGroup = params.item.modifierGroups.find(
-    (g) => g.name === "Add Drink Temperature"
+    (g) => g.id === `modgrp_add_drink_temp_${params.item.id}`
   );
   const addDrinkSugarGroup = params.item.modifierGroups.find(
-    (g) => g.name === "Add Drink Sugar Level"
+    (g) => g.id === `modgrp_add_drink_sugar_${params.item.id}`
+  );
+  const addDrinkSoftChoiceGroup = params.item.modifierGroups.find(
+    (g) => g.id === `modgrp_add_drink_soft_choice_${params.item.id}`
   );
   if (!addDrinkGroup) {
     return { surchargeCents: 0, surchargeLabel: null as string | null };
@@ -117,9 +122,12 @@ function calculateAddDrinkSurcharge(params: {
   const selectedSugar = addDrinkSugarGroup
     ? params.selected.filter((s) => s.groupId === addDrinkSugarGroup.id)
     : [];
+  const selectedSoftChoice = addDrinkSoftChoiceGroup
+    ? params.selected.filter((s) => s.groupId === addDrinkSoftChoiceGroup.id)
+    : [];
 
   if (!selectedDrink.length) {
-    if (selectedTemp.length || selectedSugar.length) {
+    if (selectedTemp.length || selectedSugar.length || selectedSoftChoice.length) {
       throw new Error("Choose a drink before selecting drink preferences.");
     }
     return { surchargeCents: 0, surchargeLabel: null as string | null };
@@ -132,7 +140,7 @@ function calculateAddDrinkSurcharge(params: {
     : "";
 
   if (selectedDrinkId === "none") {
-    if (selectedTemp.length || selectedSugar.length) {
+    if (selectedTemp.length || selectedSugar.length || selectedSoftChoice.length) {
       throw new Error('Choose a specific drink before selecting drink preferences.');
     }
     return { surchargeCents: 0, surchargeLabel: null as string | null };
@@ -163,6 +171,12 @@ function calculateAddDrinkSurcharge(params: {
   }
   if (noSugarDrinkIds.has(selectedDrinkId) && selectedSugar.length) {
     throw new Error("Selected drink does not allow sugar level changes.");
+  }
+  if (selectedDrinkId === "drink_soft" && addDrinkSoftChoiceGroup && selectedSoftChoice.length === 0) {
+    throw new Error("Select a soft drink option.");
+  }
+  if (selectedDrinkId !== "drink_soft" && selectedSoftChoice.length) {
+    throw new Error("Soft drink options are only available when Soft Drink is selected.");
   }
 
   const surchargeCents =

@@ -10,6 +10,7 @@
     "lint": "next lint",
     "scrape:hongfar": "tsx scripts/scrape-hongfarcafe.ts",
     "backfill:missing-zh": "tsx scripts/backfill-missing-zh.ts",
+    "backfill:add-drink-soft-choice": "tsx scripts/backfill-add-drink-soft-choice.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed"

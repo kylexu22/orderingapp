@@ -32,8 +32,10 @@ type MenuData = {
 };
 
 function getAddDrinkSurchargeCents(line: any, item: any) {
-  const addDrinkGroup = item.modifierGroups.find((g: any) => g.name === "Add Drink");
-  const addDrinkTempGroup = item.modifierGroups.find((g: any) => g.name === "Add Drink Temperature");
+  const addDrinkGroup = item.modifierGroups.find((g: any) => g.id === `modgrp_add_drink_${item.id}`);
+  const addDrinkTempGroup = item.modifierGroups.find(
+    (g: any) => g.id === `modgrp_add_drink_temp_${item.id}`
+  );
   if (!addDrinkGroup) return 0;
 
   const selectedDrink = line.modifiers.find((m: any) => m.groupId === addDrinkGroup.id);
