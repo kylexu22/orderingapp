@@ -14,7 +14,7 @@ import {
   ModifierSelectionInput,
   StoreHours
 } from "@/lib/types";
-import { formatPhone } from "@/lib/format";
+import { formatPhone, roundToNearestNickel } from "@/lib/format";
 
 function getTaxRate() {
   const parsed = Number(process.env.TAX_RATE ?? "0");
@@ -505,7 +505,7 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   const taxCents = Math.round(subtotalCents * getTaxRate());
-  const totalCents = subtotalCents + taxCents;
+  const totalCents = roundToNearestNickel(subtotalCents + taxCents);
   const pickup = await resolvePickup(input, settings);
   const orderNumber = await generateOrderNumber();
 

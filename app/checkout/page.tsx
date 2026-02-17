@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { PickupType } from "@prisma/client";
 import { useCart } from "@/lib/cart-store";
-import { fmtTime } from "@/lib/format";
+import { centsToCurrency, fmtTime, roundToNearestNickel } from "@/lib/format";
 import { getAsapReadyTime, getTodaySlots } from "@/lib/pickup";
 import { StoreHours } from "@/lib/types";
-import { getClientLang, type Lang } from "@/lib/i18n";
+import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 import { getStoreOrderState } from "@/lib/store-status";
 
 type SettingsPayload = {
@@ -19,10 +20,84 @@ type SettingsPayload = {
   timezone?: string;
 };
 
+type MenuPayload = {
+  categories: any[];
+  combos: any[];
+};
+
+const CLIENT_TAX_RATE = (() => {
+  const parsed = Number(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.13");
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0.13;
+})();
+
+function getLineLabel(line: { lineType: "ITEM" | "COMBO"; refId: string }, menu?: MenuPayload) {
+  if (!menu) return line.refId;
+  if (line.lineType === "ITEM") {
+    for (const c of menu.categories) {
+      const item = c.items.find((i: { id: string }) => i.id === line.refId);
+      if (item) return item.name;
+    }
+    return line.refId;
+  }
+  const combo = menu.combos.find((c: { id: string }) => c.id === line.refId);
+  return combo?.name ?? line.refId;
+}
+
+function getAddDrinkSurchargeCents(line: any, item: any) {
+  const addDrinkGroup = item.modifierGroups.find((g: any) => g.id === `modgrp_add_drink_${item.id}`);
+  const addDrinkTempGroup = item.modifierGroups.find(
+    (g: any) => g.id === `modgrp_add_drink_temp_${item.id}`
+  );
+  if (!addDrinkGroup) return 0;
+
+  const selectedDrink = line.modifiers.find((m: any) => m.groupId === addDrinkGroup.id);
+  if (!selectedDrink) return 0;
+  const drinkPrefix = `modopt_add_drink_${item.id}_`;
+  const selectedDrinkId = String(selectedDrink.optionId ?? "").startsWith(drinkPrefix)
+    ? String(selectedDrink.optionId).slice(drinkPrefix.length)
+    : "";
+
+  const coldOnlyDrinkIds = new Set(["drink_soft", "drink_lemon_coke", "drink_lemon_sprite"]);
+  const selectedTemp = addDrinkTempGroup
+    ? line.modifiers.find((m: any) => m.groupId === addDrinkTempGroup.id)
+    : null;
+  const isCold =
+    coldOnlyDrinkIds.has(selectedDrinkId) ||
+    String(selectedTemp?.optionId ?? "").includes(`modopt_add_drink_temp_cold_${item.id}`);
+  if (!isCold) return 0;
+  return selectedDrinkId === "drink_soft" || selectedDrinkId === "drink_soy_milk" ? 0 : 150;
+}
+
+function getLineTotalCents(line: any, menu: MenuPayload): number {
+  if (line.lineType === "ITEM") {
+    const item = menu.categories.flatMap((c: any) => c.items).find((i: any) => i.id === line.refId);
+    if (!item) return 0;
+    let unit = item.basePriceCents;
+    for (const mod of line.modifiers) {
+      const group = item.modifierGroups.find((g: any) => g.id === mod.groupId);
+      const option = group?.options.find((o: any) => o.id === mod.optionId);
+      if (option) unit += option.priceDeltaCents;
+    }
+    unit += getAddDrinkSurchargeCents(line, item);
+    return unit * line.qty;
+  }
+
+  const combo = menu.combos.find((c: any) => c.id === line.refId);
+  if (!combo) return 0;
+  let unit = combo.basePriceCents;
+  for (const sel of line.comboSelections) {
+    const group = combo.groups.find((g: any) => g.id === sel.comboGroupId);
+    const option = group?.options.find((o: any) => o.id === sel.comboOptionId);
+    if (option) unit += option.priceDeltaCents;
+  }
+  return unit * line.qty;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { lines, clear } = useCart();
   const [settings, setSettings] = useState<SettingsPayload | null>(null);
+  const [menu, setMenu] = useState<MenuPayload | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -37,6 +112,10 @@ export default function CheckoutPage() {
     fetch("/api/menu")
       .then((res) => res.json())
       .then((data) => {
+        setMenu({
+          categories: data.categories ?? [],
+          combos: data.combos ?? []
+        });
         if (data.settings) {
           setSettings({
             prepTimeMinutes: data.settings.prepTimeMinutes,
@@ -81,6 +160,15 @@ export default function CheckoutPage() {
       closedDates: settings.closedDates
     });
   }, [settings]);
+  const subtotalCents = useMemo(() => {
+    if (!menu) return 0;
+    return lines.reduce((sum, line) => sum + getLineTotalCents(line, menu), 0);
+  }, [lines, menu]);
+  const taxCents = useMemo(() => Math.round(subtotalCents * CLIENT_TAX_RATE), [subtotalCents]);
+  const totalCents = useMemo(
+    () => roundToNearestNickel(subtotalCents + taxCents),
+    [subtotalCents, taxCents]
+  );
 
   async function submit() {
     if (orderState === "ORDERING_OFF") {
@@ -127,7 +215,43 @@ export default function CheckoutPage() {
 
   return (
     <div className="space-y-4 rounded-xl bg-[var(--card)] p-4 shadow-sm">
+      <Link
+        href="/cart"
+        className="inline-flex items-center gap-2 border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
+      >
+        {lang === "zh" ? "← 返回購物車" : "← Back to Cart"}
+      </Link>
       <h1 className="text-2xl font-bold">{lang === "zh" ? "結帳" : "Checkout"}</h1>
+      <div className="rounded border border-amber-900/20 p-3">
+        <div className="font-semibold">{lang === "zh" ? "訂單摘要" : "Order Summary"}</div>
+        <div className="mt-2 space-y-1 text-sm">
+          {lines.map((line, idx) => (
+            <div key={`${line.refId}-${idx}`} className="flex items-start justify-between gap-3">
+              <div>
+                <span className="font-medium">{line.qty}x </span>
+                <span>{localizeText(getLineLabel(line, menu ?? undefined), lang)}</span>
+              </div>
+              <div className="whitespace-nowrap font-medium">
+                {menu ? centsToCurrency(getLineTotalCents(line, menu)) : "—"}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 border-t border-amber-900/20 pt-2 text-sm">
+          <div className="flex justify-between">
+            <span>{lang === "zh" ? "小計" : "Subtotal"}</span>
+            <span>{centsToCurrency(subtotalCents)}</span>
+          </div>
+          <div className="mt-1 flex justify-between">
+            <span>{lang === "zh" ? "稅項" : "Tax"}</span>
+            <span>{centsToCurrency(taxCents)}</span>
+          </div>
+          <div className="mt-1 flex justify-between text-base font-bold text-black">
+            <span>{lang === "zh" ? "總計" : "Total"}</span>
+            <span>{centsToCurrency(totalCents)}</span>
+          </div>
+        </div>
+      </div>
       <label className="block text-sm">
         {lang === "zh" ? "姓名" : "Name"}
         <input
@@ -187,6 +311,14 @@ export default function CheckoutPage() {
             ))}
           </select>
         )}
+      </div>
+
+      <div className="rounded border border-amber-900/20 p-3">
+        <div className="font-semibold">{lang === "zh" ? "付款方式" : "Payment Method"}</div>
+        <label className="mt-2 inline-flex items-center gap-2">
+          <input type="radio" checked readOnly />
+          {lang === "zh" ? "到店付款（現金）" : "Pay in Person (Cash)"}
+        </label>
       </div>
 
       <input

@@ -2,6 +2,10 @@ export function centsToCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+export function roundToNearestNickel(cents: number): number {
+  return Math.round(cents / 5) * 5;
+}
+
 export function formatPhone(raw: string): string {
   return raw.replace(/[^\d+]/g, "");
 }

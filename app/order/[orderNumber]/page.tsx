@@ -30,7 +30,7 @@ export default async function ConfirmationPage({
           ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
           : fmtDateTime(order.pickupTime as Date)}
       </div>
-      <Link href="/" className="inline-block rounded bg-[var(--brand)] px-4 py-2 text-white">
+      <Link href="/menu" className="inline-block rounded bg-[var(--brand)] px-4 py-2 text-white">
         {lang === "zh" ? "返回菜單" : "Back to Menu"}
       </Link>
     </div>

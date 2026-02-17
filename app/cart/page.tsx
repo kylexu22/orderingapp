@@ -3,13 +3,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-store";
-import { centsToCurrency } from "@/lib/format";
+import { centsToCurrency, roundToNearestNickel } from "@/lib/format";
 import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 
 type MenuPayload = {
   categories: any[];
   combos: any[];
 };
+
+const CLIENT_TAX_RATE = (() => {
+  const parsed = Number(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.13");
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0.13;
+})();
 
 async function fetchMenu() {
   const res = await fetch("/api/menu");
@@ -132,9 +137,20 @@ export default function CartPage() {
     if (!menu) return 0;
     return lines.reduce((sum, line) => sum + getLineTotalCents(line, menu), 0);
   }, [lines, menu]);
+  const taxCents = useMemo(() => Math.round(subtotalCents * CLIENT_TAX_RATE), [subtotalCents]);
+  const totalCents = useMemo(
+    () => roundToNearestNickel(subtotalCents + taxCents),
+    [subtotalCents, taxCents]
+  );
 
   return (
     <div className="space-y-4">
+      <Link
+        href="/menu"
+        className="inline-flex items-center gap-2 border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
+      >
+        {lang === "zh" ? "← 返回餐牌" : "← Back to Menu"}
+      </Link>
       <h1 className="text-2xl font-bold">{lang === "zh" ? "購物車" : "Cart"}</h1>
       {lines.length === 0 ? (
         <div className="rounded bg-[var(--card)] p-4">{lang === "zh" ? "購物車是空的。" : "Your cart is empty."}</div>
@@ -180,6 +196,12 @@ export default function CartPage() {
           <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">
             <div className="font-semibold">
               {lang === "zh" ? "預估小計" : "Estimated subtotal"}: {centsToCurrency(subtotalCents)}
+            </div>
+            <div className="mt-1 font-semibold">
+              {lang === "zh" ? "稅項" : "Tax"}: {centsToCurrency(taxCents)}
+            </div>
+            <div className="mt-1 text-lg font-bold text-black">
+              {lang === "zh" ? "總計" : "Total"}: {centsToCurrency(totalCents)}
             </div>
             <Link href="/checkout" className="mt-3 inline-block rounded bg-[var(--brand)] px-4 py-2 text-white">
               {lang === "zh" ? "前往結帳" : "Proceed to Checkout"}

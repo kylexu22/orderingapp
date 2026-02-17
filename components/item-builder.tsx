@@ -264,7 +264,7 @@ export function ItemBuilder({
       lineNote: lineNote.trim() || undefined,
       modifiers
     }, lang === "zh" ? `${localizeText(item.name, lang)} 已加入購物車` : `${item.name} added to cart`);
-    router.push("/");
+    router.push("/menu");
   }
 
   return (

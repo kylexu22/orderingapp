@@ -227,7 +227,7 @@ export function ComboBuilder({
       lineNote: lineNote.trim() || undefined,
       comboSelections: selected
     }, lang === "zh" ? `${localizeText(combo.name, lang)} 已加入購物車` : `${combo.name} added to cart`);
-    router.push("/");
+    router.push("/menu");
   }
 
   function toggleSection(groupId: string, categoryId: string) {
