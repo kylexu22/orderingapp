@@ -1,9 +1,7 @@
 import "@/app/globals.css";
 import { CartProvider } from "@/lib/cart-store";
-import { SiteHeader } from "@/components/site-header";
-import { CartToast } from "@/components/cart-toast";
-import { CustomerFooter } from "@/components/customer-footer";
 import { Lora, Noto_Serif_SC } from "next/font/google";
+import { LayoutShell } from "@/components/layout-shell";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -28,10 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${lora.variable} ${notoSerifSc.variable}`}>
         <CartProvider>
-          <SiteHeader />
-          <main className="mx-auto w-full max-w-6xl px-4 py-4">{children}</main>
-          <CustomerFooter />
-          <CartToast />
+          <LayoutShell>{children}</LayoutShell>
         </CartProvider>
       </body>
     </html>
