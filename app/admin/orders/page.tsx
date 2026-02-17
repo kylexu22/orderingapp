@@ -44,7 +44,58 @@ export default function AdminOrdersPage() {
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
+  const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
+  const keepAliveObjectUrlRef = useRef<string | null>(null);
   const isAlertPlayingRef = useRef(false);
+
+  const startSilentKeepAliveLoop = useCallback(async () => {
+    try {
+      if (!keepAliveAudioRef.current) {
+        const sampleRate = 8000;
+        const seconds = 2;
+        const numSamples = sampleRate * seconds;
+        const bytesPerSample = 2;
+        const dataSize = numSamples * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
+
+        const writeString = (offset: number, value: string) => {
+          for (let i = 0; i < value.length; i += 1) {
+            view.setUint8(offset + i, value.charCodeAt(i));
+          }
+        };
+
+        writeString(0, "RIFF");
+        view.setUint32(4, 36 + dataSize, true);
+        writeString(8, "WAVE");
+        writeString(12, "fmt ");
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true); // PCM
+        view.setUint16(22, 1, true); // mono
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * bytesPerSample, true);
+        view.setUint16(32, bytesPerSample, true);
+        view.setUint16(34, 16, true);
+        writeString(36, "data");
+        view.setUint32(40, dataSize, true);
+
+        const blob = new Blob([buffer], { type: "audio/wav" });
+        const objectUrl = URL.createObjectURL(blob);
+        keepAliveObjectUrlRef.current = objectUrl;
+
+        const audio = new Audio(objectUrl);
+        audio.loop = true;
+        audio.preload = "auto";
+        audio.setAttribute("playsinline", "true");
+        keepAliveAudioRef.current = audio;
+      }
+
+      await keepAliveAudioRef.current.play();
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
 
   const ensureAudioReady = useCallback(async () => {
     try {
@@ -130,6 +181,23 @@ export default function AdminOrdersPage() {
       window.removeEventListener("keydown", unlock);
     };
   }, [ensureAudioReady]);
+
+  useEffect(() => {
+    return () => {
+      if (keepAliveAudioRef.current) {
+        keepAliveAudioRef.current.pause();
+      }
+      if (keepAliveObjectUrlRef.current) {
+        URL.revokeObjectURL(keepAliveObjectUrlRef.current);
+      }
+    };
+  }, []);
+
+  async function enableSoundAlerts() {
+    const ready = await ensureAudioReady();
+    if (!ready) return;
+    await startSilentKeepAliveLoop();
+  }
 
   useEffect(() => {
     const events = new EventSource("/api/orders/stream");
@@ -266,7 +334,7 @@ export default function AdminOrdersPage() {
         {!soundEnabled ? (
           <button
             type="button"
-            onClick={() => void ensureAudioReady()}
+            onClick={() => void enableSoundAlerts()}
             className="border px-4 py-2 text-sm font-semibold"
           >
             Enable Sound Alerts

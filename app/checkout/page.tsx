@@ -8,6 +8,7 @@ import { fmtTime } from "@/lib/format";
 import { getAsapReadyTime, getTodaySlots } from "@/lib/pickup";
 import { StoreHours } from "@/lib/types";
 import { getClientLang, type Lang } from "@/lib/i18n";
+import { getStoreOrderState } from "@/lib/store-status";
 
 type SettingsPayload = {
   prepTimeMinutes: number;
@@ -15,6 +16,7 @@ type SettingsPayload = {
   storeHours: StoreHours;
   closedDates: string[];
   acceptingOrders: boolean;
+  timezone?: string;
 };
 
 export default function CheckoutPage() {
@@ -41,7 +43,8 @@ export default function CheckoutPage() {
             slotIntervalMinutes: data.settings.slotIntervalMinutes,
             storeHours: data.settings.storeHours,
             closedDates: data.settings.closedDates,
-            acceptingOrders: data.settings.acceptingOrders ?? true
+            acceptingOrders: data.settings.acceptingOrders ?? true,
+            timezone: data.settings.timezone
           });
         }
       });
@@ -69,9 +72,23 @@ export default function CheckoutPage() {
     return lang === "zh" ? `預計可取餐時間 ${fmtTime(estimate)}` : `Estimated ready at ${fmtTime(estimate)}`;
   }, [settings, lang]);
 
+  const orderState = useMemo(() => {
+    if (!settings) return "OPEN" as const;
+    return getStoreOrderState({
+      acceptingOrders: settings.acceptingOrders,
+      timezone: settings.timezone,
+      storeHours: settings.storeHours,
+      closedDates: settings.closedDates
+    });
+  }, [settings]);
+
   async function submit() {
-    if (settings && !settings.acceptingOrders) {
+    if (orderState === "ORDERING_OFF") {
       setError(lang === "zh" ? "暫停接單，請稍後再試。" : "Ordering is currently paused.");
+      return;
+    }
+    if (orderState === "CLOSED") {
+      setError(lang === "zh" ? "本店目前休息中。" : "The store is currently closed.");
       return;
     }
     setSubmitting(true);
@@ -182,14 +199,20 @@ export default function CheckoutPage() {
       />
 
       {error ? <div className="text-sm text-red-700">{error}</div> : null}
-      {settings && !settings.acceptingOrders ? (
+      {orderState !== "OPEN" ? (
         <div className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          {lang === "zh" ? "目前暫停接單。" : "We are not accepting orders right now."}
+          {orderState === "CLOSED"
+            ? lang === "zh"
+              ? "本店目前休息中，暫時不能下單。你仍可瀏覽菜單。"
+              : "The store is currently closed. Ordering is unavailable, but you can still view the menu."
+            : lang === "zh"
+              ? "目前暫停接單。你仍可瀏覽菜單。"
+              : "Ordering is currently turned off. You can still view the menu."}
         </div>
       ) : null}
       <button
         onClick={submit}
-        disabled={submitting || Boolean(settings && !settings.acceptingOrders)}
+        disabled={submitting || orderState !== "OPEN"}
         className="rounded bg-[var(--brand)] px-4 py-2 text-white disabled:opacity-50"
       >
         {submitting ? (lang === "zh" ? "提交中..." : "Submitting...") : lang === "zh" ? "提交訂單" : "Place Order"}

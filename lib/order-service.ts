@@ -6,6 +6,7 @@ import {
 } from "@prisma/client";
 import { getAsapReadyTime, getTodaySlots } from "@/lib/pickup";
 import { prisma } from "@/lib/prisma";
+import { getStoreOrderState } from "@/lib/store-status";
 import {
   CartLineInput,
   ComboSelectionInput,
@@ -480,8 +481,17 @@ export async function createOrder(input: CreateOrderInput) {
 
   const settings = await prisma.storeSettings.findUnique({ where: { id: "default" } });
   if (!settings) throw new Error("Store settings missing.");
-  if (!settings.acceptingOrders) {
+  const storeOrderState = getStoreOrderState({
+    acceptingOrders: settings.acceptingOrders,
+    timezone: settings.timezone,
+    storeHours: settings.storeHours as StoreHours,
+    closedDates: settings.closedDates as string[]
+  });
+  if (storeOrderState === "ORDERING_OFF") {
     throw new Error("We are not accepting orders right now.");
+  }
+  if (storeOrderState === "CLOSED") {
+    throw new Error("The store is currently closed.");
   }
 
   const orderLines: Prisma.OrderLineUncheckedCreateWithoutOrderInput[] = [];

@@ -4,13 +4,15 @@ import { centsToCurrency } from "@/lib/format";
 import { DesktopCartPanel } from "@/components/desktop-cart-panel";
 import { localizeText } from "@/lib/i18n";
 import { getServerLang } from "@/lib/i18n-server";
+import { getStoreOrderState } from "@/lib/store-status";
+import { StoreHours } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage() {
   const lang = getServerLang();
-  const { categories, combos } = await getMenuData();
+  const { categories, combos, settings } = await getMenuData();
   const combosAnchorId = "category-combos";
   const visibleCategories = categories
     .map((category) => ({
@@ -19,9 +21,30 @@ export default async function HomePage() {
     }))
     .filter((category) => category.items.length > 0);
 
+  const orderState = settings
+    ? getStoreOrderState({
+        acceptingOrders: settings.acceptingOrders,
+        timezone: settings.timezone,
+        storeHours: settings.storeHours as StoreHours,
+        closedDates: settings.closedDates as string[]
+      })
+    : "OPEN";
+  const showStoreBanner = orderState !== "OPEN";
+
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
       <div className="space-y-6">
+        {showStoreBanner ? (
+          <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {orderState === "CLOSED"
+              ? lang === "zh"
+                ? "本店目前休息中，暫時不能下單。你仍可瀏覽菜單。"
+                : "The store is currently closed. Ordering is unavailable, but you can still view the menu."
+              : lang === "zh"
+                ? "本店暫停接單。你仍可瀏覽菜單。"
+                : "Ordering is currently turned off. You can still view the menu."}
+          </div>
+        ) : null}
         <section className="sticky top-16 z-20 -mx-4 bg-[var(--bg)] px-4 py-2">
           <div className="flex gap-2 overflow-x-auto whitespace-nowrap">
             <a
