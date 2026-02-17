@@ -816,7 +816,6 @@ async function main() {
   console.log(
     `Seeded (${SEED_MODE}) ${scrapedCategories.length} scraped categories, ${scrapedItems.length} scraped items, ${manualDrinks.length} drinks, ${comboItems.length} combo-only items, ${drinkBundleEligibleItems.length} drink-bundle items, ${congeeAddonEligibleItems.length} congee add-on items, ${teaTimeSelectionItems.length} tea-time selection items, and ${combos.length} combos.`
   );
-  );
 }
 
 main()
