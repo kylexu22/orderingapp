@@ -71,6 +71,31 @@ function getAddDrinkSurchargeCents(line: any, item: any) {
   return selectedDrinkId === "drink_soft" ? 0 : 150;
 }
 
+function getLineTotalCents(line: any, menu: MenuPayload): number {
+  if (line.lineType === "ITEM") {
+    const item = menu.categories.flatMap((c: any) => c.items).find((i: any) => i.id === line.refId);
+    if (!item) return 0;
+    let unit = item.basePriceCents;
+    for (const mod of line.modifiers) {
+      const group = item.modifierGroups.find((g: any) => g.id === mod.groupId);
+      const option = group?.options.find((o: any) => o.id === mod.optionId);
+      if (option) unit += option.priceDeltaCents;
+    }
+    unit += getAddDrinkSurchargeCents(line, item);
+    return unit * line.qty;
+  }
+
+  const combo = menu.combos.find((c: any) => c.id === line.refId);
+  if (!combo) return 0;
+  let unit = combo.basePriceCents;
+  for (const sel of line.comboSelections) {
+    const group = combo.groups.find((g: any) => g.id === sel.comboGroupId);
+    const option = group?.options.find((o: any) => o.id === sel.comboOptionId);
+    if (option) unit += option.priceDeltaCents;
+  }
+  return unit * line.qty;
+}
+
 function renderComboSelections(line: any, menu: MenuPayload | undefined, lang: Lang) {
   if (!menu) return null;
   const combo = menu.combos.find((c: any) => c.id === line.refId);
@@ -105,31 +130,7 @@ export default function CartPage() {
 
   const subtotalCents = useMemo(() => {
     if (!menu) return 0;
-    return lines.reduce((sum, line) => {
-      if (line.lineType === "ITEM") {
-        const item = menu.categories
-          .flatMap((c: any) => c.items)
-          .find((i: any) => i.id === line.refId);
-        if (!item) return sum;
-        let unit = item.basePriceCents;
-        for (const mod of line.modifiers) {
-          const group = item.modifierGroups.find((g: any) => g.id === mod.groupId);
-          const option = group?.options.find((o: any) => o.id === mod.optionId);
-          if (option) unit += option.priceDeltaCents;
-        }
-        unit += getAddDrinkSurchargeCents(line, item);
-        return sum + unit * line.qty;
-      }
-      const combo = menu.combos.find((c: any) => c.id === line.refId);
-      if (!combo) return sum;
-      let unit = combo.basePriceCents;
-      for (const sel of line.comboSelections) {
-        const group = combo.groups.find((g: any) => g.id === sel.comboGroupId);
-        const option = group?.options.find((o: any) => o.id === sel.comboOptionId);
-        if (option) unit += option.priceDeltaCents;
-      }
-      return sum + unit * line.qty;
-    }, 0);
+    return lines.reduce((sum, line) => sum + getLineTotalCents(line, menu), 0);
   }, [lines, menu]);
 
   return (
@@ -159,6 +160,11 @@ export default function CartPage() {
                   {lang === "zh" ? "移除" : "Remove"}
                 </button>
               </div>
+              {menu ? (
+                <div className="mt-1 text-sm font-semibold text-[var(--brand)]">
+                  {lang === "zh" ? "項目小計" : "Line total"}: {centsToCurrency(getLineTotalCents(line, menu))}
+                </div>
+              ) : null}
               <label className="mt-2 block text-sm">
                 {lang === "zh" ? "數量" : "Qty"}
                 <input

@@ -41,6 +41,7 @@ export default function AdminOrdersPage() {
   const [tab, setTab] = useState<"CURRENT" | "PAST">("CURRENT");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const isAlertPlayingRef = useRef(false);
 
   const ensureAudioReady = useCallback(async () => {
     try {
@@ -65,30 +66,42 @@ export default function AdminOrdersPage() {
   }, []);
 
   const playNewOrderSound = useCallback(async () => {
+    if (isAlertPlayingRef.current) return;
     const ok = await ensureAudioReady();
     if (!ok || !audioContextRef.current) return;
+    isAlertPlayingRef.current = true;
     const context = audioContextRef.current;
     const now = context.currentTime;
+    const totalDurationSeconds = 5;
+    const cycleSeconds = 0.5;
+    const cycles = Math.floor(totalDurationSeconds / cycleSeconds);
 
-    const gain = context.createGain();
-    gain.connect(context.destination);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+    for (let i = 0; i < cycles; i += 1) {
+      const start = now + i * cycleSeconds;
+      const gain = context.createGain();
+      gain.connect(context.destination);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.08, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
 
-    const osc1 = context.createOscillator();
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(880, now);
-    osc1.connect(gain);
-    osc1.start(now);
-    osc1.stop(now + 0.12);
+      const osc1 = context.createOscillator();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(880, start);
+      osc1.connect(gain);
+      osc1.start(start);
+      osc1.stop(start + 0.11);
 
-    const osc2 = context.createOscillator();
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(1040, now + 0.12);
-    osc2.connect(gain);
-    osc2.start(now + 0.12);
-    osc2.stop(now + 0.24);
+      const osc2 = context.createOscillator();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(1040, start + 0.11);
+      osc2.connect(gain);
+      osc2.start(start + 0.11);
+      osc2.stop(start + 0.22);
+    }
+
+    window.setTimeout(() => {
+      isAlertPlayingRef.current = false;
+    }, totalDurationSeconds * 1000 + 100);
   }, [ensureAudioReady]);
 
   const loadOrders = useCallback(async () => {

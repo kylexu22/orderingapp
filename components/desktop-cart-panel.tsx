@@ -56,35 +56,37 @@ function getAddDrinkSurchargeCents(line: any, item: any) {
   return selectedDrinkId === "drink_soft" ? 0 : 150;
 }
 
+function getLineTotalCents(line: any, menu: MenuData): number {
+  if (line.lineType === "ITEM") {
+    const item = menu.categories
+      .flatMap((c) => c.items)
+      .find((i) => i.id === line.refId);
+    if (!item) return 0;
+    let unit = item.basePriceCents;
+    for (const mod of line.modifiers) {
+      const group = item.modifierGroups.find((g) => g.id === mod.groupId);
+      const option = group?.options.find((o) => o.id === mod.optionId);
+      if (option) unit += option.priceDeltaCents;
+    }
+    unit += getAddDrinkSurchargeCents(line, item);
+    return unit * line.qty;
+  }
+  const combo = menu.combos.find((c) => c.id === line.refId);
+  if (!combo) return 0;
+  let unit = combo.basePriceCents;
+  for (const sel of line.comboSelections) {
+    const group = combo.groups.find((g) => g.id === sel.comboGroupId);
+    const option = group?.options.find((o) => o.id === sel.comboOptionId);
+    if (option) unit += option.priceDeltaCents;
+  }
+  return unit * line.qty;
+}
+
 export function DesktopCartPanel({ menu, lang }: { menu: MenuData; lang: Lang }) {
   const { lines } = useCart();
 
   const subtotalCents = useMemo(() => {
-    return lines.reduce((sum, line) => {
-      if (line.lineType === "ITEM") {
-        const item = menu.categories
-          .flatMap((c) => c.items)
-          .find((i) => i.id === line.refId);
-        if (!item) return sum;
-        let unit = item.basePriceCents;
-        for (const mod of line.modifiers) {
-          const group = item.modifierGroups.find((g) => g.id === mod.groupId);
-          const option = group?.options.find((o) => o.id === mod.optionId);
-          if (option) unit += option.priceDeltaCents;
-        }
-        unit += getAddDrinkSurchargeCents(line, item);
-        return sum + unit * line.qty;
-      }
-      const combo = menu.combos.find((c) => c.id === line.refId);
-      if (!combo) return sum;
-      let unit = combo.basePriceCents;
-      for (const sel of line.comboSelections) {
-        const group = combo.groups.find((g) => g.id === sel.comboGroupId);
-        const option = group?.options.find((o) => o.id === sel.comboOptionId);
-        if (option) unit += option.priceDeltaCents;
-      }
-      return sum + unit * line.qty;
-    }, 0);
+    return lines.reduce((sum, line) => sum + getLineTotalCents(line, menu), 0);
   }, [lines, menu]);
 
   return (
@@ -106,6 +108,9 @@ export function DesktopCartPanel({ menu, lang }: { menu: MenuData; lang: Lang })
               <div key={`${line.refId}-${idx}`} className="rounded border border-gray-200 p-2 text-sm">
                 <div className="font-medium">{itemName ?? line.refId}</div>
                 <div className="text-gray-600">{lang === "zh" ? "數量" : "Qty"}: {line.qty}</div>
+                <div className="font-semibold text-[var(--brand)]">
+                  {centsToCurrency(getLineTotalCents(line, menu))}
+                </div>
               </div>
             );
           })}
