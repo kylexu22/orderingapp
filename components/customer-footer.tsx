@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -26,7 +26,8 @@ export function CustomerFooter() {
           height={98}
           className="mx-auto mb-3 h-auto w-[min(170px,58vw)]"
         />
-        <p className="font-['var(--font-noto-serif-sc)'] text-lg tracking-wide">Hong Far Cafe</p>
+        <p className="font-['var(--font-noto-serif-sc)'] text-lg tracking-wide">鴻發餐廳</p>
+        <p className="font-['var(--font-noto-serif-sc)'] text-base tracking-wide">Hong Far Cafe</p>
         <p className="text-sm opacity-90">9425 Leslie St, Richmond Hill, ON</p>
         <p className="text-sm opacity-90">
           <Link href="tel:+19057709236" className="text-[#c4a574]">

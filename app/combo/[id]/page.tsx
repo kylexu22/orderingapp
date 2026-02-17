@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ComboBuilder } from "@/components/combo-builder";
 import { localizeText } from "@/lib/i18n";
@@ -40,6 +41,12 @@ export default async function ComboPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="space-y-4 rounded-xl bg-[var(--card)] p-4 shadow-sm">
+      <Link
+        href="/menu"
+        className="inline-flex items-center gap-2 border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
+      >
+        {lang === "zh" ? "← 返回餐牌" : "← Back to Menu"}
+      </Link>
       <h1 className="text-2xl font-bold">{localizeText(combo.name, lang)}</h1>
       <p className="text-gray-600">{localizeText(combo.description, lang)}</p>
       <ComboBuilder combo={combo} groups={combo.groups} items={items} lang={lang} />
