@@ -61,7 +61,7 @@ function beep() {
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [error, setError] = useState("");
-  const [printMode, setPrintMode] = useState<"BROWSER" | "STAR_WEBPRNT">("BROWSER");
+  const [printMode, setPrintMode] = useState<"BROWSER" | "STAR_WEBPRNT" | "PASSPRNT">("BROWSER");
 
   const loadOrders = useCallback(async () => {
     const res = await fetch("/api/orders");
@@ -109,9 +109,8 @@ export default function AdminOrdersPage() {
       try {
         w.focus();
         w.print();
-        setTimeout(() => w.print(), 600);
       } catch {
-        alert("Print failed. Please use browser print manually and set Copies = 2.");
+        alert("Print failed. Please use browser print manually.");
       }
     };
   }
@@ -143,22 +142,37 @@ export default function AdminOrdersPage() {
   </request>
 </StarWebPrint>`;
 
-      for (let i = 0; i < 2; i += 1) {
-        await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "text/xml; charset=utf-8" },
-          body: xml,
-          mode: "cors"
-        });
-      }
-      alert("Sent 2 copies to Star WebPRNT.");
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/xml; charset=utf-8" },
+        body: xml,
+        mode: "cors"
+      });
+      alert("Sent to Star WebPRNT.");
     } catch {
       alert("Star WebPRNT failed. Falling back to browser print.");
       printBrowser(orderNumber);
     }
   }
 
+  function printPassPrnt(orderNumber: string) {
+    const ticketUrl = `${window.location.origin}/api/orders/${orderNumber}/ticket`;
+    const passPrntUrl =
+      `starpassprnt://v1/print/nopreview` +
+      `?url=${encodeURIComponent(ticketUrl)}` +
+      `&size=3` +
+      `&cut=partial` +
+      `&popup=no`;
+
+    // Attempt app handoff first. If app isn't installed, user remains in browser.
+    window.location.href = passPrntUrl;
+  }
+
   function print(orderNumber: string) {
+    if (printMode === "PASSPRNT") {
+      printPassPrnt(orderNumber);
+      return;
+    }
     if (printMode === "STAR_WEBPRNT") {
       void printStarWebPrnt(orderNumber);
       return;
@@ -180,16 +194,19 @@ export default function AdminOrdersPage() {
     <div className="space-y-4 pb-8">
       <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">
         <h1 className="text-2xl font-bold text-[var(--brand)]">iPad Order Console</h1>
-        <p className="text-sm text-gray-600">Print each order twice: front + kitchen copy.</p>
+        <p className="text-sm text-gray-600">Print each order ticket from the selected print mode.</p>
         <label className="mt-2 inline-flex items-center gap-2 text-sm">
           Print Mode
           <select
             value={printMode}
-            onChange={(e) => setPrintMode(e.target.value as "BROWSER" | "STAR_WEBPRNT")}
+            onChange={(e) =>
+              setPrintMode(e.target.value as "BROWSER" | "STAR_WEBPRNT" | "PASSPRNT")
+            }
             className="rounded border px-2 py-1"
           >
             <option value="BROWSER">Browser Fallback (Default)</option>
             <option value="STAR_WEBPRNT">Star WebPRNT (Optional)</option>
+            <option value="PASSPRNT">PassPRNT App</option>
           </select>
         </label>
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
@@ -224,7 +241,7 @@ export default function AdminOrdersPage() {
                 onClick={() => print(order.orderNumber)}
                 className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
               >
-                Print x2
+                Print
               </button>
               <button
                 onClick={() => print(order.orderNumber)}
