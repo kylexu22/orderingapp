@@ -194,7 +194,7 @@ export default function AdminOrdersPage() {
         throw new Error("Ticket fetch failed");
       }
       const ticketHtml = await ticketRes.text();
-      const backUrl = `${window.location.origin}${window.location.pathname}`;
+      const backUrl = `${window.location.origin}/close-tab`;
       const passPrntUrl =
         `starpassprnt://v1/print/nopreview` +
         `?html=${encodeURIComponent(ticketHtml)}` +
