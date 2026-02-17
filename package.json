@@ -12,6 +12,7 @@
     "backfill:missing-zh": "tsx scripts/backfill-missing-zh.ts",
     "backfill:add-drink-soft-choice": "tsx scripts/backfill-add-drink-soft-choice.ts",
     "sync:add-drink-option-names": "tsx scripts/sync-add-drink-option-names.ts",
+    "translate:missing-zh-db": "tsx scripts/translate-missing-zh-db.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed"

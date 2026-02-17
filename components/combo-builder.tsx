@@ -192,17 +192,29 @@ export function ComboBuilder({
     for (const group of groups) {
       const picks = selectedByGroup.get(group.id) ?? [];
       if (picks.length < group.minSelect || picks.length > group.maxSelect) {
-        setError(`${group.name}: choose ${group.minSelect}-${group.maxSelect}.`);
+        setError(
+          lang === "zh"
+            ? `${localizeText(group.name, lang)}：請選擇 ${group.minSelect}-${group.maxSelect} 項。`
+            : `${group.name}: choose ${group.minSelect}-${group.maxSelect}.`
+        );
         return;
       }
       if (group.required && picks.length === 0) {
-        setError(`${group.name} is required.`);
+        setError(
+          lang === "zh"
+            ? `${localizeText(group.name, lang)} 為必選。`
+            : `${group.name} is required.`
+        );
         return;
       }
       for (const pick of picks) {
         const option = group.options.find((o) => o.id === pick.comboOptionId);
         if (option?.optionType === "CATEGORY" && !pick.selectedItemId) {
-          setError(`${group.name}: select an item.`);
+          setError(
+            lang === "zh"
+              ? `${localizeText(group.name, lang)}：請選擇一個項目。`
+              : `${group.name}: select an item.`
+          );
           return;
         }
       }
@@ -214,7 +226,7 @@ export function ComboBuilder({
       qty,
       lineNote: lineNote.trim() || undefined,
       comboSelections: selected
-    }, `${combo.name} added to cart`);
+    }, lang === "zh" ? `${localizeText(combo.name, lang)} 已加入購物車` : `${combo.name} added to cart`);
     router.push("/");
   }
 
@@ -225,9 +237,11 @@ export function ComboBuilder({
 
   return (
     <div className="space-y-4">
-      <div className="text-lg font-semibold">Combo total: {centsToCurrency(total)}</div>
+      <div className="text-lg font-semibold">
+        {lang === "zh" ? "套餐總價" : "Combo total"}: {centsToCurrency(total)}
+      </div>
       <label className="block text-sm">
-        Quantity
+        {lang === "zh" ? "數量" : "Quantity"}
         <input
           className="mt-1 w-20 rounded border px-2 py-1"
           type="number"
@@ -242,7 +256,7 @@ export function ComboBuilder({
           <div className="font-semibold">
             {localizeText(group.name, lang)}
             <span className="ml-2 text-sm text-gray-500">
-              Choose {group.minSelect}
+              {lang === "zh" ? "選擇" : "Choose"} {group.minSelect}
               {group.maxSelect !== group.minSelect ? `-${group.maxSelect}` : ""}
             </span>
           </div>
@@ -287,7 +301,7 @@ export function ComboBuilder({
                           {selectedInSection > 0 ? ` (${selectedInSection} Selected)` : ""}
                         </span>
                         <span className="text-sm text-gray-500">
-                          {isCollapsed ? "Expand" : "Collapse"}
+                          {isCollapsed ? (lang === "zh" ? "展開" : "Expand") : lang === "zh" ? "收起" : "Collapse"}
                         </span>
                       </button>
                       {!isCollapsed ? (
@@ -327,7 +341,9 @@ export function ComboBuilder({
                                   </label>
                                   {active && option.allowModifiers && selectedItem ? (
                                     <div className="mt-2 space-y-2 rounded bg-amber-50 p-2">
-                                      <div className="text-sm font-medium">{localizeText(selectedItem.name, lang)} modifiers</div>
+                                      <div className="text-sm font-medium">
+                                        {localizeText(selectedItem.name, lang)} {lang === "zh" ? "選項" : "modifiers"}
+                                      </div>
                                       {selectedItem.modifierGroups.map((groupMod) => (
                                         <div key={groupMod.id} className="text-sm">
                                           <div>{localizeText(groupMod.name, lang)}</div>
@@ -392,7 +408,9 @@ export function ComboBuilder({
                         />
                         {option.optionType === "ITEM"
                           ? localizeText(itemById.get(option.refId)?.name ?? "Item", lang)
-                          : "Choose from category"}
+                          : lang === "zh"
+                            ? "從分類中選擇"
+                            : "Choose from category"}
                       </span>
                       <span className="text-sm">
                         {option.priceDeltaCents ? `+${centsToCurrency(option.priceDeltaCents)}` : ""}
@@ -404,7 +422,7 @@ export function ComboBuilder({
                         value={selectedLine?.selectedItemId ?? ""}
                         onChange={(e) => setSelectedItem(group.id, option.id, e.target.value)}
                       >
-                        <option value="">Select item</option>
+                        <option value="">{lang === "zh" ? "選擇項目" : "Select item"}</option>
                         {categoryItems.map((item) => (
                           <option key={item.id} value={item.id}>
                             {localizeText(item.name, lang)}
@@ -414,7 +432,9 @@ export function ComboBuilder({
                     ) : null}
                     {active && option.allowModifiers && selectedItem ? (
                       <div className="mt-2 space-y-2 rounded bg-amber-50 p-2">
-                        <div className="text-sm font-medium">{localizeText(selectedItem.name, lang)} modifiers</div>
+                        <div className="text-sm font-medium">
+                          {localizeText(selectedItem.name, lang)} {lang === "zh" ? "選項" : "modifiers"}
+                        </div>
                         {selectedItem.modifierGroups.map((groupMod) => (
                           <div key={groupMod.id} className="text-sm">
                             <div>{localizeText(groupMod.name, lang)}</div>
@@ -447,23 +467,23 @@ export function ComboBuilder({
         </div>
       ))}
       <label className="block text-sm">
-        Additional Notes (optional)
+        {lang === "zh" ? "附加備註（選填）" : "Additional Notes (optional)"}
         <textarea
           className="mt-1 w-full rounded border px-2 py-2"
           value={lineNote}
           onChange={(e) => setLineNote(e.target.value)}
-          placeholder="Special request for this combo"
+          placeholder={lang === "zh" ? "此套餐的特殊要求" : "Special request for this combo"}
         />
       </label>
       {selectedItemNames.length ? (
         <div className="rounded border border-amber-900/20 bg-amber-50 p-3 text-sm">
-          <div className="font-semibold">Selected items</div>
+          <div className="font-semibold">{lang === "zh" ? "已選項目" : "Selected items"}</div>
           <div>{selectedItemNames.join(", ")}</div>
         </div>
       ) : null}
       {error ? <div className="text-sm text-red-700">{error}</div> : null}
       <button onClick={submit} className="rounded bg-[var(--brand)] px-4 py-2 text-white">
-        Add Combo to Cart
+        {lang === "zh" ? "加入套餐到購物車" : "Add Combo to Cart"}
       </button>
     </div>
   );

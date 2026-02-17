@@ -19,15 +19,26 @@ function splitBilingual(text: string) {
     return { zh: pipeSplit[0], en: pipeSplit.slice(1).join(" | ") };
   }
 
+  const hasZh = /[\u3400-\u9FFF]/.test(trimmed);
+  const hasEn = /[A-Za-z]/.test(trimmed);
+  if (hasZh && hasEn) {
+    const zhPositions = Array.from(trimmed).flatMap((char, index) =>
+      /[\u3400-\u9FFF]/.test(char) ? [index] : []
+    );
+    const firstZh = zhPositions[0] ?? -1;
+    const lastZh = zhPositions[zhPositions.length - 1] ?? -1;
+    if (firstZh >= 0 && lastZh >= 0) {
+      const zh = trimmed.slice(0, lastZh + 1).trim();
+      const en = trimmed.slice(lastZh + 1).trim();
+      if (zh && en) return { zh, en };
+    }
+  }
   const firstLatinIdx = trimmed.search(/[A-Za-z]/);
   if (firstLatinIdx > 0) {
     const zh = trimmed.slice(0, firstLatinIdx).trim();
     const en = trimmed.slice(firstLatinIdx).trim();
     if (zh && en) return { zh, en };
   }
-
-  const hasZh = /[\u3400-\u9FFF]/.test(trimmed);
-  const hasEn = /[A-Za-z]/.test(trimmed);
   if (hasZh && !hasEn) return { zh: trimmed, en: "" };
   if (!hasZh && hasEn) return { zh: "", en: trimmed };
   return { zh: trimmed, en: trimmed };

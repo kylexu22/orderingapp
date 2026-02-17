@@ -58,7 +58,7 @@ export function SiteHeader() {
           </div>
           {!isAdminRoute ? (
             <Link href="/cart" className="rounded bg-[var(--brand)] px-3 py-1.5 text-white">
-              Cart ({count})
+              {lang === "zh" ? `購物車 (${count})` : `Cart (${count})`}
             </Link>
           ) : null}
         </nav>

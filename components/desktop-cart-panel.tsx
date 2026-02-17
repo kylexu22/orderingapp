@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useMemo } from "react";
@@ -97,7 +97,10 @@ export function DesktopCartPanel({ menu, lang }: { menu: MenuData; lang: Lang })
           {lines.map((line, idx) => {
             const itemName =
               line.lineType === "ITEM"
-                ? localizeText(menu.categories.flatMap((c) => c.items).find((i) => i.id === line.refId)?.name, lang)
+                ? localizeText(
+                    menu.categories.flatMap((c) => c.items).find((i) => i.id === line.refId)?.name,
+                    lang
+                  )
                 : localizeText(menu.combos.find((c) => c.id === line.refId)?.name, lang);
             return (
               <div key={`${line.refId}-${idx}`} className="rounded border border-gray-200 p-2 text-sm">

@@ -3,9 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getClientLang, type Lang } from "@/lib/i18n";
 
 export function CustomerFooter() {
   const pathname = usePathname() ?? "";
+  const [lang, setLang] = useState<Lang>("en");
+
+  useEffect(() => {
+    setLang(getClientLang());
+  }, []);
+
   if (pathname.startsWith("/admin")) return null;
 
   return (
@@ -26,7 +34,7 @@ export function CustomerFooter() {
           </Link>
         </p>
         <p className="mt-3 text-xs uppercase tracking-[0.08em] opacity-75">
-          Copyright 2026 HONG FAR H.K. CAFE INC.
+          {lang === "zh" ? "版權所有 2026 HONG FAR H.K. CAFE INC." : "Copyright 2026 HONG FAR H.K. CAFE INC."}
         </p>
       </div>
     </footer>

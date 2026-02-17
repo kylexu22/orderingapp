@@ -134,7 +134,7 @@ export default function CartPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Cart</h1>
+      <h1 className="text-2xl font-bold">{lang === "zh" ? "購物車" : "Cart"}</h1>
       {lines.length === 0 ? (
         <div className="rounded bg-[var(--card)] p-4">{lang === "zh" ? "購物車是空的。" : "Your cart is empty."}</div>
       ) : (

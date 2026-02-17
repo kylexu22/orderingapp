@@ -204,25 +204,41 @@ export function ItemBuilder({
     for (const group of item.modifierGroups) {
       const count = (selected[group.id] ?? []).length;
       if (count < group.minSelect || count > group.maxSelect) {
-        setError(`${group.name}: choose ${group.minSelect}-${group.maxSelect}.`);
+        setError(
+          lang === "zh"
+            ? `${localizeText(group.name, lang)}：請選擇 ${group.minSelect}-${group.maxSelect} 項。`
+            : `${group.name}: choose ${group.minSelect}-${group.maxSelect}.`
+        );
         return;
       }
       if (group.required && count === 0) {
-        setError(`${group.name} is required.`);
+        setError(
+          lang === "zh"
+            ? `${localizeText(group.name, lang)} 為必選。`
+            : `${group.name} is required.`
+        );
         return;
       }
     }
     if (selectedDrinkOptionId && !selectedDrinkIsNone && !selectedDrinkIsColdOnly) {
       const tempPickedCount = addDrinkTempGroup ? (selected[addDrinkTempGroup.id] ?? []).length : 0;
       if (tempPickedCount === 0) {
-        setError("Add Drink Temperature is required when a drink is selected.");
+        setError(
+          lang === "zh"
+            ? "已選飲品時，必須選擇飲品溫度。"
+            : "Add Drink Temperature is required when a drink is selected."
+        );
         return;
       }
     }
     if (selectedDrinkOptionId && !selectedDrinkIsNone && !selectedDrinkNoSugar) {
       const sugarPickedCount = addDrinkSugarGroup ? (selected[addDrinkSugarGroup.id] ?? []).length : 0;
       if (sugarPickedCount === 0) {
-        setError("Add Drink Sugar Level is required when selected drink allows sugar changes.");
+        setError(
+          lang === "zh"
+            ? "此飲品可調糖，請選擇甜度。"
+            : "Add Drink Sugar Level is required when selected drink allows sugar changes."
+        );
         return;
       }
     }
@@ -231,7 +247,7 @@ export function ItemBuilder({
         ? (selected[addDrinkSoftChoiceGroup.id] ?? []).length
         : 0;
       if (addDrinkSoftChoiceGroup && softChoicePickedCount === 0) {
-        setError("Select a soft drink option.");
+        setError(lang === "zh" ? "請選擇汽水款式。" : "Select a soft drink option.");
         return;
       }
     }
@@ -246,17 +262,17 @@ export function ItemBuilder({
       qty,
       lineNote: lineNote.trim() || undefined,
       modifiers
-    }, `${item.name} added to cart`);
+    }, lang === "zh" ? `${localizeText(item.name, lang)} 已加入購物車` : `${item.name} added to cart`);
     router.push("/");
   }
 
   return (
     <div className="space-y-4">
       <div className="text-lg font-semibold">
-        Price: {centsToCurrency(item.basePriceCents + modifierDelta)}
+        {lang === "zh" ? "價格" : "Price"}: {centsToCurrency(item.basePriceCents + modifierDelta)}
       </div>
       <label className="block text-sm font-medium">
-        Quantity
+        {lang === "zh" ? "數量" : "Quantity"}
         <input
           type="number"
           min={1}
@@ -288,7 +304,7 @@ export function ItemBuilder({
             <div className="font-medium">
               {localizeText(group.name, lang)}{" "}
               <span className="text-sm text-gray-500">
-                (Choose {group.minSelect}
+                ({lang === "zh" ? "選擇" : "Choose"} {group.minSelect}
                 {group.maxSelect !== group.minSelect ? `-${group.maxSelect}` : ""})
               </span>
             </div>
@@ -329,18 +345,18 @@ export function ItemBuilder({
       })}
 
       <label className="block text-sm font-medium">
-        Additional Notes (optional)
+        {lang === "zh" ? "附加備註（選填）" : "Additional Notes (optional)"}
         <textarea
           value={lineNote}
           onChange={(e) => setLineNote(e.target.value)}
           className="mt-1 w-full rounded border px-2 py-2"
-          placeholder="No onions, extra spicy, etc."
+          placeholder={lang === "zh" ? "例如：走蔥、加辣等" : "No onions, extra spicy, etc."}
         />
       </label>
 
       {error ? <div className="text-sm text-red-700">{error}</div> : null}
       <button onClick={submit} className="rounded bg-[var(--brand)] px-4 py-2 text-white">
-        Add to Cart
+        {lang === "zh" ? "加入購物車" : "Add to Cart"}
       </button>
     </div>
   );

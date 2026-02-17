@@ -72,6 +72,55 @@ async function main() {
     updated += 1;
   }
 
+  const addDrinkGroups = await prisma.modifierGroup.findMany({
+    where: { id: { startsWith: "modgrp_add_drink_" } },
+    select: { id: true, name: true }
+  });
+  for (const group of addDrinkGroups) {
+    let nextName = group.name;
+    if (group.id.startsWith("modgrp_add_drink_temp_")) {
+      nextName = "加配飲品：溫度 | Add Drink Temperature";
+    } else if (group.id.startsWith("modgrp_add_drink_sugar_")) {
+      nextName = "加配飲品：甜度 | Add Drink Sugar Level";
+    } else if (group.id.startsWith("modgrp_add_drink_soft_choice_")) {
+      nextName = "加配飲品：汽水選擇 | Add Drink Soft Drink Choice";
+    } else {
+      nextName = "加配飲品 | Add Drink";
+    }
+    if (nextName !== group.name) {
+      await prisma.modifierGroup.update({
+        where: { id: group.id },
+        data: { name: nextName }
+      });
+      updated += 1;
+    }
+  }
+
+  const tempAndSugarOptions = await prisma.modifierOption.findMany({
+    where: {
+      OR: [
+        { id: { startsWith: "modopt_add_drink_temp_" } },
+        { id: { startsWith: "modopt_add_drink_sugar_" } }
+      ]
+    },
+    select: { id: true, name: true }
+  });
+  for (const option of tempAndSugarOptions) {
+    let nextName = option.name;
+    if (option.id.startsWith("modopt_add_drink_temp_hot_")) nextName = "熱 | Hot";
+    if (option.id.startsWith("modopt_add_drink_temp_cold_")) nextName = "凍 | Cold";
+    if (option.id.startsWith("modopt_add_drink_sugar_regular_")) nextName = "正常甜 | Regular";
+    if (option.id.startsWith("modopt_add_drink_sugar_less_")) nextName = "少甜 | Less Sugar";
+    if (option.id.startsWith("modopt_add_drink_sugar_none_")) nextName = "無糖 | No Sugar";
+    if (nextName !== option.name) {
+      await prisma.modifierOption.update({
+        where: { id: option.id },
+        data: { name: nextName }
+      });
+      updated += 1;
+    }
+  }
+
   const softChoiceUpdates = [
     { key: "coke", name: "可口可樂 | Coke" },
     { key: "sprite", name: "雪碧 | Sprite" },
