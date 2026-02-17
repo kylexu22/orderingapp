@@ -124,9 +124,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     .title { font-size: ${kitchen ? "28px" : "40px"}; font-weight: 700; }
     .number { font-size: ${kitchen ? "32px" : "40px"}; font-weight: 800; margin: 18px 0; }
     .section { margin-top: 24px; border-top: 1px dashed #222; padding-top: 24px; }
-    .line { margin-top: 18px; font-size: ${kitchen ? "20px" : "42px"}; }
+    .line { margin-top: 18px; font-size: ${kitchen ? "42px" : "42px"}; }
     .line strong { font-size: ${kitchen ? "44px" : "42px"}; }
-    .subline { padding-left: 24px; font-size: ${kitchen ? "20px" : "39px"}; }
+    .subline { padding-left: 24px; font-size: ${kitchen ? "38px" : "39px"}; }
     .totals { margin-top: 30px; border-top: 1px dashed #222; padding-top: 24px; }
   </style>
 </head>

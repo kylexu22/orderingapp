@@ -72,7 +72,7 @@ export default function AdminOrdersPage() {
     isAlertPlayingRef.current = true;
     const context = audioContextRef.current;
     const now = context.currentTime;
-    const totalDurationSeconds = 5;
+    const totalDurationSeconds = 2.5;
     const cycleSeconds = 0.5;
     const cycles = Math.floor(totalDurationSeconds / cycleSeconds);
 
@@ -162,9 +162,11 @@ export default function AdminOrdersPage() {
         throw new Error("Ticket fetch failed");
       }
       const ticketHtml = await ticketRes.text();
+      const backUrl = `${window.location.origin}${window.location.pathname}`;
       const passPrntUrl =
         `starpassprnt://v1/print/nopreview` +
         `?html=${encodeURIComponent(ticketHtml)}` +
+        `&back=${encodeURIComponent(backUrl)}` +
         `&size=3` +
         `&cut=partial` +
         `&popup=no`;
