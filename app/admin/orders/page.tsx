@@ -47,6 +47,9 @@ export default function AdminOrdersPage() {
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const keepAliveObjectUrlRef = useRef<string | null>(null);
   const isAlertPlayingRef = useRef(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const lastRealtimeMessageAtRef = useRef<number>(Date.now());
 
   const startSilentKeepAliveLoop = useCallback(async () => {
     try {
@@ -200,28 +203,98 @@ export default function AdminOrdersPage() {
   }
 
   useEffect(() => {
-    const events = new EventSource("/api/orders/stream");
-    events.addEventListener("ORDER_CREATED", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data ?? "{}") as { id?: string };
-        const orderId = payload.id;
-        if (orderId) {
-          setHighlightedOrderIds((prev) => new Set([...prev, orderId]));
-          setAttentionOrderIds((prev) => new Set([...prev, orderId]));
-        }
-      } catch {
-        // ignore payload parse errors
+    const clearReconnectTimer = () => {
+      if (reconnectTimerRef.current !== null) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
       }
-      void playNewOrderSound();
-      loadOrders();
-    });
-    events.addEventListener("ORDER_UPDATED", () => {
-      loadOrders();
-    });
-    events.onerror = () => {
-      setError("Realtime disconnected. Retrying...");
     };
-    return () => events.close();
+
+    const closeRealtime = () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+
+    const connectRealtime = () => {
+      clearReconnectTimer();
+      closeRealtime();
+      const events = new EventSource("/api/orders/stream");
+      eventSourceRef.current = events;
+      lastRealtimeMessageAtRef.current = Date.now();
+
+      events.onopen = () => {
+        setError("");
+        lastRealtimeMessageAtRef.current = Date.now();
+      };
+
+      events.addEventListener("ping", () => {
+        lastRealtimeMessageAtRef.current = Date.now();
+      });
+
+      events.addEventListener("ORDER_CREATED", (event) => {
+        lastRealtimeMessageAtRef.current = Date.now();
+        try {
+          const payload = JSON.parse((event as MessageEvent).data ?? "{}") as { id?: string };
+          const orderId = payload.id;
+          if (orderId) {
+            setHighlightedOrderIds((prev) => new Set([...prev, orderId]));
+            setAttentionOrderIds((prev) => new Set([...prev, orderId]));
+          }
+        } catch {
+          // ignore payload parse errors
+        }
+        void playNewOrderSound();
+        void loadOrders();
+      });
+
+      events.addEventListener("ORDER_UPDATED", () => {
+        lastRealtimeMessageAtRef.current = Date.now();
+        void loadOrders();
+      });
+
+      events.onerror = () => {
+        setError("Realtime disconnected. Reconnecting...");
+        closeRealtime();
+        clearReconnectTimer();
+        reconnectTimerRef.current = window.setTimeout(() => {
+          reconnectTimerRef.current = null;
+          connectRealtime();
+          void loadOrders();
+        }, 1500);
+      };
+    };
+
+    const refreshRealtimeOnForeground = () => {
+      if (document.visibilityState !== "visible") return;
+      connectRealtime();
+      void loadOrders();
+    };
+
+    connectRealtime();
+
+    const pollTimer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      const staleMs = Date.now() - lastRealtimeMessageAtRef.current;
+      if (staleMs > 35_000) {
+        connectRealtime();
+      }
+      void loadOrders();
+    }, 15_000);
+
+    document.addEventListener("visibilitychange", refreshRealtimeOnForeground);
+    window.addEventListener("focus", refreshRealtimeOnForeground);
+    window.addEventListener("pageshow", refreshRealtimeOnForeground);
+
+    return () => {
+      window.clearInterval(pollTimer);
+      document.removeEventListener("visibilitychange", refreshRealtimeOnForeground);
+      window.removeEventListener("focus", refreshRealtimeOnForeground);
+      window.removeEventListener("pageshow", refreshRealtimeOnForeground);
+      clearReconnectTimer();
+      closeRealtime();
+    };
   }, [loadOrders, playNewOrderSound]);
 
   async function sendToPastOrders(orderId: string) {
