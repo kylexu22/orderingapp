@@ -87,14 +87,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ticket ${esc(order.orderNumber)}</title>
   <style>
-    @page { size: 80mm auto; margin: 4mm; }
-    body { font-family: "Arial", sans-serif; width: 72mm; margin: 0 auto; font-size: 13px; }
+    @page { size: 80mm auto; margin: 2mm; }
+    body { font-family: "Arial", sans-serif; width: 100%; margin: 0; font-size: 14px; }
     .center { text-align: center; }
-    .title { font-size: 18px; font-weight: 700; }
-    .number { font-size: 20px; font-weight: 800; margin: 6px 0; }
+    .title { font-size: 20px; font-weight: 700; }
+    .number { font-size: 24px; font-weight: 800; margin: 6px 0; }
     .section { margin-top: 8px; border-top: 1px dashed #222; padding-top: 8px; }
     .line { margin-top: 6px; }
-    .subline { padding-left: 10px; font-size: 12px; }
+    .subline { padding-left: 10px; font-size: 13px; }
     .totals { margin-top: 10px; border-top: 1px dashed #222; padding-top: 8px; }
     .paid { margin-top: 10px; text-align: center; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
   </style>
