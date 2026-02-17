@@ -424,8 +424,18 @@ async function buildComboLine(line: Extract<CartLineInput, { lineType: "COMBO" }
   };
 }
 
-async function resolvePickup(input: CreateOrderInput) {
-  const settings = await prisma.storeSettings.findUnique({ where: { id: "default" } });
+async function resolvePickup(
+  input: CreateOrderInput,
+  settingsParam?: {
+    prepTimeMinutes: number;
+    slotIntervalMinutes: number;
+    storeHours: Prisma.JsonValue;
+    closedDates: Prisma.JsonValue;
+  }
+) {
+  const settings =
+    settingsParam ??
+    (await prisma.storeSettings.findUnique({ where: { id: "default" } }));
   if (!settings) throw new Error("Store settings missing.");
 
   const now = new Date();
@@ -468,6 +478,12 @@ export async function createOrder(input: CreateOrderInput) {
   if (input.honeypot?.trim()) throw new Error("Spam check failed.");
   if (!input.lines?.length) throw new Error("Cart is empty.");
 
+  const settings = await prisma.storeSettings.findUnique({ where: { id: "default" } });
+  if (!settings) throw new Error("Store settings missing.");
+  if (!settings.acceptingOrders) {
+    throw new Error("We are not accepting orders right now.");
+  }
+
   const orderLines: Prisma.OrderLineUncheckedCreateWithoutOrderInput[] = [];
   let subtotalCents = 0;
 
@@ -480,7 +496,7 @@ export async function createOrder(input: CreateOrderInput) {
 
   const taxCents = Math.round(subtotalCents * getTaxRate());
   const totalCents = subtotalCents + taxCents;
-  const pickup = await resolvePickup(input);
+  const pickup = await resolvePickup(input, settings);
   const orderNumber = await generateOrderNumber();
 
   const order = await prisma.order.create({

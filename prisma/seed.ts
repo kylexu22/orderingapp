@@ -1259,7 +1259,8 @@ async function main() {
             "5": [{ open: "11:00", close: "22:00" }],
             "6": [{ open: "11:00", close: "21:00" }]
           },
-          closedDates: []
+          closedDates: [],
+          acceptingOrders: true
         }
       : {},
     create: {
@@ -1276,7 +1277,8 @@ async function main() {
         "5": [{ open: "11:00", close: "22:00" }],
         "6": [{ open: "11:00", close: "21:00" }]
       },
-      closedDates: []
+      closedDates: [],
+      acceptingOrders: true
     }
   });
 

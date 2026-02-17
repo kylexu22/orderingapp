@@ -132,6 +132,7 @@ model StoreSettings {
   slotIntervalMinutes  Int
   storeHours           Json
   closedDates          Json
+  acceptingOrders      Boolean @default(true)
 }
 
 model Order {

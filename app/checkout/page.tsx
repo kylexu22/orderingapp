@@ -14,6 +14,7 @@ type SettingsPayload = {
   slotIntervalMinutes: number;
   storeHours: StoreHours;
   closedDates: string[];
+  acceptingOrders: boolean;
 };
 
 export default function CheckoutPage() {
@@ -39,7 +40,8 @@ export default function CheckoutPage() {
             prepTimeMinutes: data.settings.prepTimeMinutes,
             slotIntervalMinutes: data.settings.slotIntervalMinutes,
             storeHours: data.settings.storeHours,
-            closedDates: data.settings.closedDates
+            closedDates: data.settings.closedDates,
+            acceptingOrders: data.settings.acceptingOrders ?? true
           });
         }
       });
@@ -68,6 +70,10 @@ export default function CheckoutPage() {
   }, [settings, lang]);
 
   async function submit() {
+    if (settings && !settings.acceptingOrders) {
+      setError(lang === "zh" ? "暫停接單，請稍後再試。" : "Ordering is currently paused.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -176,9 +182,14 @@ export default function CheckoutPage() {
       />
 
       {error ? <div className="text-sm text-red-700">{error}</div> : null}
+      {settings && !settings.acceptingOrders ? (
+        <div className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+          {lang === "zh" ? "目前暫停接單。" : "We are not accepting orders right now."}
+        </div>
+      ) : null}
       <button
         onClick={submit}
-        disabled={submitting}
+        disabled={submitting || Boolean(settings && !settings.acceptingOrders)}
         className="rounded bg-[var(--brand)] px-4 py-2 text-white disabled:opacity-50"
       >
         {submitting ? (lang === "zh" ? "提交中..." : "Submitting...") : lang === "zh" ? "提交訂單" : "Place Order"}

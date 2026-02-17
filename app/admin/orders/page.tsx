@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { OrderStatus } from "@prisma/client";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 
@@ -229,6 +230,20 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-4 pb-8">
+      <div className="flex items-center gap-2">
+        <Link
+          href="/admin/orders"
+          className="rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+        >
+          Orders
+        </Link>
+        <Link href="/admin/menu" className="rounded border px-4 py-2 text-sm font-semibold">
+          Menu
+        </Link>
+        <Link href="/admin/settings" className="rounded border px-4 py-2 text-sm font-semibold">
+          Settings
+        </Link>
+      </div>
       <div className="flex items-center gap-2">
         <button
           type="button"

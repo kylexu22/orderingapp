@@ -1,4 +1,5 @@
 import { getMenuData } from "@/lib/menu";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,6 +9,20 @@ export default async function AdminMenuPage() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Link href="/admin/orders" className="rounded border px-4 py-2 text-sm font-semibold">
+          Orders
+        </Link>
+        <Link
+          href="/admin/menu"
+          className="rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+        >
+          Menu
+        </Link>
+        <Link href="/admin/settings" className="rounded border px-4 py-2 text-sm font-semibold">
+          Settings
+        </Link>
+      </div>
       <h1 className="text-2xl font-bold">Menu (Read Only)</h1>
       <p className="rounded bg-amber-100 p-3 text-sm">
         Edit via seed script or direct database updates for MVP.
