@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ComboOptionType {
+  ITEM
+  CATEGORY
+}
+
+enum OrderStatus {
+  NEW
+  ACCEPTED
+  READY
+  PICKED_UP
+  CANCELLED
+}
+
+enum PickupType {
+  ASAP
+  SCHEDULED
+}
+
+enum OrderLineType {
+  ITEM
+  COMBO
+}
+
+enum SelectionKind {
+  COMBO_PICK
+  MODIFIER
+}
+
+model Category {
+  id        String  @id @default(cuid())
+  name      String
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  items              Item[]
+  @@index([sortOrder])
+}
+
+model Item {
+  id              String  @id @default(cuid())
+  name            String
+  description     String?
+  basePriceCents  Int
+  isActive        Boolean @default(true)
+  isComboOnly     Boolean @default(false)
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+
+  modifierGroups  ModifierGroup[]
+  @@index([categoryId])
+}
+
+model ModifierGroup {
+  id         String  @id @default(cuid())
+  name       String
+  required   Boolean @default(false)
+  minSelect  Int     @default(0)
+  maxSelect  Int     @default(1)
+  sortOrder  Int     @default(0)
+  itemId     String?
+  item       Item?   @relation(fields: [itemId], references: [id])
+
+  options    ModifierOption[]
+
+  @@index([itemId])
+}
+
+model ModifierOption {
+  id              String @id @default(cuid())
+  groupId         String
+  group           ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name            String
+  priceDeltaCents Int    @default(0)
+  sortOrder       Int    @default(0)
+  isDefault       Boolean @default(false)
+
+  @@index([groupId])
+}
+
+model Combo {
+  id             String  @id @default(cuid())
+  name           String
+  description    String?
+  basePriceCents Int
+  isActive       Boolean @default(true)
+
+  groups         ComboGroup[]
+}
+
+model ComboGroup {
+  id         String  @id @default(cuid())
+  comboId    String
+  combo      Combo   @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  name       String
+  required   Boolean @default(false)
+  minSelect  Int     @default(0)
+  maxSelect  Int     @default(1)
+  sortOrder  Int     @default(0)
+
+  options    ComboOption[]
+
+  @@index([comboId])
+}
+
+model ComboOption {
+  id              String @id @default(cuid())
+  comboGroupId    String
+  comboGroup      ComboGroup @relation(fields: [comboGroupId], references: [id], onDelete: Cascade)
+  optionType      ComboOptionType
+  refId           String
+  priceDeltaCents Int    @default(0)
+  allowModifiers  Boolean @default(false)
+  sortOrder       Int    @default(0)
+
+  @@index([comboGroupId])
+  @@index([refId])
+}
+
+model StoreSettings {
+  id                   String @id
+  timezone             String
+  prepTimeMinutes      Int
+  slotIntervalMinutes  Int
+  storeHours           Json
+  closedDates          Json
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  orderNumber         String      @unique
+  createdAt           DateTime    @default(now())
+  status              OrderStatus @default(NEW)
+  customerName        String
+  phone               String
+  notes               String?
+  pickupType          PickupType
+  pickupTime          DateTime?
+  estimatedReadyTime  DateTime?
+  subtotalCents       Int
+  taxCents            Int
+  totalCents          Int
+
+  lines               OrderLine[]
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model OrderLine {
+  id                    String      @id @default(cuid())
+  orderId               String
+  order                 Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineType              OrderLineType
+  refId                 String
+  nameSnapshot          String
+  basePriceSnapshotCents Int
+  qty                   Int
+  lineTotalCents        Int
+
+  selections            OrderSelection[]
+
+  @@index([orderId])
+}
+
+model OrderSelection {
+  id                                String       @id @default(cuid())
+  orderLineId                       String
+  orderLine                         OrderLine    @relation(fields: [orderLineId], references: [id], onDelete: Cascade)
+  selectionKind                     SelectionKind
+  label                             String
+  selectedItemNameSnapshot          String?
+  selectedItemId                    String?
+  selectedModifierOptionNameSnapshot String?
+  selectedModifierOptionId          String?
+  priceDeltaSnapshotCents           Int          @default(0)
+  sortOrder                         Int          @default(0)
+
+  @@index([orderLineId])
+}

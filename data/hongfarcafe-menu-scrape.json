@@ -1,0 +1,1385 @@
+{
+  "source": "https://hongfarcafe.ca",
+  "scrapedAt": "2026-02-16T10:29:37.001Z",
+  "durationSeconds": 17,
+  "categoryCount": 14,
+  "productCount": 119,
+  "categories": [
+    {
+      "slug": "-sandwichestoast",
+      "url": "https://hongfarcafe.ca/category/-sandwichestoast",
+      "label": "三文治多士 Sandwiches/Toast 12 Items"
+    },
+    {
+      "slug": "-tea-time-special-2-pm-to-5-pm",
+      "url": "https://hongfarcafe.ca/category/-tea-time-special-2-pm-to-5-pm",
+      "label": "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+    },
+    {
+      "slug": "-soup",
+      "url": "https://hongfarcafe.ca/category/-soup",
+      "label": "湯 Soup 12 Items"
+    },
+    {
+      "slug": "-noodles-rice-noodles-in-soup",
+      "url": "https://hongfarcafe.ca/category/-noodles-rice-noodles-in-soup",
+      "label": "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+    },
+    {
+      "slug": "-baked-ricespaghetti-combo",
+      "url": "https://hongfarcafe.ca/category/-baked-ricespaghetti-combo",
+      "label": "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+    },
+    {
+      "slug": "-special-meal-combo",
+      "url": "https://hongfarcafe.ca/category/-special-meal-combo",
+      "label": "特餐 Special Meal Combo 6 Items"
+    },
+    {
+      "slug": "-congee",
+      "url": "https://hongfarcafe.ca/category/-congee",
+      "label": "粥類 Congee 9 Items"
+    },
+    {
+      "slug": "-tea-and-meal-all-day-special",
+      "url": "https://hongfarcafe.ca/category/-tea-and-meal-all-day-special",
+      "label": "茶餐 Tea and Meal All Day Special 1 Items"
+    },
+    {
+      "slug": "-all-day-special",
+      "url": "https://hongfarcafe.ca/category/-all-day-special",
+      "label": "超值套餐 ALL DAY SPECIAL 20 Items"
+    },
+    {
+      "slug": "-seafood-value-combos",
+      "url": "https://hongfarcafe.ca/category/-seafood-value-combos",
+      "label": "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+    },
+    {
+      "slug": "-sat-and-sun-only-breakfast-10-1130",
+      "url": "https://hongfarcafe.ca/category/-sat-and-sun-only-breakfast-10-1130",
+      "label": "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+    },
+    {
+      "slug": "-hot-plate-combo",
+      "url": "https://hongfarcafe.ca/category/-hot-plate-combo",
+      "label": "鐵板餐 Hot Plate Combo 3 Items"
+    },
+    {
+      "slug": "-house-special",
+      "url": "https://hongfarcafe.ca/category/-house-special",
+      "label": "鴻發推介 House Special 8 Items"
+    }
+  ],
+  "products": [
+    {
+      "slug": "-baked-rice-with-lobster-in-cream-sauce-cheese",
+      "url": "https://hongfarcafe.ca/product/-baked-rice-with-lobster-in-cream-sauce-cheese",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "焗白汁芝士龍蝦飯 Baked Rice with Lobster in Cream Sauce & Cheese",
+      "title": "焗白汁芝士龍蝦飯 Baked Rice with Lobster in Cream Sauce & Cheese",
+      "priceText": "$38.50",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop (Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "-chicken-and-sweet-corn-thick-soup-per-person",
+      "url": "https://hongfarcafe.ca/product/-chicken-and-sweet-corn-thick-soup-per-person",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "雞茸栗米羹 Chicken and Sweet Corn Thick Soup (毎位 per person)",
+      "title": "雞茸栗米羹 Chicken and Sweet Corn Thick Soup (毎位 per person)",
+      "priceText": "$10.00",
+      "descriptionText": "$10.00"
+    },
+    {
+      "slug": "-chicken-and-sweet-corn-thick-soup-regular",
+      "url": "https://hongfarcafe.ca/product/-chicken-and-sweet-corn-thick-soup-regular",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "雞茸栗米羹 Chicken and Sweet Corn Thick Soup (例 Regular)",
+      "title": "雞茸栗米羹 Chicken and Sweet Corn Thick Soup (例 Regular)",
+      "priceText": "$15.00",
+      "descriptionText": "$15.00"
+    },
+    {
+      "slug": "-deep-fried-chicken-wingspork-chopfillet-with-salad",
+      "url": "https://hongfarcafe.ca/product/-deep-fried-chicken-wingspork-chopfillet-with-salad",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "炸雞翼 / 吉列魚柳/吉列豬扒配薯條或什菜沙律Deep Fried Chicken Wings/Pork Chop/Fillet with Salad",
+      "title": "炸雞翼 / 吉列魚柳/吉列豬扒配薯條或什菜沙律Deep Fried Chicken Wings/Pork Chop/Fillet with Salad",
+      "priceText": "$13.25",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "-deluxe-seafood-soup-per-person",
+      "url": "https://hongfarcafe.ca/product/-deluxe-seafood-soup-per-person",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "一品海皇羹 Deluxe Seafood Soup (毎位 Per Person)",
+      "title": "一品海皇羹 Deluxe Seafood Soup (毎位 Per Person)",
+      "priceText": "$10.75",
+      "descriptionText": "$10.75"
+    },
+    {
+      "slug": "-deluxe-seafood-soup-regular",
+      "url": "https://hongfarcafe.ca/product/-deluxe-seafood-soup-regular",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "一品海皇羹 Deluxe Seafood Soup (例 Regular)",
+      "title": "一品海皇羹 Deluxe Seafood Soup (例 Regular)",
+      "priceText": "$17.50",
+      "descriptionText": "$17.50"
+    },
+    {
+      "slug": "-egg-drop-soup-with-chopped-beef-per-person",
+      "url": "https://hongfarcafe.ca/product/-egg-drop-soup-with-chopped-beef-per-person",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "西湖牛肉羹 Egg Drop Soup with Chopped Beef (每位 per person)",
+      "title": "西湖牛肉羹 Egg Drop Soup with Chopped Beef (每位 per person)",
+      "priceText": "$10.25",
+      "descriptionText": "$10.25"
+    },
+    {
+      "slug": "-egg-drop-soup-with-chopped-beef-regular",
+      "url": "https://hongfarcafe.ca/product/-egg-drop-soup-with-chopped-beef-regular",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "西湖牛肉羹 Egg Drop Soup with Chopped Beef (例 Regular)",
+      "title": "西湖牛肉羹 Egg Drop Soup with Chopped Beef (例 Regular)",
+      "priceText": "$16.00",
+      "descriptionText": "$16.00"
+    },
+    {
+      "slug": "-fish-maw-with-crab-meat-soup-per-person",
+      "url": "https://hongfarcafe.ca/product/-fish-maw-with-crab-meat-soup-per-person",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "蟹肉魚肚羹 Fish Maw with Crab Meat Soup (毎位 Per Person)",
+      "title": "蟹肉魚肚羹 Fish Maw with Crab Meat Soup (毎位 Per Person)",
+      "priceText": "$10.75",
+      "descriptionText": "$10.75"
+    },
+    {
+      "slug": "-fish-maw-with-crab-meat-soup-regular",
+      "url": "https://hongfarcafe.ca/product/-fish-maw-with-crab-meat-soup-regular",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "蟹肉魚肚羹 Fish Maw with Crab Meat Soup (例 Regular)",
+      "title": "蟹肉魚肚羹 Fish Maw with Crab Meat Soup (例 Regular)",
+      "priceText": "$17.50",
+      "descriptionText": "$17.50"
+    },
+    {
+      "slug": "-fish-maw-with-sweet-corn-soup-per-person",
+      "url": "https://hongfarcafe.ca/product/-fish-maw-with-sweet-corn-soup-per-person",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "栗米魚肚羹 Fish Maw with Sweet Corn Soup (每位 Per Person)",
+      "title": "栗米魚肚羹 Fish Maw with Sweet Corn Soup (每位 Per Person)",
+      "priceText": "$10.75",
+      "descriptionText": "$10.75"
+    },
+    {
+      "slug": "-fish-maw-with-sweet-corn-soup-regular",
+      "url": "https://hongfarcafe.ca/product/-fish-maw-with-sweet-corn-soup-regular",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "栗米魚肚羹 Fish Maw with Sweet Corn Soup (例 Regular)",
+      "title": "栗米魚肚羹 Fish Maw with Sweet Corn Soup (例 Regular)",
+      "priceText": "$17.50",
+      "descriptionText": "$17.50"
+    },
+    {
+      "slug": "-french-toast-with-butter-and-jam",
+      "url": "https://hongfarcafe.ca/product/-french-toast-with-butter-and-jam",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "特式法蘭西多士(牛油/果醬/奶醬/花生醬)(任選一款) French Toast with Butter and Jam",
+      "title": "特式法蘭西多士(牛油/果醬/奶醬/花生醬)(任選一款) French Toast with Butter and Jam",
+      "priceText": "$11.50",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "-fried-noodle-with-sliced-grouper",
+      "url": "https://hongfarcafe.ca/product/-fried-noodle-with-sliced-grouper",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "韮皇魚片炒河/麵 Fried Noodle with Sliced Grouper",
+      "title": "韮皇魚片炒河/麵 Fried Noodle with Sliced Grouper",
+      "priceText": "$18.00",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "-fried-vermicelli-with-bbq-duck-and-preserved-vegetable",
+      "url": "https://hongfarcafe.ca/product/-fried-vermicelli-with-bbq-duck-and-preserved-vegetable",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "雪菜火鴨絲炆鴛鴦米 Fried Vermicelli with BBQ Duck and Preserved Vegetable",
+      "title": "雪菜火鴨絲炆鴛鴦米 Fried Vermicelli with BBQ Duck and Preserved Vegetable",
+      "priceText": "$17.50",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "-grilled-sirloin-steak-served-with-rice-spaghetti-fries-or-mixed-vegetables",
+      "url": "https://hongfarcafe.ca/product/-grilled-sirloin-steak-served-with-rice-spaghetti-fries-or-mixed-vegetables",
+      "categories": [
+        "鐵板餐 Hot Plate Combo 3 Items"
+      ],
+      "listingTitle": "鐵板西冷牛扒 選配:(飯/意粉/薯條/雜菜)Grilled Sirloin Steak Served with Rice, Spaghetti, Fries or Mixed Vegetables",
+      "title": "鐵板西冷牛扒 選配:(飯/意粉/薯條/雜菜)Grilled Sirloin Steak Served with Rice, Spaghetti, Fries or Mixed Vegetables",
+      "priceText": "$21.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)以上每款奉送各式熱飲或汽水 (改凍飲/熱檸蜜或熱檸樂加 $1.50) (改凍檸蜜或凍檸樂加$2.25)"
+    },
+    {
+      "slug": "-ham-macaroni-or-satay-beef-vermicelli-with-toast-and-pan-fried-egg-luncheon-meat-chicken-wing-red-sausage-ham-sausage-bacon-fish-fillet-pick-twe",
+      "url": "https://hongfarcafe.ca/product/-ham-macaroni-or-satay-beef-vermicelli-with-toast-and-pan-fried-egg-luncheon-meat-chicken-wing-red-sausage-ham-sausage-bacon-fish-fillet-pick-twe",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "火腿通粉或沙爹牛肉湯米+牛油多士 煎蛋/餐肉/雞翼/紅腸/火腿/腸仔/煙肉/魚柳(任選兩款)Ham Macaroni or Satay Beef Vermicelli with Toast and. Pan Fried Egg / Luncheon Meat / Chicken Wing/ Red Sausage / Ham / Sausage / Bacon / Fish Fillet (Pick Twe)",
+      "title": "火腿通粉或沙爹牛肉湯米+牛油多士 煎蛋/餐肉/雞翼/紅腸/火腿/腸仔/煙肉/魚柳(任選兩款)Ham Macaroni or Satay Beef Vermicelli with Toast and. Pan Fried Egg / Luncheon Meat / Chicken Wing/ Red Sausage / Ham / Sausage / Bacon / Fish Fillet (Pick Twe)",
+      "priceText": "$12.00",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "-hot-and-sour-soup-per-person",
+      "url": "https://hongfarcafe.ca/product/-hot-and-sour-soup-per-person",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "酸辣湯 Hot and Sour Soup (每位 Per Person)",
+      "title": "酸辣湯 Hot and Sour Soup (每位 Per Person)",
+      "priceText": "$10.75",
+      "descriptionText": "$10.75"
+    },
+    {
+      "slug": "-hot-and-sour-soup-regular",
+      "url": "https://hongfarcafe.ca/product/-hot-and-sour-soup-regular",
+      "categories": [
+        "湯 Soup 12 Items"
+      ],
+      "listingTitle": "酸辣湯 Hot and Sour Soup (例 Regular)",
+      "title": "酸辣湯 Hot and Sour Soup (例 Regular)",
+      "priceText": "$17.50",
+      "descriptionText": "$17.50"
+    },
+    {
+      "slug": "-instant-noodle-in-soup-and-pan-fried-egg-luncheon-meat-satay-beef-red-sausage-hamsausage-bacon-fish-fillet-pick-two",
+      "url": "https://hongfarcafe.ca/product/-instant-noodle-in-soup-and-pan-fried-egg-luncheon-meat-satay-beef-red-sausage-hamsausage-bacon-fish-fillet-pick-two",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "公仔麵配任選以下兩款, 煎蛋/餐肉/沙爹牛肉/紅腸/火腿/腸仔/煙肉/魚柳Instant Noodle in Soup and Pan Fried Egg / Luncheon Meat / Satay Beef / Red Sausage/ Ham/Sausage / Bacon / Fish Fillet (Pick Two)",
+      "title": "公仔麵配任選以下兩款, 煎蛋/餐肉/沙爹牛肉/紅腸/火腿/腸仔/煙肉/魚柳Instant Noodle in Soup and Pan Fried Egg / Luncheon Meat / Satay Beef / Red Sausage/ Ham/Sausage / Bacon / Fish Fillet (Pick Two)",
+      "priceText": "$12.00",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "-instant-noodle-in-soup-choose-two-eggsausagesatay-beeffilletham",
+      "url": "https://hongfarcafe.ca/product/-instant-noodle-in-soup-choose-two-eggsausagesatay-beeffilletham",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "(任選兩款) 公仔麵配餐肉/煎蛋/牛腩/紅腸/火腿/沙爹牛肉Instant Noodle in Soup. Choose Two (Egg/Sausage/Satay Beef/Fillet/Ham)",
+      "title": "(任選兩款) 公仔麵配餐肉/煎蛋/牛腩/紅腸/火腿/沙爹牛肉Instant Noodle in Soup. Choose Two (Egg/Sausage/Satay Beef/Fillet/Ham)",
+      "priceText": "$13.00",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "-minced-beef-congee-with-soya-noodle-fried-dough-stickox-tongue-pastry-pick-one",
+      "url": "https://hongfarcafe.ca/product/-minced-beef-congee-with-soya-noodle-fried-dough-stickox-tongue-pastry-pick-one",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "芽菜仔炒麵/油條/牛利酥(任選一款)+ 免治牛肉粥Minced Beef Congee with Soya Noodle / Fried Dough Stick/Ox-tongue Pastry (Pick One)",
+      "title": "芽菜仔炒麵/油條/牛利酥(任選一款)+ 免治牛肉粥Minced Beef Congee with Soya Noodle / Fried Dough Stick/Ox-tongue Pastry (Pick One)",
+      "priceText": "$12.00",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "-pork-chopchickensteak-black-pepper-tomato-onion-garlic-sauce",
+      "url": "https://hongfarcafe.ca/product/-pork-chopchickensteak-black-pepper-tomato-onion-garlic-sauce",
+      "categories": [
+        "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+      ],
+      "listingTitle": "焗豬扒/雞扒/牛扒 選配:(飯/意 可配(黑椒汁/洋蔥汁/燒汁/蒜茸汁)Pork Chop/Chicken/Steak (Black Pepper/ Tomato / Onion / Garlic Sauce)",
+      "title": "焗豬扒/雞扒/牛扒 選配:(飯/意 可配(黑椒汁/洋蔥汁/燒汁/蒜茸汁)Pork Chop/Chicken/Steak (Black Pepper/ Tomato / Onion / Garlic Sauce)",
+      "priceText": "$19.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "-ricelo-mein-with-spare-ribs-in-honey-pepper-sauce",
+      "url": "https://hongfarcafe.ca/product/-ricelo-mein-with-spare-ribs-in-honey-pepper-sauce",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "蜜椒肉排飯/撈麵 Rice/Lo Mein with Spare Ribs in Honey & Pepper Sauce",
+      "title": "蜜椒肉排飯/撈麵 Rice/Lo Mein with Spare Ribs in Honey & Pepper Sauce",
+      "priceText": "$17.00",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "-satay-beef-satay-chicken-noodles-or-rice-noodles",
+      "url": "https://hongfarcafe.ca/product/-satay-beef-satay-chicken-noodles-or-rice-noodles",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "沙爹牛/沙爹雞 麵/河粉Satay Beef Satay Chicken / Noodles or Rice Noodles",
+      "title": "沙爹牛/沙爹雞 麵/河粉Satay Beef Satay Chicken / Noodles or Rice Noodles",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "-sausagehamred-sausage-luncheon-meat-two-pan-fried-eggs-pick-two-and-toast-with-butter",
+      "url": "https://hongfarcafe.ca/product/-sausagehamred-sausage-luncheon-meat-two-pan-fried-eggs-pick-two-and-toast-with-butter",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "腸仔/火腿/紅腸/餐肉/煎雙蛋 (任選兩款)牛油多士Sausage/Ham/Red Sausage / Luncheon Meat / Two Pan Fried Eggs (Pick Two) and Toast with Butter",
+      "title": "腸仔/火腿/紅腸/餐肉/煎雙蛋 (任選兩款)牛油多士Sausage/Ham/Red Sausage / Luncheon Meat / Two Pan Fried Eggs (Pick Two) and Toast with Butter",
+      "priceText": "$10.25",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "-self-selected-combo-special-for-5",
+      "url": "https://hongfarcafe.ca/product/-self-selected-combo-special-for-5",
+      "categories": [
+        "自選和菜 (Dishes of Your Choice Combo Special) 5 Items"
+      ],
+      "listingTitle": "自選和菜（五和菜) Self-Selected Combo Special For 5",
+      "title": "自選和菜（五和菜) Self-Selected Combo Special For 5",
+      "priceText": "$90.99",
+      "descriptionText": "You can select any five of the menus here"
+    },
+    {
+      "slug": "-stir-fried-noodle-with-eggplant-minced-pork",
+      "url": "https://hongfarcafe.ca/product/-stir-fried-noodle-with-eggplant-minced-pork",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "魚香茄子炆伊麵 Stir Fried Noodle with Eggplant & Minced Pork",
+      "title": "魚香茄子炆伊麵 Stir Fried Noodle with Eggplant & Minced Pork",
+      "priceText": "$17.00",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "-stir-fried-sticky-rice-with-chinese-sausage",
+      "url": "https://hongfarcafe.ca/product/-stir-fried-sticky-rice-with-chinese-sausage",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "生炒糯米飯 Stir Fried Sticky Rice with Chinese Sausage",
+      "title": "生炒糯米飯 Stir Fried Sticky Rice with Chinese Sausage",
+      "priceText": "$17.50",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "-tea-special",
+      "url": "https://hongfarcafe.ca/product/-tea-special",
+      "categories": [
+        "茶餐 Tea and Meal All Day Special 1 Items"
+      ],
+      "listingTitle": "茶餐 Tea Special",
+      "title": "茶餐 Tea Special",
+      "priceText": "$14.50",
+      "descriptionText": "沙爹牛肉湯通粉 Satay Beef Macaroni 火腿煎双蛋 牛油多士 Ham and Pan Fried Eggs with Toast咖啡或奶茶(或凍飲加1.50)可改:公仔麵或烏冬加$2.00"
+    },
+    {
+      "slug": "-toast-with-butter-and-pan-fried-egg-luncheon-meat-chicken-wing-red-sausage-ham-sausage-bacon-fish-fillet-pick-four",
+      "url": "https://hongfarcafe.ca/product/-toast-with-butter-and-pan-fried-egg-luncheon-meat-chicken-wing-red-sausage-ham-sausage-bacon-fish-fillet-pick-four",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "牛油多士, 任選以下四款 煎蛋/餐肉/雞翼/紅腸/火腿/腸仔/煙肉/魚柳Toast with Butter and Pan Fried Egg / Luncheon Meat / Chicken Wing / Red Sausage / Ham / Sausage / Bacon / Fish Fillet (Pick Four)",
+      "title": "牛油多士, 任選以下四款 煎蛋/餐肉/雞翼/紅腸/火腿/腸仔/煙肉/魚柳Toast with Butter and Pan Fried Egg / Luncheon Meat / Chicken Wing / Red Sausage / Ham / Sausage / Bacon / Fish Fillet (Pick Four)",
+      "priceText": "$12.00",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "a-combo-for-3a",
+      "url": "https://hongfarcafe.ca/product/a-combo-for-3a",
+      "categories": [
+        "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+      ],
+      "listingTitle": "三和菜(A) Combo for 3A",
+      "title": "三和菜(A) Combo for 3A",
+      "priceText": "$73.00",
+      "descriptionText": "清蒸游水立魚一條 魚露走地雞半隻 XO醬荷芹炒豬爽肉"
+    },
+    {
+      "slug": "a-combo-for-4a",
+      "url": "https://hongfarcafe.ca/product/a-combo-for-4a",
+      "categories": [
+        "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+      ],
+      "listingTitle": "四和菜(A) Combo for 4A",
+      "title": "四和菜(A) Combo for 4A",
+      "priceText": "$108.00",
+      "descriptionText": "避風塘龍蝦一隻 豉汁涼瓜生蠔煲 清蒸游水立魚一條 時菜炒豬爽肉"
+    },
+    {
+      "slug": "a-combo-for-6a",
+      "url": "https://hongfarcafe.ca/product/a-combo-for-6a",
+      "categories": [
+        "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+      ],
+      "listingTitle": "六和菜(A) Combo for 6A",
+      "title": "六和菜(A) Combo for 6A",
+      "priceText": "$163.00",
+      "descriptionText": "賽螃雙龍蝦 椒鹽拑爪 魚露走地雞半隻 清蒸游水立魚一條 蒜心皇子菇炒豬爽肉 蜜椒肉排 咸魚薑汁炒芥蘭"
+    },
+    {
+      "slug": "b-combo-for-3b",
+      "url": "https://hongfarcafe.ca/product/b-combo-for-3b",
+      "categories": [
+        "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+      ],
+      "listingTitle": "三和菜(B) Combo for 3B",
+      "title": "三和菜(B) Combo for 3B",
+      "priceText": "$73.00",
+      "descriptionText": "薑蔥龍蝦一隻 金蒜脆皮走地雞半隻 XO醬皇子菇炒豬爽肉"
+    },
+    {
+      "slug": "b-combo-for-4b",
+      "url": "https://hongfarcafe.ca/product/b-combo-for-4b",
+      "categories": [
+        "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+      ],
+      "listingTitle": "四和菜(B) Combo for 4B",
+      "title": "四和菜(B) Combo for 4B",
+      "priceText": "$108.00",
+      "descriptionText": "薑蔥龍蝦一隻 金蒜脆皮走地雞半隻 清蒸游水立魚一條 翡翠賽螃蟹"
+    },
+    {
+      "slug": "b-combo-for-6b",
+      "url": "https://hongfarcafe.ca/product/b-combo-for-6b",
+      "categories": [
+        "超值游水海鮮套餐 Seafood Value Combos 6 Items"
+      ],
+      "listingTitle": "六和菜(B) Combo for 6B",
+      "title": "六和菜(B) Combo for 6B",
+      "priceText": "$163.00",
+      "descriptionText": "美極雙龍蝦 金針雲耳蒸走地雞 翡翠蜜椒金蠔 XO醬荷芹炒豬爽肉 千島肉排 上湯蒜子白菜"
+    },
+    {
+      "slug": "beef-brisket-and-wonton-with-noodle-in-soup",
+      "url": "https://hongfarcafe.ca/product/beef-brisket-and-wonton-with-noodle-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "雲吞牛腩湯麵或河Beef Brisket and Wonton with Noodle in Soup",
+      "title": "雲吞牛腩湯麵或河Beef Brisket and Wonton with Noodle in Soup",
+      "priceText": "$13.25",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "beef-brisketbeef-tendonnoodles-or-rice-noodles",
+      "url": "https://hongfarcafe.ca/product/beef-brisketbeef-tendonnoodles-or-rice-noodles",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "牛筋/牛腩/麵/河粉Beef Brisket/Beef Tendon/Noodles or Rice Noodles",
+      "title": "牛筋/牛腩/麵/河粉Beef Brisket/Beef Tendon/Noodles or Rice Noodles",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "beef-briskets-stew-with-white-radish-on-rice",
+      "url": "https://hongfarcafe.ca/product/beef-briskets-stew-with-white-radish-on-rice",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "蘿白牛腩飯Beef Briskets Stew with White Radish on Rice",
+      "title": "蘿白牛腩飯Beef Briskets Stew with White Radish on Rice",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "beef-sandwich",
+      "url": "https://hongfarcafe.ca/product/beef-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "牛肉三文治Beef Sandwich",
+      "title": "牛肉三文治Beef Sandwich",
+      "priceText": "$8.00",
+      "descriptionText": "$8.00"
+    },
+    {
+      "slug": "beef-with-tomato-sauce-on-rice",
+      "url": "https://hongfarcafe.ca/product/beef-with-tomato-sauce-on-rice",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "番茄牛肉飯Beef with Tomato Sauce on rice",
+      "title": "番茄牛肉飯Beef with Tomato Sauce on rice",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "blt-bacon-lettuce-and-tomato-sandwich",
+      "url": "https://hongfarcafe.ca/product/blt-bacon-lettuce-and-tomato-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "煙肉生菜鮮茄三文治BLT-Bacon, Lettuce and Tomato Sandwich",
+      "title": "煙肉生菜鮮茄三文治BLT-Bacon, Lettuce and Tomato Sandwich",
+      "priceText": "$8.25",
+      "descriptionText": "$8.25"
+    },
+    {
+      "slug": "cheese-sandwich",
+      "url": "https://hongfarcafe.ca/product/cheese-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "芝士三文治Cheese Sandwich",
+      "title": "芝士三文治Cheese Sandwich",
+      "priceText": "$7.75",
+      "descriptionText": "$7.75"
+    },
+    {
+      "slug": "chicken-chinese-mushroom-congee",
+      "url": "https://hongfarcafe.ca/product/chicken-chinese-mushroom-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "北菇滑雞粥Chicken & Chinese Mushroom Congee",
+      "title": "北菇滑雞粥Chicken & Chinese Mushroom Congee",
+      "priceText": "$11.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "chicken-with-ginger-green-onion-with-rice",
+      "url": "https://hongfarcafe.ca/product/chicken-with-ginger-green-onion-with-rice",
+      "categories": [
+        "特餐 Special Meal Combo 6 Items"
+      ],
+      "listingTitle": "魚露雞或白切雞或霸皇雞飯Chicken with Ginger & Green Onion with Rice",
+      "title": "魚露雞或白切雞或霸皇雞飯Chicken with Ginger & Green Onion with Rice",
+      "priceText": "$17.50",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "chicken-with-portuguese-sauce",
+      "url": "https://hongfarcafe.ca/product/chicken-with-portuguese-sauce",
+      "categories": [
+        "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+      ],
+      "listingTitle": "焗葡國雞Chicken with Portuguese Sauce",
+      "title": "焗葡國雞Chicken with Portuguese Sauce",
+      "priceText": "$19.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "chili-pork-lo-mein-canton-style",
+      "url": "https://hongfarcafe.ca/product/chili-pork-lo-mein-canton-style",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "炸醬撈麵Chili Pork Lo Mein (Canton Style)",
+      "title": "炸醬撈麵Chili Pork Lo Mein (Canton Style)",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "chili-pork-with-shanghai-noodle-in-soup",
+      "url": "https://hongfarcafe.ca/product/chili-pork-with-shanghai-noodle-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "炸醬肉絲上海麵Chili Pork with Shanghai Noodle in Soup",
+      "title": "炸醬肉絲上海麵Chili Pork with Shanghai Noodle in Soup",
+      "priceText": "$13.25",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "club-sandwich",
+      "url": "https://hongfarcafe.ca/product/club-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "公司三文治Club Sandwich",
+      "title": "公司三文治Club Sandwich",
+      "priceText": "$11.00",
+      "descriptionText": "$11.00"
+    },
+    {
+      "slug": "deep-fried-pork-chop-vermicelli-in-soup-with-pan-fried-eg",
+      "url": "https://hongfarcafe.ca/product/deep-fried-pork-chop-vermicelli-in-soup-with-pan-fried-eg",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "炸豬扒湯米+煎蛋Deep Fried Pork Chop Vermicelli in Soup with Pan Fried Eg",
+      "title": "炸豬扒湯米+煎蛋Deep Fried Pork Chop Vermicelli in Soup with Pan Fried Eg",
+      "priceText": "$12.50",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "deep-fried-pork-chop-with-u-don-in-soup",
+      "url": "https://hongfarcafe.ca/product/deep-fried-pork-chop-with-u-don-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "炸豬扒煎蛋湯烏冬Deep Fried Pork Chop with U-don in Soup",
+      "title": "炸豬扒煎蛋湯烏冬Deep Fried Pork Chop with U-don in Soup",
+      "priceText": "$13.25",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "egg-sandwich",
+      "url": "https://hongfarcafe.ca/product/egg-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "雞蛋三文治Egg Sandwich",
+      "title": "雞蛋三文治Egg Sandwich",
+      "priceText": "$7.50",
+      "descriptionText": "$7.50"
+    },
+    {
+      "slug": "fillet-and-mushroom-with-noodle-in-soup",
+      "url": "https://hongfarcafe.ca/product/fillet-and-mushroom-with-noodle-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "皇子菇魚柳湯河或薑葱雲吞撈麵Fillet and Mushroom with Noodle in Soup",
+      "title": "皇子菇魚柳湯河或薑葱雲吞撈麵Fillet and Mushroom with Noodle in Soup",
+      "priceText": "$13.50",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "fillet-with-cheese-sauce",
+      "url": "https://hongfarcafe.ca/product/fillet-with-cheese-sauce",
+      "categories": [
+        "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+      ],
+      "listingTitle": "焗白汁石班Fillet with Cheese Sauce",
+      "title": "焗白汁石班Fillet with Cheese Sauce",
+      "priceText": "$19.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "fillet-with-mushroom-and-celery-on-rice",
+      "url": "https://hongfarcafe.ca/product/fillet-with-mushroom-and-celery-on-rice",
+      "categories": [
+        "特餐 Special Meal Combo 6 Items"
+      ],
+      "listingTitle": "荷芹皇子菇魚片飯Fillet with Mushroom and Celery on Rice",
+      "title": "荷芹皇子菇魚片飯Fillet with Mushroom and Celery on Rice",
+      "priceText": "$17.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "fillet-with-spicy-sauce-on-rice-malaysia-style",
+      "url": "https://hongfarcafe.ca/product/fillet-with-spicy-sauce-on-rice-malaysia-style",
+      "categories": [
+        "特餐 Special Meal Combo 6 Items"
+      ],
+      "listingTitle": "馬拉盞斑球飯Fillet with Spicy Sauce on Rice (Malaysia Style)",
+      "title": "馬拉盞斑球飯Fillet with Spicy Sauce on Rice (Malaysia Style)",
+      "priceText": "$17.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop (Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "fish-and-beef-balls-noodles",
+      "url": "https://hongfarcafe.ca/product/fish-and-beef-balls-noodles",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "雙丸麵Fish and Beef Balls Noodles",
+      "title": "雙丸麵Fish and Beef Balls Noodles",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "fish-balls-beef-balls-cattle-fish-balls-noodles-rice-noodles",
+      "url": "https://hongfarcafe.ca/product/fish-balls-beef-balls-cattle-fish-balls-noodles-rice-noodles",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "魚蛋/牛丸/墨魚丸麵/河粉Fish Balls/ Beef Balls/ Cattle Fish Balls Noodles /Rice Noodles",
+      "title": "魚蛋/牛丸/墨魚丸麵/河粉Fish Balls/ Beef Balls/ Cattle Fish Balls Noodles /Rice Noodles",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "french-toast",
+      "url": "https://hongfarcafe.ca/product/french-toast",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "西多士French Toast",
+      "title": "西多士French Toast",
+      "priceText": "$8.00",
+      "descriptionText": "$8.00"
+    },
+    {
+      "slug": "fried-egg-barbeque-duck-with-preserved-vegetable-vermicelli-in-soup",
+      "url": "https://hongfarcafe.ca/product/fried-egg-barbeque-duck-with-preserved-vegetable-vermicelli-in-soup",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "雪菜火鴨絲煎蛋湯米線Fried Egg Barbeque Duck with Preserved Vegetable Vermicelli in Soup",
+      "title": "雪菜火鴨絲煎蛋湯米線Fried Egg Barbeque Duck with Preserved Vegetable Vermicelli in Soup",
+      "priceText": "$12.50",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "fried-noodle-or-rice-noodle-with-beef-in-black-bean-sauce",
+      "url": "https://hongfarcafe.ca/product/fried-noodle-or-rice-noodle-with-beef-in-black-bean-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "豉椒牛肉炒麵/炒河Fried Noodle or Rice Noodle with Beef in Black Bean Sauce",
+      "title": "豉椒牛肉炒麵/炒河Fried Noodle or Rice Noodle with Beef in Black Bean Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-noodle-or-rice-noodle-with-spare-ribs-in-black-bean-sauce",
+      "url": "https://hongfarcafe.ca/product/fried-noodle-or-rice-noodle-with-spare-ribs-in-black-bean-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "豉椒排骨炒麵炒河Fried Noodle or Rice Noodle with Spare Ribs in Black Bean Sauce",
+      "title": "豉椒排骨炒麵炒河Fried Noodle or Rice Noodle with Spare Ribs in Black Bean Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-noodles-with-mixed-vegetable",
+      "url": "https://hongfarcafe.ca/product/fried-noodles-with-mixed-vegetable",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "什菜炒麵Fried Noodles with Mixed Vegetable",
+      "title": "什菜炒麵Fried Noodles with Mixed Vegetable",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-noodles-with-shredded-pork-chinese-mushrooms",
+      "url": "https://hongfarcafe.ca/product/fried-noodles-with-shredded-pork-chinese-mushrooms",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "北菇肉絲炒麵Fried Noodles with Shredded Pork & Chinese Mushrooms",
+      "title": "北菇肉絲炒麵Fried Noodles with Shredded Pork & Chinese Mushrooms",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-rice-ham-bbq-pork-yeung-chow-style",
+      "url": "https://hongfarcafe.ca/product/fried-rice-ham-bbq-pork-yeung-chow-style",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "楊州炒飯Fried Rice Ham & BBQ Pork (Yeung Chow Style)",
+      "title": "楊州炒飯Fried Rice Ham & BBQ Pork (Yeung Chow Style)",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-rice-noodle-with-chicken-in-satay-sauce",
+      "url": "https://hongfarcafe.ca/product/fried-rice-noodle-with-chicken-in-satay-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "沙爹雞片炒河Fried Rice Noodle with Chicken in Satay Sauce",
+      "title": "沙爹雞片炒河Fried Rice Noodle with Chicken in Satay Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-rice-noodle-with-shrimp-bbq-pork-singapore-style",
+      "url": "https://hongfarcafe.ca/product/fried-rice-noodle-with-shrimp-bbq-pork-singapore-style",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "炒貴刁Fried Rice Noodle with Shrimp & BBQ Pork (Singapore Style)",
+      "title": "炒貴刁Fried Rice Noodle with Shrimp & BBQ Pork (Singapore Style)",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-rice-or-vermicelli-with-shrimps-minced-pork-malaysian-style",
+      "url": "https://hongfarcafe.ca/product/fried-rice-or-vermicelli-with-shrimps-minced-pork-malaysian-style",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "馬拉盞蝦仁肉碎炒飯或炒米Fried Rice or Vermicelli with Shrimps & Minced Pork (Malaysian Style)",
+      "title": "馬拉盞蝦仁肉碎炒飯或炒米Fried Rice or Vermicelli with Shrimps & Minced Pork (Malaysian Style)",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-rice-with-green-bean-minced-pork-and-salted-black-olive",
+      "url": "https://hongfarcafe.ca/product/fried-rice-with-green-bean-minced-pork-and-salted-black-olive",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "欖菜肉碎四季豆炒飯Fried Rice with Green Bean, Minced Pork and Salted Black Olive",
+      "title": "欖菜肉碎四季豆炒飯Fried Rice with Green Bean, Minced Pork and Salted Black Olive",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "fried-vermicelli-with-shrimp-bbq-pork-singapore-style",
+      "url": "https://hongfarcafe.ca/product/fried-vermicelli-with-shrimp-bbq-pork-singapore-style",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "星州炒米Fried Vermicelli with Shrimp & BBQ Pork (Singapore Style)",
+      "title": "星州炒米Fried Vermicelli with Shrimp & BBQ Pork (Singapore Style)",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "grilled-mixed-steak",
+      "url": "https://hongfarcafe.ca/product/grilled-mixed-steak",
+      "categories": [
+        "鐵板餐 Hot Plate Combo 3 Items"
+      ],
+      "listingTitle": "鐵板雜扒Grilled Mixed Steak",
+      "title": "鐵板雜扒Grilled Mixed Steak",
+      "priceText": "$21.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)以上每款奉送各式熱飲或汽水 (改凍飲/熱檸蜜或熱檸樂加 $1.50) (改凍檸蜜或凍檸樂加$2.25)"
+    },
+    {
+      "slug": "hai-nan-house-chicken-with-rice",
+      "url": "https://hongfarcafe.ca/product/hai-nan-house-chicken-with-rice",
+      "categories": [
+        "特餐 Special Meal Combo 6 Items"
+      ],
+      "listingTitle": "海南走地雞飯Hai Nan House Chicken with Rice",
+      "title": "海南走地雞飯Hai Nan House Chicken with Rice",
+      "priceText": "$17.50",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "ham-and-chicken-with-corn-sauce",
+      "url": "https://hongfarcafe.ca/product/ham-and-chicken-with-corn-sauce",
+      "categories": [
+        "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+      ],
+      "listingTitle": "焗粟米火腿雞絲Ham and Chicken with Corn Sauce",
+      "title": "焗粟米火腿雞絲Ham and Chicken with Corn Sauce",
+      "priceText": "$19.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "ham-and-egg-sandwich",
+      "url": "https://hongfarcafe.ca/product/ham-and-egg-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "火腿蛋三文治Ham and Egg Sandwich",
+      "title": "火腿蛋三文治Ham and Egg Sandwich",
+      "priceText": "$8.00",
+      "descriptionText": "$8.00"
+    },
+    {
+      "slug": "ham-omelette-sausage-bacon-and-toast-with-butter",
+      "url": "https://hongfarcafe.ca/product/ham-omelette-sausage-bacon-and-toast-with-butter",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "火腿奄列配腸仔及煙肉+牛油多士Ham Omelette, Sausage, Bacon and Toast with Butter",
+      "title": "火腿奄列配腸仔及煙肉+牛油多士Ham Omelette, Sausage, Bacon and Toast with Butter",
+      "priceText": "$12.00",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "ham-sandwich",
+      "url": "https://hongfarcafe.ca/product/ham-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "火腿三文治Ham Sandwich",
+      "title": "火腿三文治Ham Sandwich",
+      "priceText": "$7.50",
+      "descriptionText": "$7.50"
+    },
+    {
+      "slug": "house-special-congee",
+      "url": "https://hongfarcafe.ca/product/house-special-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "招牌粥House Special Congee",
+      "title": "招牌粥House Special Congee",
+      "priceText": "$12.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "kwong-chow-style",
+      "url": "https://hongfarcafe.ca/product/kwong-chow-style",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "艇仔粥Kwong Chow Style",
+      "title": "艇仔粥Kwong Chow Style",
+      "priceText": "$11.00",
+      "descriptionText": "$11.00"
+    },
+    {
+      "slug": "lo-mein-beef-brisket-or-wonton",
+      "url": "https://hongfarcafe.ca/product/lo-mein-beef-brisket-or-wonton",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "牛腩或雲吞撈麵Lo Mein (Beef Brisket or Wonton)",
+      "title": "牛腩或雲吞撈麵Lo Mein (Beef Brisket or Wonton)",
+      "priceText": "$14.50",
+      "descriptionText": "$14.50"
+    },
+    {
+      "slug": "luncheon-meat-and-egg-sandwich",
+      "url": "https://hongfarcafe.ca/product/luncheon-meat-and-egg-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "餐肉蛋三文治Luncheon Meat and Egg Sandwich",
+      "title": "餐肉蛋三文治Luncheon Meat and Egg Sandwich",
+      "priceText": "$8.00",
+      "descriptionText": "$8.00"
+    },
+    {
+      "slug": "luncheon-meat-sandwich",
+      "url": "https://hongfarcafe.ca/product/luncheon-meat-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "餐内三文治Luncheon Meat Sandwich",
+      "title": "餐内三文治Luncheon Meat Sandwich",
+      "priceText": "$7.50",
+      "descriptionText": "$7.50"
+    },
+    {
+      "slug": "minced-beef-congee",
+      "url": "https://hongfarcafe.ca/product/minced-beef-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "免治牛肉粥Minced Beef Congee",
+      "title": "免治牛肉粥Minced Beef Congee",
+      "priceText": "$11.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "minced-beef-with-noodle-in-soup",
+      "url": "https://hongfarcafe.ca/product/minced-beef-with-noodle-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "香茜北菇牛崧湯米或麵Minced Beef with Noodle in Soup",
+      "title": "香茜北菇牛崧湯米或麵Minced Beef with Noodle in Soup",
+      "priceText": "$13.00",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "minced-pork-to-fu-with-rice-in-hot-sauce",
+      "url": "https://hongfarcafe.ca/product/minced-pork-to-fu-with-rice-in-hot-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "麻婆豆腐飯Minced Pork & To-Fu with Rice in Hot Sauce",
+      "title": "麻婆豆腐飯Minced Pork & To-Fu with Rice in Hot Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "mixed-vegetable-with-portuguese-sauce",
+      "url": "https://hongfarcafe.ca/product/mixed-vegetable-with-portuguese-sauce",
+      "categories": [
+        "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+      ],
+      "listingTitle": "焗葡汁雜菜Mixed Vegetable with Portuguese Sauce",
+      "title": "焗葡汁雜菜Mixed Vegetable with Portuguese Sauce",
+      "priceText": "$19.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "plain-congee",
+      "url": "https://hongfarcafe.ca/product/plain-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "白粥Plain Congee",
+      "title": "白粥Plain Congee",
+      "priceText": "$6.75",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "pork-chopchicken-steak",
+      "url": "https://hongfarcafe.ca/product/pork-chopchicken-steak",
+      "categories": [
+        "特餐 Special Meal Combo 6 Items"
+      ],
+      "listingTitle": "豬扒/雞扒/牛扒Pork Chop/Chicken / Steak",
+      "title": "豬扒/雞扒/牛扒Pork Chop/Chicken / Steak",
+      "priceText": "$17.50",
+      "descriptionText": "Served with Rice or Spaghetti (Black Pepper/ Tomato/Onion Garlic Sauce)All combo serve with Hot Tea, Coffee, Lemon Tea or Pop (Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "preserved-egg-and-pork-congee",
+      "url": "https://hongfarcafe.ca/product/preserved-egg-and-pork-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "皮蛋瘦肉粥Preserved Egg and Pork Congee",
+      "title": "皮蛋瘦肉粥Preserved Egg and Pork Congee",
+      "priceText": "$11.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "preserved-vegetable-shredded-barbeque-duck-and-ego-with-vermicelli-in-soup",
+      "url": "https://hongfarcafe.ca/product/preserved-vegetable-shredded-barbeque-duck-and-ego-with-vermicelli-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "雪菜鴨絲煎蛋湯米線Preserved Vegetable Shredded Barbeque Duck and Ego with Vermicelli in Soup",
+      "title": "雪菜鴨絲煎蛋湯米線Preserved Vegetable Shredded Barbeque Duck and Ego with Vermicelli in Soup",
+      "priceText": "$13.50",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "rice-with-minced-pork-in-sweet-corn-sauce",
+      "url": "https://hongfarcafe.ca/product/rice-with-minced-pork-in-sweet-corn-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "粟米肉粒飯Rice with Minced Pork in Sweet Corn Sauce",
+      "title": "粟米肉粒飯Rice with Minced Pork in Sweet Corn Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "rice-with-shrimps-lobster-sauce",
+      "url": "https://hongfarcafe.ca/product/rice-with-shrimps-lobster-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "蝦龍糊飯Rice with Shrimps & Lobster Sauce",
+      "title": "蝦龍糊飯Rice with Shrimps & Lobster Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "rice-with-sliced-pork-and-oyster-mushroom",
+      "url": "https://hongfarcafe.ca/product/rice-with-sliced-pork-and-oyster-mushroom",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "皇子菇荷芹豬爽肉反Rice with Sliced Pork and Oyster Mushroom",
+      "title": "皇子菇荷芹豬爽肉反Rice with Sliced Pork and Oyster Mushroom",
+      "priceText": "$17.50",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "sandwich-choose-any-two-ham-or-egg-or-luncheon-or-corned-beef",
+      "url": "https://hongfarcafe.ca/product/sandwich-choose-any-two-ham-or-egg-or-luncheon-or-corned-beef",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "火腿蛋/餐肉蛋/咸牛肉蛋三文治Sandwich Choose any Two (Ham or Egg or Luncheon or Corned Beef)",
+      "title": "火腿蛋/餐肉蛋/咸牛肉蛋三文治Sandwich Choose any Two (Ham or Egg or Luncheon or Corned Beef)",
+      "priceText": "$12.00",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "scallop-and-pork-chopchickensteak",
+      "url": "https://hongfarcafe.ca/product/scallop-and-pork-chopchickensteak",
+      "categories": [
+        "鐵板餐 Hot Plate Combo 3 Items"
+      ],
+      "listingTitle": "鐵板帶子+(豬扒/雞扒/牛扒)Scallop and (Pork Chop/Chicken/Steak)",
+      "title": "鐵板帶子+(豬扒/雞扒/牛扒)Scallop and (Pork Chop/Chicken/Steak)",
+      "priceText": "$22.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)以上每款奉送各式熱飲或汽水 (改凍飲/熱檸蜜或熱檸樂加 $1.50)(改凍檸蜜或凍檸樂加$2.25)"
+    },
+    {
+      "slug": "seafood-congee",
+      "url": "https://hongfarcafe.ca/product/seafood-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "海鮮粥Seafood Congee",
+      "title": "海鮮粥Seafood Congee",
+      "priceText": "$11.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "seafood-with-cream-sauce-and-cheese",
+      "url": "https://hongfarcafe.ca/product/seafood-with-cream-sauce-and-cheese",
+      "categories": [
+        "焗飯/意粉套餐 Baked Rice/Spaghetti Combo 6 Items"
+      ],
+      "listingTitle": "焗白汁芝士海鮮Seafood with Cream Sauce and Cheese",
+      "title": "焗白汁芝士海鮮Seafood with Cream Sauce and Cheese",
+      "priceText": "$19.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "self-selected-combo-special-for-2",
+      "url": "https://hongfarcafe.ca/product/self-selected-combo-special-for-2",
+      "categories": [
+        "自選和菜 (Dishes of Your Choice Combo Special) 5 Items"
+      ],
+      "listingTitle": "自選和菜（二和菜）Self-Selected Combo Special For 2",
+      "title": "自選和菜（二和菜）Self-Selected Combo Special For 2",
+      "priceText": "$37.99",
+      "descriptionText": "You can select any two of the menus here"
+    },
+    {
+      "slug": "self-selected-combo-special-for-3",
+      "url": "https://hongfarcafe.ca/product/self-selected-combo-special-for-3",
+      "categories": [
+        "自選和菜 (Dishes of Your Choice Combo Special) 5 Items"
+      ],
+      "listingTitle": "自選和菜（三和菜）Self-Selected Combo Special For 3",
+      "title": "自選和菜（三和菜）Self-Selected Combo Special For 3",
+      "priceText": "$54.99",
+      "descriptionText": "You can select any three of the menus here"
+    },
+    {
+      "slug": "self-selected-combo-special-for-4",
+      "url": "https://hongfarcafe.ca/product/self-selected-combo-special-for-4",
+      "categories": [
+        "自選和菜 (Dishes of Your Choice Combo Special) 5 Items"
+      ],
+      "listingTitle": "自選和菜（四和菜）Self-Selected Combo Special For 4",
+      "title": "自選和菜（四和菜）Self-Selected Combo Special For 4",
+      "priceText": "$73.99",
+      "descriptionText": "You can select any four of the menus here"
+    },
+    {
+      "slug": "self-selected-combo-special-for-6",
+      "url": "https://hongfarcafe.ca/product/self-selected-combo-special-for-6",
+      "categories": [
+        "自選和菜 (Dishes of Your Choice Combo Special) 5 Items"
+      ],
+      "listingTitle": "自選和菜（六和菜）Self-Selected Combo Special For 6",
+      "title": "自選和菜（六和菜）Self-Selected Combo Special For 6",
+      "priceText": "$107.99",
+      "descriptionText": "You can select any six of the menus here"
+    },
+    {
+      "slug": "shredded-pork-with-preserved-vegetable-noodle-in-soup",
+      "url": "https://hongfarcafe.ca/product/shredded-pork-with-preserved-vegetable-noodle-in-soup",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "榨菜或雪菜肉絲湯米或麵Shredded Pork with Preserved Vegetable Noodle in Soup",
+      "title": "榨菜或雪菜肉絲湯米或麵Shredded Pork with Preserved Vegetable Noodle in Soup",
+      "priceText": "$13.00",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "shredded-pork-with-preserved-vegetable-noodles",
+      "url": "https://hongfarcafe.ca/product/shredded-pork-with-preserved-vegetable-noodles",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "雪菜榨菜肉絲麵Shredded Pork with Preserved Vegetable Noodles",
+      "title": "雪菜榨菜肉絲麵Shredded Pork with Preserved Vegetable Noodles",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "shrimp-wonton-noodles",
+      "url": "https://hongfarcafe.ca/product/shrimp-wonton-noodles",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "雲吞麵Shrimp Wonton Noodles",
+      "title": "雲吞麵Shrimp Wonton Noodles",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "shrimp-wonton-soup",
+      "url": "https://hongfarcafe.ca/product/shrimp-wonton-soup",
+      "categories": [
+        "湯粉麵 Noodles/ Rice Noodles in Soup 9 Items"
+      ],
+      "listingTitle": "淨雲吞Shrimp Wonton Soup",
+      "title": "淨雲吞Shrimp Wonton Soup",
+      "priceText": "$13.50",
+      "descriptionText": "$13.50"
+    },
+    {
+      "slug": "sliced-beef-congee",
+      "url": "https://hongfarcafe.ca/product/sliced-beef-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "生滾牛肉粥Sliced Beef Congee",
+      "title": "生滾牛肉粥Sliced Beef Congee",
+      "priceText": "$11.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "sliced-fish-congee",
+      "url": "https://hongfarcafe.ca/product/sliced-fish-congee",
+      "categories": [
+        "粥類 Congee 9 Items"
+      ],
+      "listingTitle": "魚片粥Sliced Fish Congee",
+      "title": "魚片粥Sliced Fish Congee",
+      "priceText": "$11.00",
+      "descriptionText": "(以上粥類可跟油條或牛脷酥加$2.00)"
+    },
+    {
+      "slug": "spaghetti-minced-pork-baked-with-cheese",
+      "url": "https://hongfarcafe.ca/product/spaghetti-minced-pork-baked-with-cheese",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "芝士焗肉醬意粉Spaghetti Minced Pork Baked with Cheese",
+      "title": "芝士焗肉醬意粉Spaghetti Minced Pork Baked with Cheese",
+      "priceText": "$13.50",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    },
+    {
+      "slug": "steamed-braised-pork-with-preserved-veg-on-rice",
+      "url": "https://hongfarcafe.ca/product/steamed-braised-pork-with-preserved-veg-on-rice",
+      "categories": [
+        "特餐 Special Meal Combo 6 Items"
+      ],
+      "listingTitle": "梅菜扣肉飯Steamed Braised Pork with Preserved Veg. on Rice",
+      "title": "梅菜扣肉飯Steamed Braised Pork with Preserved Veg. on Rice",
+      "priceText": "$17.00",
+      "descriptionText": "All combo serve with Hot Tea, Coffee, Lemon Tea or Pop(Extra Charge: $1.50 for Ice Drink)"
+    },
+    {
+      "slug": "stir-fried-eggplant-on-rice",
+      "url": "https://hongfarcafe.ca/product/stir-fried-eggplant-on-rice",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "魚香茄子飯Stir Fried Eggplant on Rice",
+      "title": "魚香茄子飯Stir Fried Eggplant on Rice",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "stir-fried-rice-noodle-with-beef-soya-sauce",
+      "url": "https://hongfarcafe.ca/product/stir-fried-rice-noodle-with-beef-soya-sauce",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "干炒牛河Stir Fried Rice Noodle with Beef & Soya Sauce",
+      "title": "干炒牛河Stir Fried Rice Noodle with Beef & Soya Sauce",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "stir-fried-shanghai-noodle",
+      "url": "https://hongfarcafe.ca/product/stir-fried-shanghai-noodle",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "上海粗炒Stir Fried Shanghai Noodle",
+      "title": "上海粗炒Stir Fried Shanghai Noodle",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "stir-fried-spaghetti-with-beef-black-pepper",
+      "url": "https://hongfarcafe.ca/product/stir-fried-spaghetti-with-beef-black-pepper",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "干炒黑椒牛肉意粉Stir Fried Spaghetti with Beef & Black Pepper",
+      "title": "干炒黑椒牛肉意粉Stir Fried Spaghetti with Beef & Black Pepper",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "sweet-and-sour-pork-on-rice",
+      "url": "https://hongfarcafe.ca/product/sweet-and-sour-pork-on-rice",
+      "categories": [
+        "超值套餐 ALL DAY SPECIAL 20 Items"
+      ],
+      "listingTitle": "咕嚕肉飯Sweet and Sour Pork on Rice",
+      "title": "咕嚕肉飯Sweet and Sour Pork on Rice",
+      "priceText": "$16.95",
+      "descriptionText": "FREE: TEA & COFFEE (COLD +$1.50)/POP/BOTTLE WATEROR(HOT & SOUR SOUP +$2.00 each person, for dine-in only)以上套餐每款奉送咖啡或奶茶或汽水 (改凍飲或熱檸蜜加$1.50, 改凍檸蜜加$2.25)"
+    },
+    {
+      "slug": "toast",
+      "url": "https://hongfarcafe.ca/product/toast",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "各式多士Toast",
+      "title": "各式多士Toast",
+      "priceText": "$5.50",
+      "descriptionText": "$5.50"
+    },
+    {
+      "slug": "toast-with-butter-french-toast-excluded",
+      "url": "https://hongfarcafe.ca/product/toast-with-butter-french-toast-excluded",
+      "categories": [
+        "逢星期六、日 精美早餐 Sat and Sun Only Breakfast (10-11:30) 9 Items"
+      ],
+      "listingTitle": "各式多士(西多除外)Toast with Butter (French Toast excluded)",
+      "title": "各式多士(西多除外)Toast with Butter (French Toast excluded)",
+      "priceText": "$8.50",
+      "descriptionText": "以上各款奉送咖啡或奶茶或汽水 (改凍飲/熱檸蜜或熱檸樂加$1.50 改凍檸蜜或凍檸樂加$2.25)All Breakfasts with Tea or Coffee or PopIce Drink/Honey Lemonade (hot) / Coke with Lemon (hot) +$1.50 Honey Lemonade (cold) / Coke with Lemon (cold) +$2.25"
+    },
+    {
+      "slug": "tomato-and-ham-sandwich",
+      "url": "https://hongfarcafe.ca/product/tomato-and-ham-sandwich",
+      "categories": [
+        "三文治多士 Sandwiches/Toast 12 Items"
+      ],
+      "listingTitle": "鮮茄火腿三文治Tomato and Ham Sandwich",
+      "title": "鮮茄火腿三文治Tomato and Ham Sandwich",
+      "priceText": "$7.75",
+      "descriptionText": "$7.75"
+    },
+    {
+      "slug": "xo-fried-rice-with-chopped-oyster-in-xo-sauce",
+      "url": "https://hongfarcafe.ca/product/xo-fried-rice-with-chopped-oyster-in-xo-sauce",
+      "categories": [
+        "鴻發推介 House Special 8 Items"
+      ],
+      "listingTitle": "X.O.醬蠔肉炒飯 Fried Rice with Chopped Oyster in X.O. Sauce",
+      "title": "X.O.醬蠔肉炒飯 Fried Rice with Chopped Oyster in X.O. Sauce",
+      "priceText": "$19.00",
+      "descriptionText": "每款奉送各式熱飲或汽水(改凍飲或熱檸蜜或熱檸樂加$1.50)改凍檸蜜或凍檸樂加$2.25)Served with Hot Tea / Coffee / Lemon Tea or Pop (Extra Charge: $1.50 for Cold Drinks)"
+    },
+    {
+      "slug": "xoxo-sauce-fried-rice-noodle-roll-and-plain-congee",
+      "url": "https://hongfarcafe.ca/product/xoxo-sauce-fried-rice-noodle-roll-and-plain-congee",
+      "categories": [
+        "惬意下午茶 Tea Time Special (2 pm to 5 pm) 13 Items"
+      ],
+      "listingTitle": "X.O.醬炒麵+白粥XO Sauce Fried Rice Noodle Roll and Plain Congee",
+      "title": "X.O.醬炒麵+白粥XO Sauce Fried Rice Noodle Roll and Plain Congee",
+      "priceText": "$13.25",
+      "descriptionText": "以上每款奉送各式咖啡或奶茶(改凍飲/熱檸蜜或熱檸樂加$1.50/ 凍檸蜜或凍檸樂加$2.25)FREE : HOT TEA, COFFEE, POP (ICE DRINK $1.50)"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f5f0e8;
+  --ink: #2c2420;
+  --brand: #8b2e24;
+  --brand-soft: #ebe4d8;
+  --card: #fffdfa;
+}
+
+body {
+  font-family: var(--font-lora), "Noto Serif SC", Georgia, serif;
+  background: linear-gradient(165deg, #faf8f4 0%, #f2ede6 35%, #ebe6df 100%);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
