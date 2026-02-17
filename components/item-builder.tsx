@@ -5,11 +5,13 @@ import { ModifierGroup, ModifierOption } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { centsToCurrency } from "@/lib/format";
+import { localizeText, type Lang } from "@/lib/i18n";
 
 type GroupWithOptions = ModifierGroup & { options: ModifierOption[] };
 
 export function ItemBuilder({
-  item
+  item,
+  lang
 }: {
   item: {
     id: string;
@@ -17,6 +19,7 @@ export function ItemBuilder({
     basePriceCents: number;
     modifierGroups: GroupWithOptions[];
   };
+  lang: Lang;
 }) {
   const router = useRouter();
   const { addLine } = useCart();
@@ -37,6 +40,7 @@ export function ItemBuilder({
     addDrinkGroup && selectedDrinkOptionId
       ? selectedDrinkOptionId.replace(`modopt_add_drink_${item.id}_`, "")
       : "";
+  const selectedDrinkIsNone = selectedDrinkId === "none";
   const coldOnlyDrinkIds = new Set(["drink_soft", "drink_lemon_coke", "drink_lemon_sprite"]);
   const noSugarDrinkIds = new Set([
     "drink_soft",
@@ -47,9 +51,9 @@ export function ItemBuilder({
   ]);
   const selectedDrinkIsColdOnly = Boolean(selectedDrinkId && coldOnlyDrinkIds.has(selectedDrinkId));
   const selectedDrinkNoSugar = Boolean(selectedDrinkId && noSugarDrinkIds.has(selectedDrinkId));
-  const canShowDrinkTemp = Boolean(addDrinkTempGroup && selectedDrinkOptionId);
+  const canShowDrinkTemp = Boolean(addDrinkTempGroup && selectedDrinkOptionId && !selectedDrinkIsNone);
   const canShowDrinkSugar = Boolean(
-    addDrinkSugarGroup && selectedDrinkOptionId && !selectedDrinkNoSugar
+    addDrinkSugarGroup && selectedDrinkOptionId && !selectedDrinkIsNone && !selectedDrinkNoSugar
   );
   const coldTempOptionId = addDrinkTempGroup?.options.find((o) =>
     o.id.includes(`modopt_add_drink_temp_cold_${item.id}`)
@@ -62,9 +66,20 @@ export function ItemBuilder({
   )?.id;
 
   useEffect(() => {
+    if (!addDrinkGroup) return;
+    const current = selected[addDrinkGroup.id] ?? [];
+    const noneOptionId = addDrinkGroup.options.find((o) =>
+      o.id.includes(`modopt_add_drink_${item.id}_none`)
+    )?.id;
+    if (!current.length && noneOptionId) {
+      setSelected((prev) => ({ ...prev, [addDrinkGroup.id]: [noneOptionId] }));
+    }
+  }, [addDrinkGroup, item.id, selected]);
+
+  useEffect(() => {
     if (!addDrinkTempGroup) return;
     const current = selected[addDrinkTempGroup.id] ?? [];
-    if (!selectedDrinkOptionId) {
+    if (!selectedDrinkOptionId || selectedDrinkIsNone) {
       if (current.length > 0) {
         setSelected((prev) => ({ ...prev, [addDrinkTempGroup.id]: [] }));
       }
@@ -83,6 +98,7 @@ export function ItemBuilder({
     addDrinkTempGroup,
     selected,
     selectedDrinkOptionId,
+    selectedDrinkIsNone,
     selectedDrinkIsColdOnly,
     coldTempOptionId,
     hotTempOptionId
@@ -91,7 +107,7 @@ export function ItemBuilder({
   useEffect(() => {
     if (!addDrinkSugarGroup) return;
     const current = selected[addDrinkSugarGroup.id] ?? [];
-    if (!selectedDrinkOptionId || selectedDrinkNoSugar) {
+    if (!selectedDrinkOptionId || selectedDrinkIsNone || selectedDrinkNoSugar) {
       if (current.length > 0) {
         setSelected((prev) => ({ ...prev, [addDrinkSugarGroup.id]: [] }));
       }
@@ -100,7 +116,14 @@ export function ItemBuilder({
     if (!current.length && regularSugarOptionId) {
       setSelected((prev) => ({ ...prev, [addDrinkSugarGroup.id]: [regularSugarOptionId] }));
     }
-  }, [addDrinkSugarGroup, selected, selectedDrinkOptionId, selectedDrinkNoSugar, regularSugarOptionId]);
+  }, [
+    addDrinkSugarGroup,
+    selected,
+    selectedDrinkOptionId,
+    selectedDrinkIsNone,
+    selectedDrinkNoSugar,
+    regularSugarOptionId
+  ]);
 
   const modifierDelta = useMemo(() => {
     let sum = 0;
@@ -113,6 +136,7 @@ export function ItemBuilder({
     const selectedTempOptionId = addDrinkTempGroup ? (selected[addDrinkTempGroup.id] ?? [])[0] : "";
     const isColdSelection =
       Boolean(selectedDrinkOptionId) &&
+      !selectedDrinkIsNone &&
       (selectedDrinkIsColdOnly || selectedTempOptionId === coldTempOptionId);
     if (isColdSelection && selectedDrinkId !== "drink_soft") {
       sum += 150;
@@ -123,6 +147,7 @@ export function ItemBuilder({
     selected,
     addDrinkTempGroup,
     selectedDrinkOptionId,
+    selectedDrinkIsNone,
     selectedDrinkIsColdOnly,
     coldTempOptionId,
     selectedDrinkId
@@ -162,14 +187,14 @@ export function ItemBuilder({
         return;
       }
     }
-    if (selectedDrinkOptionId && !selectedDrinkIsColdOnly) {
+    if (selectedDrinkOptionId && !selectedDrinkIsNone && !selectedDrinkIsColdOnly) {
       const tempPickedCount = addDrinkTempGroup ? (selected[addDrinkTempGroup.id] ?? []).length : 0;
       if (tempPickedCount === 0) {
         setError("Add Drink Temperature is required when a drink is selected.");
         return;
       }
     }
-    if (selectedDrinkOptionId && !selectedDrinkNoSugar) {
+    if (selectedDrinkOptionId && !selectedDrinkIsNone && !selectedDrinkNoSugar) {
       const sugarPickedCount = addDrinkSugarGroup ? (selected[addDrinkSugarGroup.id] ?? []).length : 0;
       if (sugarPickedCount === 0) {
         setError("Add Drink Sugar Level is required when selected drink allows sugar changes.");
@@ -206,15 +231,6 @@ export function ItemBuilder({
           className="mt-1 w-20 rounded border px-2 py-1"
         />
       </label>
-      <label className="block text-sm font-medium">
-        Additional Notes (optional)
-        <textarea
-          value={lineNote}
-          onChange={(e) => setLineNote(e.target.value)}
-          className="mt-1 w-full rounded border px-2 py-2"
-          placeholder="No onions, extra spicy, etc."
-        />
-      </label>
 
       {item.modifierGroups.map((group) => {
         if (group.name === "Add Drink Temperature" && !canShowDrinkTemp) {
@@ -233,7 +249,7 @@ export function ItemBuilder({
         return (
           <div key={group.id} className="rounded-lg border border-amber-900/20 p-3">
             <div className="font-medium">
-              {group.name}{" "}
+              {localizeText(group.name, lang)}{" "}
               <span className="text-sm text-gray-500">
                 (Choose {group.minSelect}
                 {group.maxSelect !== group.minSelect ? `-${group.maxSelect}` : ""})
@@ -264,7 +280,7 @@ export function ItemBuilder({
                       }
                       className="mr-2"
                     />
-                    {opt.name}
+                    {localizeText(opt.name, lang)}
                   </span>
                   <span>{dynamicDeltaCents ? `+${centsToCurrency(dynamicDeltaCents)}` : ""}</span>
                 </label>
@@ -274,6 +290,16 @@ export function ItemBuilder({
           </div>
         );
       })}
+
+      <label className="block text-sm font-medium">
+        Additional Notes (optional)
+        <textarea
+          value={lineNote}
+          onChange={(e) => setLineNote(e.target.value)}
+          className="mt-1 w-full rounded border px-2 py-2"
+          placeholder="No onions, extra spicy, etc."
+        />
+      </label>
 
       {error ? <div className="text-sm text-red-700">{error}</div> : null}
       <button onClick={submit} className="rounded bg-[var(--brand)] px-4 py-2 text-white">

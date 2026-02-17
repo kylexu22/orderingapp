@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useCart } from "@/lib/cart-store";
 import { centsToCurrency } from "@/lib/format";
+import { localizeText, type Lang } from "@/lib/i18n";
 
 type MenuData = {
   categories: Array<{
@@ -53,7 +54,7 @@ function getAddDrinkSurchargeCents(line: any, item: any) {
   return selectedDrinkId === "drink_soft" ? 0 : 150;
 }
 
-export function DesktopCartPanel({ menu }: { menu: MenuData }) {
+export function DesktopCartPanel({ menu, lang }: { menu: MenuData; lang: Lang }) {
   const { lines } = useCart();
 
   const subtotalCents = useMemo(() => {
@@ -86,29 +87,29 @@ export function DesktopCartPanel({ menu }: { menu: MenuData }) {
 
   return (
     <aside className="sticky top-20 hidden h-fit rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm lg:block">
-      <div className="mb-2 text-lg font-semibold">Cart</div>
+      <div className="mb-2 text-lg font-semibold">{lang === "zh" ? "購物車" : "Cart"}</div>
       {lines.length === 0 ? (
-        <div className="text-sm text-gray-600">No items yet.</div>
+        <div className="text-sm text-gray-600">{lang === "zh" ? "尚未加入任何項目。" : "No items yet."}</div>
       ) : (
         <div className="space-y-2">
           {lines.map((line, idx) => {
             const itemName =
               line.lineType === "ITEM"
-                ? menu.categories.flatMap((c) => c.items).find((i) => i.id === line.refId)?.name
-                : menu.combos.find((c) => c.id === line.refId)?.name;
+                ? localizeText(menu.categories.flatMap((c) => c.items).find((i) => i.id === line.refId)?.name, lang)
+                : localizeText(menu.combos.find((c) => c.id === line.refId)?.name, lang);
             return (
               <div key={`${line.refId}-${idx}`} className="rounded border border-gray-200 p-2 text-sm">
                 <div className="font-medium">{itemName ?? line.refId}</div>
-                <div className="text-gray-600">Qty: {line.qty}</div>
+                <div className="text-gray-600">{lang === "zh" ? "數量" : "Qty"}: {line.qty}</div>
               </div>
             );
           })}
         </div>
       )}
       <div className="mt-3 border-t border-gray-200 pt-3">
-        <div className="font-semibold">Subtotal: {centsToCurrency(subtotalCents)}</div>
+        <div className="font-semibold">{lang === "zh" ? "小計" : "Subtotal"}: {centsToCurrency(subtotalCents)}</div>
         <Link href="/cart" className="mt-2 inline-block rounded bg-[var(--brand)] px-3 py-1.5 text-sm text-white">
-          Open Cart
+          {lang === "zh" ? "打開購物車" : "Open Cart"}
         </Link>
       </div>
     </aside>

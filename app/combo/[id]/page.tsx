@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ComboBuilder } from "@/components/combo-builder";
+import { localizeText } from "@/lib/i18n";
+import { getServerLang } from "@/lib/i18n-server";
 
 export default async function ComboPage({ params }: { params: { id: string } }) {
+  const lang = getServerLang();
   const [combo, items] = await Promise.all([
     prisma.combo.findFirst({
       where: { id: params.id, isActive: true },
@@ -37,9 +40,9 @@ export default async function ComboPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="space-y-4 rounded-xl bg-[var(--card)] p-4 shadow-sm">
-      <h1 className="text-2xl font-bold">{combo.name}</h1>
-      <p className="text-gray-600">{combo.description}</p>
-      <ComboBuilder combo={combo} groups={combo.groups} items={items} />
+      <h1 className="text-2xl font-bold">{localizeText(combo.name, lang)}</h1>
+      <p className="text-gray-600">{localizeText(combo.description, lang)}</p>
+      <ComboBuilder combo={combo} groups={combo.groups} items={items} lang={lang} />
     </div>
   );
 }

@@ -51,6 +51,17 @@ type SelectionRule = {
   options: string[];
 };
 
+type ItemModifierRule = {
+  idSuffix: string;
+  match: (name: string) => boolean;
+  groupName: string;
+  required: boolean;
+  minSelect: number;
+  maxSelect: number;
+  sortOrder: number;
+  options: Array<{ name: string; priceDeltaCents?: number; isDefault?: boolean }>;
+};
+
 const SCRAPED_MENU_PATH = path.join(process.cwd(), "data", "hongfarcafe-menu-scrape.json");
 const COMBO_MENU_PATH = path.join(process.cwd(), "data", "combo-special-items.json");
 const SPECIAL_SET_DESCRIPTION = "Includes hot drink or soft drink. (Cold +$1.50)";
@@ -96,6 +107,323 @@ const TEA_TIME_SELECTION_RULES: SelectionRule[] = [
     maxSelect: 1,
     sortOrder: 121,
     options: ["French Fries", "Salad"]
+  }
+];
+
+const ITEM_MODIFIER_RULES: ItemModifierRule[] = [
+  {
+    idSuffix: "satay_choice",
+    match: (name) =>
+      /satay beef satay chicken\s*\/\s*noodles or rice noodles/i.test(name),
+    groupName: "Choose Satay",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 40,
+    options: [{ name: "Satay Beef" }, { name: "Satay Chicken" }]
+  },
+  {
+    idSuffix: "satay_noodle_choice",
+    match: (name) =>
+      /satay beef satay chicken\s*\/\s*noodles or rice noodles/i.test(name),
+    groupName: "Choose Noodle Type",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 41,
+    options: [{ name: "Egg Noodles" }, { name: "Rice Noodles" }]
+  },
+  {
+    idSuffix: "lo_mein_beef_or_wonton",
+    match: (name) => /lo mein\s*\(beef brisket or wonton\)/i.test(name),
+    groupName: "Choose Protein",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 42,
+    options: [{ name: "Wonton" }, { name: "Beef Brisket" }]
+  },
+  {
+    idSuffix: "beef_brisket_tendon_choice",
+    match: (name) => /beef brisket\/beef tendon\/noodles or rice noodles/i.test(name),
+    groupName: "Choose Beef",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 43,
+    options: [{ name: "Beef Brisket" }, { name: "Beef Tendon" }]
+  },
+  {
+    idSuffix: "beef_brisket_tendon_noodle_choice",
+    match: (name) => /beef brisket\/beef tendon\/noodles or rice noodles/i.test(name),
+    groupName: "Choose Noodle Type",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 44,
+    options: [{ name: "Egg Noodles" }, { name: "Rice Noodles" }]
+  },
+  {
+    idSuffix: "balls_choice",
+    match: (name) =>
+      /fish balls\/\s*beef balls\/\s*cattle fish balls noodles\s*\/rice noodles/i.test(name),
+    groupName: "Choose Balls",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 45,
+    options: [{ name: "Fish Balls" }, { name: "Beef Balls" }, { name: "Cuttlefish Balls" }]
+  },
+  {
+    idSuffix: "balls_noodle_choice",
+    match: (name) =>
+      /fish balls\/\s*beef balls\/\s*cattle fish balls noodles\s*\/rice noodles/i.test(name),
+    groupName: "Choose Noodle Type",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 46,
+    options: [{ name: "Egg Noodles" }, { name: "Rice Noodles" }]
+  },
+  {
+    idSuffix: "french_toast_spread",
+    match: (name) => /french toast with butter and jam/i.test(name),
+    groupName: "Choose Spread",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 47,
+    options: [{ name: "Butter" }, { name: "Peanut Butter" }, { name: "Condensed Milk" }]
+  },
+  {
+    idSuffix: "baked_combo_meat",
+    match: (name) =>
+      /pork chop\/chicken\/steak\s*\(black pepper\/ tomato \/ onion \/ garlic sauce\)/i.test(
+        name
+      ),
+    groupName: "Choose Meat",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 48,
+    options: [{ name: "Pork Chop" }, { name: "Chicken" }, { name: "Steak" }]
+  },
+  {
+    idSuffix: "baked_combo_sauce",
+    match: (name) =>
+      /pork chop\/chicken\/steak\s*\(black pepper\/ tomato \/ onion \/ garlic sauce\)/i.test(
+        name
+      ),
+    groupName: "Choose Sauce",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 49,
+    options: [
+      { name: "Black Pepper Sauce" },
+      { name: "Tomato Sauce" },
+      { name: "Onion Sauce" },
+      { name: "Garlic Sauce" }
+    ]
+  },
+  {
+    idSuffix: "special_meal_base",
+    match: (name) => /pork chop\/chicken \/ steak/i.test(name),
+    groupName: "Choose Base",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 51,
+    options: [{ name: "Rice" }, { name: "Spaghetti" }]
+  },
+  {
+    idSuffix: "special_meal_meat",
+    match: (name) => /pork chop\/chicken \/ steak/i.test(name),
+    groupName: "Choose Meat",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 52,
+    options: [{ name: "Pork Chop" }, { name: "Chicken" }, { name: "Steak" }]
+  },
+  {
+    idSuffix: "special_meal_sauce",
+    match: (name) => /pork chop\/chicken \/ steak/i.test(name),
+    groupName: "Choose Sauce",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 53,
+    options: [
+      { name: "Black Pepper Sauce" },
+      { name: "Tomato Sauce" },
+      { name: "Onion Sauce" },
+      { name: "Garlic Sauce" }
+    ]
+  },
+  {
+    idSuffix: "weekend_instant_noodle_pick_two",
+    match: (name) =>
+      /instant noodle in soup and pan fried egg .*pick two/i.test(name),
+    groupName: "Choose Two",
+    required: true,
+    minSelect: 2,
+    maxSelect: 2,
+    sortOrder: 54,
+    options: [
+      { name: "Pan Fried Egg" },
+      { name: "Luncheon Meat" },
+      { name: "Satay Beef" },
+      { name: "Red Sausage" },
+      { name: "Ham" },
+      { name: "Sausage" },
+      { name: "Bacon" },
+      { name: "Fish Fillet" }
+    ]
+  },
+  {
+    idSuffix: "weekend_ham_macaroni_base",
+    match: (name) =>
+      /ham macaroni or satay beef vermicelli with toast/i.test(name),
+    groupName: "Choose Main",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 55,
+    options: [{ name: "Ham Macaroni" }, { name: "Satay Beef Vermicelli" }]
+  },
+  {
+    idSuffix: "weekend_ham_macaroni_pick_two",
+    match: (name) =>
+      /ham macaroni or satay beef vermicelli with toast/i.test(name),
+    groupName: "Choose Two",
+    required: true,
+    minSelect: 2,
+    maxSelect: 2,
+    sortOrder: 56,
+    options: [
+      { name: "Pan Fried Egg" },
+      { name: "Luncheon Meat" },
+      { name: "Chicken Wing" },
+      { name: "Red Sausage" },
+      { name: "Ham" },
+      { name: "Sausage" },
+      { name: "Bacon" },
+      { name: "Fish Fillet" }
+    ]
+  },
+  {
+    idSuffix: "weekend_toast_pick_four",
+    match: (name) =>
+      /toast with butter and pan fried egg .*pick four/i.test(name),
+    groupName: "Choose Four",
+    required: true,
+    minSelect: 4,
+    maxSelect: 4,
+    sortOrder: 57,
+    options: [
+      { name: "Pan Fried Egg" },
+      { name: "Luncheon Meat" },
+      { name: "Chicken Wing" },
+      { name: "Red Sausage" },
+      { name: "Ham" },
+      { name: "Sausage" },
+      { name: "Bacon" },
+      { name: "Fish Fillet" }
+    ]
+  },
+  {
+    idSuffix: "weekend_sausage_toast_pick_two",
+    match: (name) =>
+      /sausage\/ham\/red sausage .*two pan fried eggs .*pick two/i.test(name),
+    groupName: "Choose Two",
+    required: true,
+    minSelect: 2,
+    maxSelect: 2,
+    sortOrder: 58,
+    options: [
+      { name: "Sausage" },
+      { name: "Ham" },
+      { name: "Red Sausage" },
+      { name: "Luncheon Meat" },
+      { name: "Two Pan Fried Eggs" }
+    ]
+  },
+  {
+    idSuffix: "weekend_congee_side_pick_one",
+    match: (name) =>
+      /minced beef congee with soya noodle \/ fried dough stick\/ox-tongue pastry/i.test(name),
+    groupName: "Choose One",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 59,
+    options: [{ name: "Soya Noodle" }, { name: "Fried Dough Stick" }, { name: "Ox-tongue Pastry" }]
+  },
+  {
+    idSuffix: "hotplate_scallop_meat",
+    match: (name) => /scallop and \(pork chop\/chicken\/steak\)/i.test(name),
+    groupName: "Choose Meat",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 60,
+    options: [{ name: "Pork Chop" }, { name: "Chicken" }, { name: "Steak" }]
+  },
+  {
+    idSuffix: "hotplate_sirloin_side",
+    match: (name) =>
+      /grilled sirloin steak served with rice, spaghetti, fries or mixed vegetables/i.test(name),
+    groupName: "Choose Side",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 61,
+    options: [{ name: "Rice" }, { name: "Spaghetti" }, { name: "Fries" }, { name: "Mixed Vegetables" }]
+  },
+  {
+    idSuffix: "house_special_ribs_base",
+    match: (name) =>
+      /rice\/lo mein with spare ribs in honey & pepper sauce/i.test(name),
+    groupName: "Choose Base",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 62,
+    options: [{ name: "Rice" }, { name: "Lo Mein" }]
+  },
+  {
+    idSuffix: "spare_ribs_black_bean_noodle",
+    match: (name) =>
+      /fried noodle or rice noodle with spare ribs in black bean sauce/i.test(name),
+    groupName: "Choose Noodle Type",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 63,
+    options: [{ name: "Fried Egg Noodle" }, { name: "Rice Noodle" }]
+  },
+  {
+    idSuffix: "beef_black_bean_noodle",
+    match: (name) =>
+      /fried noodle or rice noodle with beef in black bean sauce/i.test(name),
+    groupName: "Choose Noodle Type",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 64,
+    options: [{ name: "Fried Egg Noodle" }, { name: "Rice Noodle" }]
+  },
+  {
+    idSuffix: "malaysian_shrimp_minced_pork_base",
+    match: (name) =>
+      /fried rice or vermicelli with shrimps & minced pork \(malaysian style\)/i.test(name),
+    groupName: "Choose Base",
+    required: true,
+    minSelect: 1,
+    maxSelect: 1,
+    sortOrder: 65,
+    options: [{ name: "Fried Rice" }, { name: "Vermicelli" }]
   }
 ];
 const SEED_MODE = process.env.SEED_MODE === "reset" ? "reset" : "sync";
@@ -489,14 +817,24 @@ async function main() {
     });
 
     await prisma.modifierOption.createMany({
-      data: manualDrinks.map((drink, idx) => ({
-        id: `modopt_add_drink_${item.id}_${drink.id}`,
-        groupId,
-        name: drink.name,
-        priceDeltaCents: 0,
-        sortOrder: idx + 1,
-        isDefault: false
-      })),
+      data: [
+        {
+          id: `modopt_add_drink_${item.id}_none`,
+          groupId,
+          name: "None",
+          priceDeltaCents: 0,
+          sortOrder: 0,
+          isDefault: true
+        },
+        ...manualDrinks.map((drink, idx) => ({
+          id: `modopt_add_drink_${item.id}_${drink.id}`,
+          groupId,
+          name: drink.name,
+          priceDeltaCents: 0,
+          sortOrder: idx + 1,
+          isDefault: false
+        }))
+      ],
       skipDuplicates: true
     });
 
@@ -712,6 +1050,83 @@ async function main() {
     });
   }
 
+  const itemModifierSelectionItems = scrapedItems.flatMap((item) =>
+    ITEM_MODIFIER_RULES.filter((rule) => rule.match(item.name)).map((rule) => ({ item, rule }))
+  );
+
+  for (const { item, rule } of itemModifierSelectionItems) {
+    const groupId = `modgrp_${rule.idSuffix}_${item.id}`;
+    await prisma.modifierGroup.upsert({
+      where: { id: groupId },
+      create: {
+        id: groupId,
+        itemId: item.id,
+        name: rule.groupName,
+        required: rule.required,
+        minSelect: rule.minSelect,
+        maxSelect: rule.maxSelect,
+        sortOrder: rule.sortOrder
+      },
+      update: {}
+    });
+    await prisma.modifierOption.createMany({
+      data: rule.options.map((option, idx) => ({
+        id: `modopt_${rule.idSuffix}_${item.id}_${idx + 1}`,
+        groupId,
+        name: option.name,
+        priceDeltaCents: option.priceDeltaCents ?? 0,
+        sortOrder: idx + 1,
+        isDefault: option.isDefault ?? false
+      })),
+      skipDuplicates: true
+    });
+  }
+
+  const bakedComboCategoryIds = new Set(
+    scrapedCategories
+      .filter((c) => c.name.toUpperCase().includes("BAKED RICE/SPAGHETTI COMBO"))
+      .map((c) => c.id)
+  );
+  const bakedComboItems = scrapedItems.filter((item) => bakedComboCategoryIds.has(item.categoryId));
+
+  for (const item of bakedComboItems) {
+    const groupId = `modgrp_baked_combo_base_${item.id}`;
+    await prisma.modifierGroup.upsert({
+      where: { id: groupId },
+      create: {
+        id: groupId,
+        itemId: item.id,
+        name: "Choose Base",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 50
+      },
+      update: {}
+    });
+    await prisma.modifierOption.createMany({
+      data: [
+        {
+          id: `modopt_baked_combo_base_rice_${item.id}`,
+          groupId,
+          name: "Rice",
+          priceDeltaCents: 0,
+          sortOrder: 1,
+          isDefault: false
+        },
+        {
+          id: `modopt_baked_combo_base_spaghetti_${item.id}`,
+          groupId,
+          name: "Spaghetti",
+          priceDeltaCents: 0,
+          sortOrder: 2,
+          isDefault: false
+        }
+      ],
+      skipDuplicates: true
+    });
+  }
+
   const combos = [
     { id: "combo_for_2", people: 2, basePriceCents: 3599 },
     { id: "combo_for_3", people: 3, basePriceCents: 5199 },
@@ -814,7 +1229,7 @@ async function main() {
   });
 
   console.log(
-    `Seeded (${SEED_MODE}) ${scrapedCategories.length} scraped categories, ${scrapedItems.length} scraped items, ${manualDrinks.length} drinks, ${comboItems.length} combo-only items, ${drinkBundleEligibleItems.length} drink-bundle items, ${congeeAddonEligibleItems.length} congee add-on items, ${teaTimeSelectionItems.length} tea-time selection items, and ${combos.length} combos.`
+    `Seeded (${SEED_MODE}) ${scrapedCategories.length} scraped categories, ${scrapedItems.length} scraped items, ${manualDrinks.length} drinks, ${comboItems.length} combo-only items, ${drinkBundleEligibleItems.length} drink-bundle items, ${congeeAddonEligibleItems.length} congee add-on items, ${teaTimeSelectionItems.length} tea-time selection items, ${itemModifierSelectionItems.length} item-level selection rules, ${bakedComboItems.length} baked-combo base rules, and ${combos.length} combos.`
   );
 }
 

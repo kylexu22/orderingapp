@@ -131,6 +131,13 @@ function calculateAddDrinkSurcharge(params: {
     ? selectedDrinkOptionId.slice(drinkIdPrefix.length)
     : "";
 
+  if (selectedDrinkId === "none") {
+    if (selectedTemp.length || selectedSugar.length) {
+      throw new Error('Choose a specific drink before selecting drink preferences.');
+    }
+    return { surchargeCents: 0, surchargeLabel: null as string | null };
+  }
+
   const coldOnlyDrinkIds = new Set(["drink_soft", "drink_lemon_coke", "drink_lemon_sprite"]);
   const noSugarDrinkIds = new Set([
     "drink_soft",

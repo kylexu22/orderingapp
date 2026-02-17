@@ -5,6 +5,7 @@ import { ComboOptionType, ModifierGroup, ModifierOption } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { centsToCurrency } from "@/lib/format";
+import { localizeText, type Lang } from "@/lib/i18n";
 
 type ComboGroupOption = {
   id: string;
@@ -39,11 +40,13 @@ type ItemOption = {
 export function ComboBuilder({
   combo,
   groups,
-  items
+  items,
+  lang
 }: {
   combo: { id: string; name: string; basePriceCents: number };
   groups: ComboGroupInput[];
   items: ItemOption[];
+  lang: Lang;
 }) {
   const router = useRouter();
   const { addLine } = useCart();
@@ -121,16 +124,16 @@ export function ComboBuilder({
       if (!option) continue;
       if (option.optionType === "ITEM") {
         const item = itemById.get(option.refId);
-        if (item) names.push(item.name);
+        if (item) names.push(localizeText(item.name, lang));
         continue;
       }
       if (pick.selectedItemId) {
         const item = itemById.get(pick.selectedItemId);
-        if (item) names.push(item.name);
+        if (item) names.push(localizeText(item.name, lang));
       }
     }
     return names;
-  }, [groups, itemById, selected]);
+  }, [groups, itemById, selected, lang]);
 
   function toggleOption(comboGroupId: string, comboOptionId: string) {
     setSelected((prev) => {
@@ -233,20 +236,11 @@ export function ComboBuilder({
           onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
         />
       </label>
-      <label className="block text-sm">
-        Additional Notes (optional)
-        <textarea
-          className="mt-1 w-full rounded border px-2 py-2"
-          value={lineNote}
-          onChange={(e) => setLineNote(e.target.value)}
-          placeholder="Special request for this combo"
-        />
-      </label>
 
       {groups.map((group) => (
         <div key={group.id} className="rounded-lg border border-amber-900/20 p-3">
           <div className="font-semibold">
-            {group.name}
+            {localizeText(group.name, lang)}
             <span className="ml-2 text-sm text-gray-500">
               Choose {group.minSelect}
               {group.maxSelect !== group.minSelect ? `-${group.maxSelect}` : ""}
@@ -289,7 +283,7 @@ export function ComboBuilder({
                         onClick={() => toggleSection(group.id, section.id)}
                       >
                         <span>
-                          {section.name}
+                          {localizeText(section.name, lang)}
                           {selectedInSection > 0 ? ` (${selectedInSection} Selected)` : ""}
                         </span>
                         <span className="text-sm text-gray-500">
@@ -325,7 +319,7 @@ export function ComboBuilder({
                                         onChange={() => toggleOption(group.id, option.id)}
                                         className="mr-2"
                                       />
-                                      {itemById.get(option.refId)?.name ?? "Item"}
+                                      {localizeText(itemById.get(option.refId)?.name ?? "Item", lang)}
                                     </span>
                                     <span className="text-sm">
                                       {option.priceDeltaCents ? `+${centsToCurrency(option.priceDeltaCents)}` : ""}
@@ -333,10 +327,10 @@ export function ComboBuilder({
                                   </label>
                                   {active && option.allowModifiers && selectedItem ? (
                                     <div className="mt-2 space-y-2 rounded bg-amber-50 p-2">
-                                      <div className="text-sm font-medium">{selectedItem.name} modifiers</div>
+                                      <div className="text-sm font-medium">{localizeText(selectedItem.name, lang)} modifiers</div>
                                       {selectedItem.modifierGroups.map((groupMod) => (
                                         <div key={groupMod.id} className="text-sm">
-                                          <div>{groupMod.name}</div>
+                                          <div>{localizeText(groupMod.name, lang)}</div>
                                           {groupMod.options.map((opt) => (
                                             <label key={opt.id} className="mr-3 inline-flex items-center gap-1">
                                               <input
@@ -348,7 +342,7 @@ export function ComboBuilder({
                                                 )}
                                                 onChange={() => toggleModifier(group.id, option.id, groupMod.id, opt.id)}
                                               />
-                                              {opt.name}
+                                              {localizeText(opt.name, lang)}
                                               {opt.priceDeltaCents
                                                 ? ` (+${centsToCurrency(opt.priceDeltaCents)})`
                                                 : ""}
@@ -397,7 +391,7 @@ export function ComboBuilder({
                           className="mr-2"
                         />
                         {option.optionType === "ITEM"
-                          ? itemById.get(option.refId)?.name ?? "Item"
+                          ? localizeText(itemById.get(option.refId)?.name ?? "Item", lang)
                           : "Choose from category"}
                       </span>
                       <span className="text-sm">
@@ -413,17 +407,17 @@ export function ComboBuilder({
                         <option value="">Select item</option>
                         {categoryItems.map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.name}
+                            {localizeText(item.name, lang)}
                           </option>
                         ))}
                       </select>
                     ) : null}
                     {active && option.allowModifiers && selectedItem ? (
                       <div className="mt-2 space-y-2 rounded bg-amber-50 p-2">
-                        <div className="text-sm font-medium">{selectedItem.name} modifiers</div>
+                        <div className="text-sm font-medium">{localizeText(selectedItem.name, lang)} modifiers</div>
                         {selectedItem.modifierGroups.map((groupMod) => (
                           <div key={groupMod.id} className="text-sm">
-                            <div>{groupMod.name}</div>
+                            <div>{localizeText(groupMod.name, lang)}</div>
                             {groupMod.options.map((opt) => (
                               <label key={opt.id} className="mr-3 inline-flex items-center gap-1">
                                 <input
@@ -435,7 +429,7 @@ export function ComboBuilder({
                                   )}
                                   onChange={() => toggleModifier(group.id, option.id, groupMod.id, opt.id)}
                                 />
-                                {opt.name}
+                                {localizeText(opt.name, lang)}
                                 {opt.priceDeltaCents
                                   ? ` (+${centsToCurrency(opt.priceDeltaCents)})`
                                   : ""}
@@ -452,6 +446,15 @@ export function ComboBuilder({
           </div>
         </div>
       ))}
+      <label className="block text-sm">
+        Additional Notes (optional)
+        <textarea
+          className="mt-1 w-full rounded border px-2 py-2"
+          value={lineNote}
+          onChange={(e) => setLineNote(e.target.value)}
+          placeholder="Special request for this combo"
+        />
+      </label>
       {selectedItemNames.length ? (
         <div className="rounded border border-amber-900/20 bg-amber-50 p-3 text-sm">
           <div className="font-semibold">Selected items</div>

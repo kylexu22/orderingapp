@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "scrape:hongfar": "tsx scripts/scrape-hongfarcafe.ts",
+    "backfill:missing-zh": "tsx scripts/backfill-missing-zh.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed"

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import { centsToCurrency } from "@/lib/format";
+import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 
 type MenuPayload = {
   categories: any[];
@@ -29,7 +30,7 @@ function getLineLabel(line: { lineType: "ITEM" | "COMBO"; refId: string }, menu?
   return combo?.name ?? line.refId;
 }
 
-function renderItemModifiers(line: any, menu: MenuPayload | undefined) {
+function renderItemModifiers(line: any, menu: MenuPayload | undefined, lang: Lang) {
   if (!menu) return null;
   const item = menu.categories.flatMap((c: any) => c.items).find((i: any) => i.id === line.refId);
   if (!item) return null;
@@ -38,7 +39,7 @@ function renderItemModifiers(line: any, menu: MenuPayload | undefined) {
     const option = group?.options.find((o: any) => o.id === m.optionId);
     return (
       <div key={`${m.groupId}-${m.optionId}`} className="pl-3">
-        - {group?.name}: {option?.name ?? m.optionId}
+        - {localizeText(group?.name ?? "", lang)}: {localizeText(option?.name ?? m.optionId, lang)}
       </div>
     );
   });
@@ -57,6 +58,7 @@ function getAddDrinkSurchargeCents(line: any, item: any) {
   const selectedDrinkId = String(selectedDrink.optionId ?? "").startsWith(drinkPrefix)
     ? String(selectedDrink.optionId).slice(drinkPrefix.length)
     : "";
+  if (selectedDrinkId === "none") return 0;
 
   const coldOnlyDrinkIds = new Set(["drink_soft", "drink_lemon_coke", "drink_lemon_sprite"]);
   const selectedTemp = addDrinkTempGroup
@@ -69,17 +71,23 @@ function getAddDrinkSurchargeCents(line: any, item: any) {
   return selectedDrinkId === "drink_soft" ? 0 : 150;
 }
 
-function renderComboSelections(line: any, menu: MenuPayload | undefined) {
+function renderComboSelections(line: any, menu: MenuPayload | undefined, lang: Lang) {
   if (!menu) return null;
   const combo = menu.combos.find((c: any) => c.id === line.refId);
   if (!combo) return null;
   const items = menu.categories.flatMap((c: any) => c.items);
   return line.comboSelections.map((s: any, i: number) => {
-    const group = combo.groups.find((g: any) => g.id === s.comboGroupId);
-    const selectedItem = items.find((it: any) => it.id === s.selectedItemId);
+    const comboOption = combo.groups
+      .find((g: any) => g.id === s.comboGroupId)
+      ?.options?.find((o: any) => o.id === s.comboOptionId);
+    const selectedItemId =
+      s.selectedItemId ??
+      (comboOption?.optionType === "ITEM" ? comboOption.refId : undefined);
+    const selectedItem = selectedItemId ? items.find((it: any) => it.id === selectedItemId) : null;
+    const selectionName = selectedItem?.name ?? selectedItemId ?? s.comboOptionId;
     return (
       <div key={`${s.comboGroupId}-${i}`} className="pl-3">
-        - {group?.name}: {selectedItem?.name ?? s.selectedItemId ?? s.comboOptionId}
+        - {localizeText(selectionName, lang)}
       </div>
     );
   });
@@ -88,9 +96,11 @@ function renderComboSelections(line: any, menu: MenuPayload | undefined) {
 export default function CartPage() {
   const { lines, updateQty, removeLine } = useCart();
   const [menu, setMenu] = useState<MenuPayload>();
+  const [lang, setLang] = useState<Lang>("en");
 
   useEffect(() => {
     fetchMenu().then(setMenu).catch(() => undefined);
+    setLang(getClientLang());
   }, []);
 
   const subtotalCents = useMemo(() => {
@@ -126,29 +136,31 @@ export default function CartPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Cart</h1>
       {lines.length === 0 ? (
-        <div className="rounded bg-[var(--card)] p-4">Your cart is empty.</div>
+        <div className="rounded bg-[var(--card)] p-4">{lang === "zh" ? "購物車是空的。" : "Your cart is empty."}</div>
       ) : (
         <div className="space-y-3">
           {lines.map((line, idx) => (
             <div key={`${line.refId}-${idx}`} className="rounded-xl bg-[var(--card)] p-4 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold">{getLineLabel(line, menu)}</div>
+                  <div className="font-semibold">{localizeText(getLineLabel(line, menu), lang)}</div>
                   {line.lineType === "ITEM" ? (
-                    <div className="mt-1 text-sm text-gray-600">{renderItemModifiers(line, menu)}</div>
+                    <div className="mt-1 text-sm text-gray-600">{renderItemModifiers(line, menu, lang)}</div>
                   ) : (
-                    <div className="mt-1 text-sm text-gray-600">{renderComboSelections(line, menu)}</div>
+                    <div className="mt-1 text-sm text-gray-600">{renderComboSelections(line, menu, lang)}</div>
                   )}
                   {line.lineNote ? (
-                    <div className="mt-1 text-sm text-gray-700">Additional Notes: {line.lineNote}</div>
+                    <div className="mt-1 text-sm text-gray-700">
+                      {lang === "zh" ? "附加備註" : "Additional Notes"}: {line.lineNote}
+                    </div>
                   ) : null}
                 </div>
                 <button onClick={() => removeLine(idx)} className="text-sm text-red-700 underline">
-                  Remove
+                  {lang === "zh" ? "移除" : "Remove"}
                 </button>
               </div>
               <label className="mt-2 block text-sm">
-                Qty
+                {lang === "zh" ? "數量" : "Qty"}
                 <input
                   type="number"
                   min={1}
@@ -160,9 +172,11 @@ export default function CartPage() {
             </div>
           ))}
           <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">
-            <div className="font-semibold">Estimated subtotal: {centsToCurrency(subtotalCents)}</div>
+            <div className="font-semibold">
+              {lang === "zh" ? "預估小計" : "Estimated subtotal"}: {centsToCurrency(subtotalCents)}
+            </div>
             <Link href="/checkout" className="mt-3 inline-block rounded bg-[var(--brand)] px-4 py-2 text-white">
-              Proceed to Checkout
+              {lang === "zh" ? "前往結帳" : "Proceed to Checkout"}
             </Link>
           </div>
         </div>
