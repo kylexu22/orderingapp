@@ -362,7 +362,7 @@ export default function AdminOrdersPage() {
     return Boolean(target.closest("button, a, input, textarea, select, label"));
   }
 
-  function handleOrderPointerDown(orderId: string, event: PointerEvent<HTMLDivElement>) {
+  function handleOrderPointerDown(orderId: string, event: PointerEvent<HTMLElement>) {
     if (tab !== "CURRENT") return;
     if (isInteractiveTarget(event.target)) return;
     const currentOffset = swipeOffsetByOrderId[orderId] ?? 0;
@@ -376,7 +376,7 @@ export default function AdminOrdersPage() {
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
-  function handleOrderPointerMove(orderId: string, event: PointerEvent<HTMLDivElement>) {
+  function handleOrderPointerMove(orderId: string, event: PointerEvent<HTMLElement>) {
     const drag = dragStateRef.current;
     if (!drag || drag.orderId !== orderId || drag.pointerId !== event.pointerId) return;
     const deltaX = event.clientX - drag.startX;
@@ -387,7 +387,7 @@ export default function AdminOrdersPage() {
     }));
   }
 
-  function handleOrderPointerEnd(orderId: string, event: PointerEvent<HTMLDivElement>) {
+  function handleOrderPointerEnd(orderId: string, event: PointerEvent<HTMLElement>) {
     const drag = dragStateRef.current;
     if (!drag || drag.orderId !== orderId || drag.pointerId !== event.pointerId) return;
     const currentOffset = swipeOffsetByOrderId[orderId] ?? 0;
