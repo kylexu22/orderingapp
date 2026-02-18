@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
 import { OrderStatus } from "@prisma/client";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
@@ -43,9 +43,14 @@ export default function AdminOrdersPage() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
-  const [completionSwipeByOrderId, setCompletionSwipeByOrderId] = useState<Record<string, number>>(
-    {}
-  );
+  const [swipeOffsetByOrderId, setSwipeOffsetByOrderId] = useState<Record<string, number>>({});
+  const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null);
+  const dragStateRef = useRef<{
+    orderId: string;
+    pointerId: number;
+    startX: number;
+    startOffset: number;
+  } | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const keepAliveObjectUrlRef = useRef<string | null>(null);
@@ -55,6 +60,7 @@ export default function AdminOrdersPage() {
   const lastRealtimeMessageAtRef = useRef<number>(Date.now());
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
   const hasHydratedOrdersRef = useRef(false);
+  const SWIPE_REVEAL_PX = 132;
 
   const startSilentKeepAliveLoop = useCallback(async () => {
     try {
@@ -343,12 +349,55 @@ export default function AdminOrdersPage() {
       body: JSON.stringify({ status: OrderStatus.PICKED_UP })
     });
     if (!res.ok) return;
-    setCompletionSwipeByOrderId((prev) => {
+    setSwipeOffsetByOrderId((prev) => {
       const next = { ...prev };
       delete next[orderId];
       return next;
     });
     loadOrders();
+  }
+
+  function isInteractiveTarget(target: EventTarget | null) {
+    if (!(target instanceof Element)) return false;
+    return Boolean(target.closest("button, a, input, textarea, select, label"));
+  }
+
+  function handleOrderPointerDown(orderId: string, event: PointerEvent<HTMLDivElement>) {
+    if (tab !== "CURRENT") return;
+    if (isInteractiveTarget(event.target)) return;
+    const currentOffset = swipeOffsetByOrderId[orderId] ?? 0;
+    dragStateRef.current = {
+      orderId,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startOffset: currentOffset
+    };
+    setDraggingOrderId(orderId);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleOrderPointerMove(orderId: string, event: PointerEvent<HTMLDivElement>) {
+    const drag = dragStateRef.current;
+    if (!drag || drag.orderId !== orderId || drag.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - drag.startX;
+    const nextOffset = Math.max(0, Math.min(SWIPE_REVEAL_PX, drag.startOffset + deltaX));
+    setSwipeOffsetByOrderId((prev) => ({
+      ...prev,
+      [orderId]: nextOffset
+    }));
+  }
+
+  function handleOrderPointerEnd(orderId: string, event: PointerEvent<HTMLDivElement>) {
+    const drag = dragStateRef.current;
+    if (!drag || drag.orderId !== orderId || drag.pointerId !== event.pointerId) return;
+    const currentOffset = swipeOffsetByOrderId[orderId] ?? 0;
+    const shouldReveal = currentOffset >= SWIPE_REVEAL_PX * 0.55;
+    setSwipeOffsetByOrderId((prev) => ({
+      ...prev,
+      [orderId]: shouldReveal ? SWIPE_REVEAL_PX : 0
+    }));
+    setDraggingOrderId(null);
+    dragStateRef.current = null;
   }
 
   async function printPassPrnt(orderNumber: string, orderId: string, kitchen = false) {
@@ -454,109 +503,105 @@ export default function AdminOrdersPage() {
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
       {visibleOrders.map((order) => (
-        <article
-          key={order.id}
-          className={`rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm ${
-            highlightedOrderIds.has(order.id) ? "new-order-pulse" : ""
-          } ${attentionOrderIds.has(order.id) ? "border-yellow-500" : ""}`}
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="text-lg font-semibold">#{order.orderNumber}</div>
-              <div className="text-sm">Created {fmtDateTime(order.createdAt)}</div>
-              <div className="text-lg font-bold">
-                Pickup:{" "}
-                {order.pickupType === "ASAP"
-                  ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
-                  : fmtDateTime(order.pickupTime as string)}
-              </div>
-              <div className="text-sm">
-                {order.customerName} | {order.phone}
-              </div>
-              {order.notes ? <div className="text-sm">Notes: {order.notes}</div> : null}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => void printPassPrnt(order.orderNumber, order.id)}
-                className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
-              >
-                Print
-              </button>
-              <button
-                onClick={() => void printPassPrnt(order.orderNumber, order.id, true)}
-                className="rounded border border-black px-4 py-2 text-lg font-semibold text-black"
-              >
-                Print for Kitchen
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3 space-y-2 text-base">
-            {order.lines.map((line) => (
-              <div key={line.id}>
-                <div className="font-semibold">
-                  {line.qty} x {line.nameSnapshot}
-                </div>
-                {line.selections.map((s) => (
-                  <div key={s.id} className="pl-4 text-sm text-gray-700">
-                    {s.selectionKind === "COMBO_PICK" ? (
-                      <>- {s.selectedItemNameSnapshot}</>
-                    ) : (
-                      <>
-                        - {s.label}: {s.selectedModifierOptionNameSnapshot}
-                        {s.priceDeltaSnapshotCents
-                          ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})`
-                          : ""}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
+        <div key={order.id} className="relative overflow-hidden rounded-xl">
           {tab === "CURRENT" ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
-              <div className="flex min-w-[320px] flex-1 flex-wrap items-center gap-2">
-                <label className="w-full text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Swipe right to unlock completion
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={completionSwipeByOrderId[order.id] ?? 0}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    setCompletionSwipeByOrderId((prev) => ({
-                      ...prev,
-                      [order.id]: value
-                    }));
-                  }}
-                  className="h-2 w-full cursor-pointer accent-[var(--brand)]"
-                />
+            <div className="absolute inset-y-0 right-0 flex w-[132px] items-center justify-center bg-green-700">
+              <button
+                onClick={() => void sendToPastOrders(order.id)}
+                className="rounded bg-white px-3 py-2 text-sm font-semibold text-green-800"
+              >
+                Confirm
+              </button>
+            </div>
+          ) : null}
+          <article
+            onPointerDown={(event) => handleOrderPointerDown(order.id, event)}
+            onPointerMove={(event) => handleOrderPointerMove(order.id, event)}
+            onPointerUp={(event) => handleOrderPointerEnd(order.id, event)}
+            onPointerCancel={(event) => handleOrderPointerEnd(order.id, event)}
+            className={`relative rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm ${
+              highlightedOrderIds.has(order.id) ? "new-order-pulse" : ""
+            } ${attentionOrderIds.has(order.id) ? "border-yellow-500" : ""}`}
+            style={{
+              transform:
+                tab === "CURRENT" ? `translateX(${swipeOffsetByOrderId[order.id] ?? 0}px)` : undefined,
+              transition:
+                draggingOrderId === order.id ? "none" : "transform 180ms ease-out",
+              touchAction: tab === "CURRENT" ? "pan-y" : undefined
+            }}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-lg font-semibold">#{order.orderNumber}</div>
+                <div className="text-sm">Created {fmtDateTime(order.createdAt)}</div>
+                <div className="text-lg font-bold">
+                  Pickup:{" "}
+                  {order.pickupType === "ASAP"
+                    ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
+                    : fmtDateTime(order.pickupTime as string)}
+                </div>
+                <div className="text-sm">
+                  {order.customerName} | {order.phone}
+                </div>
+                {order.notes ? <div className="text-sm">Notes: {order.notes}</div> : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => void sendToPastOrders(order.id)}
-                  disabled={(completionSwipeByOrderId[order.id] ?? 0) < 95}
-                  className="rounded border px-3 py-1 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={() => void printPassPrnt(order.orderNumber, order.id)}
+                  className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
                 >
-                  Confirm Complete
+                  Print
+                </button>
+                <button
+                  onClick={() => void printPassPrnt(order.orderNumber, order.id, true)}
+                  className="rounded border border-black px-4 py-2 text-lg font-semibold text-black"
+                >
+                  Print for Kitchen
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="mt-3">
-              <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
-            </div>
-          )}
 
-          <div className="mt-3 text-sm">
-            Subtotal {centsToCurrency(order.subtotalCents)} | Tax {centsToCurrency(order.taxCents)} | Total{" "}
-            <strong>{centsToCurrency(order.totalCents)}</strong>
-          </div>
-        </article>
+            <div className="mt-3 space-y-2 text-base">
+              {order.lines.map((line) => (
+                <div key={line.id}>
+                  <div className="font-semibold">
+                    {line.qty} x {line.nameSnapshot}
+                  </div>
+                  {line.selections.map((s) => (
+                    <div key={s.id} className="pl-4 text-sm text-gray-700">
+                      {s.selectionKind === "COMBO_PICK" ? (
+                        <>- {s.selectedItemNameSnapshot}</>
+                      ) : (
+                        <>
+                          - {s.label}: {s.selectedModifierOptionNameSnapshot}
+                          {s.priceDeltaSnapshotCents
+                            ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})`
+                            : ""}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {tab === "CURRENT" ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
+                <span className="text-xs text-gray-600">Swipe card right to complete</span>
+              </div>
+            ) : (
+              <div className="mt-3">
+                <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
+              </div>
+            )}
+
+            <div className="mt-3 text-sm">
+              Subtotal {centsToCurrency(order.subtotalCents)} | Tax {centsToCurrency(order.taxCents)} |
+              Total <strong>{centsToCurrency(order.totalCents)}</strong>
+            </div>
+          </article>
+        </div>
       ))}
 
       {visibleOrders.length === 0 ? (
