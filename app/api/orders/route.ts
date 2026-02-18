@@ -6,6 +6,13 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { createOrder } from "@/lib/order-service";
 import { broadcastOrderEvent } from "@/lib/sse";
 import { logError, logInfo } from "@/lib/logger";
+import { getVerifiedPhoneFromCookieHeader } from "@/lib/verify-session";
+import { normalizePhoneToE164 } from "@/lib/twilio-verify";
+import {
+  buildCustomerSessionCookie,
+  getCustomerSessionCookieName,
+  getCustomerSessionMaxAgeSeconds
+} from "@/lib/customer-session";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,6 +48,7 @@ const lineSchema = z.discriminatedUnion("lineType", [
 
 const createOrderSchema = z.object({
   customerName: z.string().min(1),
+  email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1),
   notes: z.string().optional(),
   pickupType: z.nativeEnum(PickupType),
@@ -71,6 +79,15 @@ export async function POST(req: Request) {
   }
 
   try {
+    const verifiedPhone = getVerifiedPhoneFromCookieHeader(req.headers.get("cookie"));
+    const submittedPhone = normalizePhoneToE164(parsed.phone);
+    if (!verifiedPhone || !submittedPhone || verifiedPhone !== submittedPhone) {
+      return NextResponse.json(
+        { error: "Phone number verification is required before checkout." },
+        { status: 400 }
+      );
+    }
+
     const order = await createOrder(parsed);
     logInfo("order.created", {
       orderNumber: order.orderNumber,
@@ -85,10 +102,20 @@ export async function POST(req: Request) {
         createdAt: order.createdAt.toISOString()
       }
     });
-    return NextResponse.json({
+    const res = NextResponse.json({
       id: order.id,
       orderNumber: order.orderNumber
     });
+    if (order.customerId) {
+      res.cookies.set(getCustomerSessionCookieName(), buildCustomerSessionCookie(order.customerId), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: getCustomerSessionMaxAgeSeconds()
+      });
+    }
+    return res;
   } catch (error) {
     logError("order.create_failed", {
       message: error instanceof Error ? error.message : "unknown"

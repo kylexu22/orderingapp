@@ -25,6 +25,17 @@ type MenuPayload = {
   combos: any[];
 };
 
+type VerifySessionPayload = {
+  verified: boolean;
+  phone?: string;
+  customer?: {
+    id: string;
+    phone: string;
+    name: string;
+    email: string | null;
+  } | null;
+};
+
 const CLIENT_TAX_RATE = (() => {
   const parsed = Number(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.13");
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0.13;
@@ -99,6 +110,7 @@ export default function CheckoutPage() {
   const [settings, setSettings] = useState<SettingsPayload | null>(null);
   const [menu, setMenu] = useState<MenuPayload | null>(null);
   const [customerName, setCustomerName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [pickupType, setPickupType] = useState<PickupType>(PickupType.ASAP);
@@ -106,9 +118,41 @@ export default function CheckoutPage() {
   const [honeypot, setHoneypot] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [verificationChecked, setVerificationChecked] = useState(false);
+  const [phoneLocked, setPhoneLocked] = useState(false);
+  const [hasKnownProfile, setHasKnownProfile] = useState(false);
   const [lang, setLang] = useState<Lang>("en");
 
   useEffect(() => {
+    async function loadVerifySession() {
+      try {
+        const res = await fetch("/api/verify/session");
+        const text = await res.text();
+        let data: VerifySessionPayload | null = null;
+        try {
+          data = text ? (JSON.parse(text) as VerifySessionPayload) : null;
+        } catch {
+          data = null;
+        }
+
+        if (!data?.verified || !data?.phone) {
+          router.replace("/verify");
+          return;
+        }
+        setPhone(data.phone);
+        setPhoneLocked(true);
+        if (data.customer) {
+          setCustomerName(data.customer.name ?? "");
+          setEmail(data.customer.email ?? "");
+          setHasKnownProfile(true);
+        } else {
+          setHasKnownProfile(false);
+        }
+      } finally {
+        setVerificationChecked(true);
+      }
+    }
+
     fetch("/api/menu")
       .then((res) => res.json())
       .then((data) => {
@@ -127,8 +171,9 @@ export default function CheckoutPage() {
           });
         }
       });
+    void loadVerifySession();
     setLang(getClientLang());
-  }, []);
+  }, [router]);
 
   const slots = useMemo(() => {
     if (!settings) return [];
@@ -179,6 +224,10 @@ export default function CheckoutPage() {
       setError(lang === "zh" ? "本店目前休息中。" : "The store is currently closed.");
       return;
     }
+    if (!phoneLocked) {
+      setError(lang === "zh" ? "請先完成電話驗證。" : "Please complete phone verification first.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -187,6 +236,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerName,
+          email,
           phone,
           notes,
           pickupType,
@@ -211,6 +261,9 @@ export default function CheckoutPage() {
 
   if (!lines.length) {
     return <div className="rounded bg-[var(--card)] p-4">{lang === "zh" ? "購物車是空的。" : "Cart is empty."}</div>;
+  }
+  if (!verificationChecked) {
+    return <div className="rounded bg-[var(--card)] p-4">{lang === "zh" ? "載入中..." : "Loading..."}</div>;
   }
 
   return (
@@ -257,15 +310,25 @@ export default function CheckoutPage() {
         <input
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
-          className="mt-1 w-full rounded border px-3 py-2"
+          readOnly={hasKnownProfile}
+          className="mt-1 w-full rounded border px-3 py-2 read-only:bg-gray-100"
+        />
+      </label>
+      <label className="block text-sm">
+        {lang === "zh" ? "電郵（選填）" : "Email (optional)"}
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          readOnly={hasKnownProfile}
+          className="mt-1 w-full rounded border px-3 py-2 read-only:bg-gray-100"
         />
       </label>
       <label className="block text-sm">
         {lang === "zh" ? "電話" : "Phone"}
         <input
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="mt-1 w-full rounded border px-3 py-2"
+          readOnly
+          className="mt-1 w-full rounded border bg-gray-100 px-3 py-2"
         />
       </label>
       <label className="block text-sm">
@@ -314,6 +377,11 @@ export default function CheckoutPage() {
       </div>
 
       <div className="rounded border border-amber-900/20 p-3">
+        <div className="font-semibold">{lang === "zh" ? "取餐地點" : "Pickup Location"}</div>
+        <div className="mt-2 text-sm text-gray-700">9425 Leslie St, Richmond Hill, ON L4B 3N7</div>
+      </div>
+
+      <div className="rounded border border-amber-900/20 p-3">
         <div className="font-semibold">{lang === "zh" ? "付款方式" : "Payment Method"}</div>
         <label className="mt-2 inline-flex items-center gap-2">
           <input type="radio" checked readOnly />
@@ -344,7 +412,7 @@ export default function CheckoutPage() {
       ) : null}
       <button
         onClick={submit}
-        disabled={submitting || orderState !== "OPEN"}
+        disabled={submitting || orderState !== "OPEN" || !phoneLocked}
         className="rounded bg-[var(--brand)] px-4 py-2 text-white disabled:opacity-50"
       >
         {submitting ? (lang === "zh" ? "提交中..." : "Submitting...") : lang === "zh" ? "提交訂單" : "Place Order"}

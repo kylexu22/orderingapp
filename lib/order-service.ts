@@ -7,6 +7,7 @@ import {
 import { getAsapReadyTime, getTodaySlots } from "@/lib/pickup";
 import { prisma } from "@/lib/prisma";
 import { getStoreOrderState } from "@/lib/store-status";
+import { normalizePhoneToE164 } from "@/lib/twilio-verify";
 import {
   CartLineInput,
   ComboSelectionInput,
@@ -14,7 +15,7 @@ import {
   ModifierSelectionInput,
   StoreHours
 } from "@/lib/types";
-import { formatPhone, roundToNearestNickel } from "@/lib/format";
+import { roundToNearestNickel } from "@/lib/format";
 
 function getTaxRate() {
   const parsed = Number(process.env.TAX_RATE ?? "0");
@@ -475,7 +476,8 @@ async function resolvePickup(
 
 export async function createOrder(input: CreateOrderInput) {
   if (!input.customerName?.trim()) throw new Error("Customer name is required.");
-  if (!input.phone?.trim()) throw new Error("Phone number is required.");
+  const normalizedPhone = normalizePhoneToE164(input.phone ?? "");
+  if (!normalizedPhone) throw new Error("Phone number is invalid.");
   if (input.honeypot?.trim()) throw new Error("Spam check failed.");
   if (!input.lines?.length) throw new Error("Cart is empty.");
 
@@ -508,12 +510,28 @@ export async function createOrder(input: CreateOrderInput) {
   const totalCents = roundToNearestNickel(subtotalCents + taxCents);
   const pickup = await resolvePickup(input, settings);
   const orderNumber = await generateOrderNumber();
+  const customer = await prisma.customer.upsert({
+    where: { phone: normalizedPhone },
+    create: {
+      phone: normalizedPhone,
+      name: input.customerName.trim(),
+      email: input.email?.trim() ? input.email.trim() : null
+    },
+    update: {
+      name: input.customerName.trim(),
+      email: input.email?.trim() ? input.email.trim() : null
+    },
+    select: {
+      id: true,
+      name: true
+    }
+  });
 
   const order = await prisma.order.create({
     data: {
       orderNumber,
-      customerName: input.customerName.trim(),
-      phone: formatPhone(input.phone),
+      customerName: customer.name,
+      phone: normalizedPhone,
       notes: input.notes?.trim() || null,
       pickupType: pickup.pickupType,
       pickupTime: pickup.pickupTime,
@@ -521,6 +539,7 @@ export async function createOrder(input: CreateOrderInput) {
       subtotalCents,
       taxCents,
       totalCents,
+      customerId: customer.id,
       lines: {
         create: orderLines
       }

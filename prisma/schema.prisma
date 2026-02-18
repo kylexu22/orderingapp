@@ -149,11 +149,25 @@ model Order {
   subtotalCents       Int
   taxCents            Int
   totalCents          Int
+  customerId          String?
+  customer            Customer?   @relation(fields: [customerId], references: [id])
 
   lines               OrderLine[]
 
   @@index([createdAt])
   @@index([status])
+  @@index([customerId])
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  name       String
+  email      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders     Order[]
 }
 
 model OrderLine {
