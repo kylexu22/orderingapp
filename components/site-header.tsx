@@ -133,7 +133,7 @@ export function SiteHeader() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#a67c5245] bg-[#1a1a1a]/95 backdrop-blur">
+    <header className="fixed left-0 right-0 top-0 z-40 border-b border-[#a67c5245] bg-[#1a1a1a]/95 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
         {isCustomerRoute ? (
           <div className="flex items-center gap-3 text-[#f5f0e8]">
@@ -203,7 +203,7 @@ export function SiteHeader() {
           />
           <aside
             ref={drawerRef}
-            className={`fixed right-0 top-0 z-50 h-screen w-80 max-w-[88vw] border-l border-[#c4a57444] bg-[#101113] p-5 text-[#f5f0e8] shadow-2xl transition-transform duration-300 ${
+            className={`fixed inset-y-0 right-0 z-[60] h-screen w-80 max-w-[88vw] overflow-y-auto overflow-x-hidden border-l border-[#c4a57444] bg-[#101113] p-5 text-[#f5f0e8] shadow-2xl transition-transform duration-300 ${
               drawerOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
