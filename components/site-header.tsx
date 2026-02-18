@@ -25,7 +25,7 @@ export function SiteHeader() {
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith("/admin");
-  const isMenuRoute = pathname === "/menu";
+  const isCustomerRoute = !isAdminRoute;
 
   async function refreshAccountSession() {
     try {
@@ -135,10 +135,16 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-[#a67c5245] bg-[#1a1a1a]/95 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-        {isMenuRoute ? (
+        {isCustomerRoute ? (
           <div className="flex items-center gap-3 text-[#f5f0e8]">
             <Link href="/" className="inline-flex h-9 w-9 items-center justify-center text-2xl leading-none">
-              ←
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-5 w-5 fill-current"
+              >
+                <path d="M12 3.2 3 10.6v10.2h6.3v-6.2h5.4v6.2H21V10.6L12 3.2zm7.2 16H16V13h-8v6.2H4.8v-7.8l7.2-5.9 7.2 5.9v7.8z" />
+              </svg>
             </Link>
             {languageToggle}
           </div>
@@ -212,7 +218,7 @@ export function SiteHeader() {
                 x
               </button>
             </div>
-            {!isMenuRoute ? (
+            {!isCustomerRoute ? (
               <div className="mb-4">
                 <div className="mb-2 text-xs uppercase tracking-wide text-[#c4a574]">{t.language}</div>
                 {languageToggle}
