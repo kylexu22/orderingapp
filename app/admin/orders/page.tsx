@@ -60,7 +60,7 @@ export default function AdminOrdersPage() {
   const lastRealtimeMessageAtRef = useRef<number>(Date.now());
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
   const hasHydratedOrdersRef = useRef(false);
-  const SWIPE_REVEAL_PX = 132;
+  const SWIPE_REVEAL_PX = 180;
 
   const startSilentKeepAliveLoop = useCallback(async () => {
     try {
@@ -505,12 +505,25 @@ export default function AdminOrdersPage() {
       {visibleOrders.map((order) => (
         <div key={order.id} className="relative overflow-hidden rounded-xl">
           {tab === "CURRENT" ? (
-            <div className="absolute inset-y-0 right-0 flex w-[132px] items-center justify-center bg-green-700">
+            <div className="absolute inset-y-0 left-0 w-[180px] bg-green-700">
               <button
                 onClick={() => void sendToPastOrders(order.id)}
-                className="rounded bg-white px-3 py-2 text-sm font-semibold text-green-800"
+                aria-label="Confirm complete order"
+                className="flex h-full w-full items-center justify-center bg-green-700 text-white"
               >
-                Confirm
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-8 w-8"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M8.5 12.5l2.3 2.3 4.7-4.7" />
+                </svg>
               </button>
             </div>
           ) : null}
