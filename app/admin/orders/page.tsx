@@ -43,6 +43,9 @@ export default function AdminOrdersPage() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
+  const [completionSwipeByOrderId, setCompletionSwipeByOrderId] = useState<Record<string, number>>(
+    {}
+  );
   const audioContextRef = useRef<AudioContext | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const keepAliveObjectUrlRef = useRef<string | null>(null);
@@ -340,6 +343,11 @@ export default function AdminOrdersPage() {
       body: JSON.stringify({ status: OrderStatus.PICKED_UP })
     });
     if (!res.ok) return;
+    setCompletionSwipeByOrderId((prev) => {
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
     loadOrders();
   }
 
@@ -454,9 +462,9 @@ export default function AdminOrdersPage() {
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-2xl font-bold">#{order.orderNumber}</div>
+              <div className="text-lg font-semibold">#{order.orderNumber}</div>
               <div className="text-sm">Created {fmtDateTime(order.createdAt)}</div>
-              <div className="text-sm font-semibold">
+              <div className="text-lg font-bold">
                 Pickup:{" "}
                 {order.pickupType === "ASAP"
                   ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
@@ -510,12 +518,33 @@ export default function AdminOrdersPage() {
           {tab === "CURRENT" ? (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
-              <button
-                onClick={() => void sendToPastOrders(order.id)}
-                className="rounded border px-3 py-1 text-sm font-semibold"
-              >
-                Complete Order
-              </button>
+              <div className="flex min-w-[320px] flex-1 flex-wrap items-center gap-2">
+                <label className="w-full text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Swipe right to unlock completion
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={completionSwipeByOrderId[order.id] ?? 0}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    setCompletionSwipeByOrderId((prev) => ({
+                      ...prev,
+                      [order.id]: value
+                    }));
+                  }}
+                  className="h-2 w-full cursor-pointer accent-[var(--brand)]"
+                />
+                <button
+                  onClick={() => void sendToPastOrders(order.id)}
+                  disabled={(completionSwipeByOrderId[order.id] ?? 0) < 95}
+                  className="rounded border px-3 py-1 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Confirm Complete
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mt-3">
