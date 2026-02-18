@@ -136,7 +136,7 @@ export default function CheckoutPage() {
         }
 
         if (!data?.verified || !data?.phone) {
-          router.replace("/verify");
+          router.replace("/login");
           return;
         }
         setPhone(data.phone);
