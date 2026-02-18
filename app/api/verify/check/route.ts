@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { checkVerifyCode, normalizePhoneToE164 } from "@/lib/twilio-verify";
+import { prisma } from "@/lib/prisma";
 import {
   buildVerifiedPhoneCookie,
   buildTrustedPhonesCookie,
@@ -11,6 +12,11 @@ import {
   getVerifyCookieMaxAgeSeconds,
   getVerifyCookieName
 } from "@/lib/verify-session";
+import {
+  buildCustomerSessionCookie,
+  getCustomerSessionCookieName,
+  getCustomerSessionMaxAgeSeconds
+} from "@/lib/customer-session";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -68,6 +74,19 @@ export async function POST(req: Request) {
       path: "/",
       maxAge: getTrustedPhoneCookieMaxAgeSeconds()
     });
+    const existingCustomer = await prisma.customer.findUnique({
+      where: { phone: phoneE164 },
+      select: { id: true }
+    });
+    if (existingCustomer) {
+      res.cookies.set(getCustomerSessionCookieName(), buildCustomerSessionCookie(existingCustomer.id), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: getCustomerSessionMaxAgeSeconds()
+      });
+    }
     return res;
   } catch (error) {
     return NextResponse.json(

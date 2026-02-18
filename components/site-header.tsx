@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCart } from "@/lib/cart-store";
@@ -7,12 +7,19 @@ import { getClientLang, type Lang } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
+type AccountSessionResponse = {
+  loggedIn?: boolean;
+  hasAccount?: boolean;
+  customer?: { name?: string };
+};
+
 export function SiteHeader() {
   const { lines } = useCart();
   const count = lines.reduce((sum, line) => sum + line.qty, 0);
   const [lang, setLang] = useState<Lang>("en");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [hasAccount, setHasAccount] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [loadingAccount, setLoadingAccount] = useState(true);
   const drawerRef = useRef<HTMLDivElement | null>(null);
@@ -22,11 +29,13 @@ export function SiteHeader() {
   async function refreshAccountSession() {
     try {
       const res = await fetch("/api/account/session", { cache: "no-store" });
-      const data = await res.json();
+      const data = (await res.json()) as AccountSessionResponse;
       setLoggedIn(Boolean(data?.loggedIn));
+      setHasAccount(Boolean(data?.hasAccount));
       setCustomerName(data?.customer?.name ?? "");
     } catch {
       setLoggedIn(false);
+      setHasAccount(false);
       setCustomerName("");
     } finally {
       setLoadingAccount(false);
@@ -71,6 +80,7 @@ export function SiteHeader() {
   async function logout() {
     await fetch("/api/account/logout", { method: "POST" });
     setLoggedIn(false);
+    setHasAccount(false);
     setCustomerName("");
     setDrawerOpen(false);
     window.location.href = "/menu";
@@ -157,7 +167,7 @@ export function SiteHeader() {
                 className="text-2xl leading-none text-[#f5f0e8]"
                 aria-label="Close menu"
               >
-                ×
+                x
               </button>
             </div>
             <div className="mb-4">
@@ -168,7 +178,7 @@ export function SiteHeader() {
                   onClick={() => setLanguage("zh")}
                   className={`px-3 py-1.5 ${lang === "zh" ? "bg-[#c4a574] text-black" : "text-[#f5f0e8]"}`}
                 >
-                  中文
+                  {"\u4e2d\u6587"}
                 </button>
                 <button
                   type="button"
@@ -189,12 +199,16 @@ export function SiteHeader() {
             <div className="space-y-3 text-base">
               {loggedIn ? (
                 <>
-                  <Link href="/profile" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
-                    {t.profile}
-                  </Link>
-                  <Link href="/orders" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
-                    {t.orderHistory}
-                  </Link>
+                  {hasAccount ? (
+                    <>
+                      <Link href="/profile" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
+                        {t.profile}
+                      </Link>
+                      <Link href="/orders" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
+                        {t.orderHistory}
+                      </Link>
+                    </>
+                  ) : null}
                   <button type="button" onClick={logout} className="block w-full text-left hover:text-[#c4a574]">
                     {t.logout}
                   </button>

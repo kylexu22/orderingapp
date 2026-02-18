@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,17 @@ import { useCart } from "@/lib/cart-store";
 import { getClientLang, type Lang } from "@/lib/i18n";
 
 const CODE_LENGTH = 6;
+
+type VerifyStartResponse = {
+  ok?: boolean;
+  skipVerification?: boolean;
+  error?: string;
+};
+
+type VerifyCheckResponse = {
+  ok?: boolean;
+  error?: string;
+};
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -51,16 +62,26 @@ export default function VerifyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: VerifyStartResponse = {};
+      try {
+        data = text ? (JSON.parse(text) as VerifyStartResponse) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) {
-        setError(data.error ?? (lang === "zh" ? "發送驗證碼失敗。" : "Failed to send code."));
+        setError(data.error ?? (lang === "zh" ? "\u767c\u9001\u9a57\u8b49\u78bc\u5931\u6557\u3002" : "Failed to send code."));
+        return;
+      }
+      if (data.skipVerification) {
+        router.replace("/checkout");
         return;
       }
       setCodeSent(true);
       setDigits(Array(CODE_LENGTH).fill(""));
       setTimeout(() => inputRefs.current[0]?.focus(), 0);
     } catch {
-      setError(lang === "zh" ? "網絡錯誤。" : "Network error.");
+      setError(lang === "zh" ? "\u7db2\u7d61\u932f\u8aa4\u3002" : "Network error.");
     } finally {
       setSending(false);
     }
@@ -76,14 +97,20 @@ export default function VerifyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, code })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: VerifyCheckResponse = {};
+      try {
+        data = text ? (JSON.parse(text) as VerifyCheckResponse) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) {
-        setError(data.error ?? (lang === "zh" ? "驗證失敗。" : "Verification failed."));
+        setError(data.error ?? (lang === "zh" ? "\u9a57\u8b49\u5931\u6557\u3002" : "Verification failed."));
         return;
       }
       router.replace("/checkout");
     } catch {
-      setError(lang === "zh" ? "網絡錯誤。" : "Network error.");
+      setError(lang === "zh" ? "\u7db2\u7d61\u932f\u8aa4\u3002" : "Network error.");
     } finally {
       setVerifying(false);
     }
@@ -141,12 +168,12 @@ export default function VerifyPage() {
         href="/cart"
         className="inline-flex items-center gap-2 border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
       >
-        {lang === "zh" ? "← 返回購物車" : "← Back to Cart"}
+        {lang === "zh" ? "\u2190 \u8fd4\u56de\u8cfc\u7269\u8eca" : "\u2190 Back to Cart"}
       </Link>
-      <h1 className="text-2xl font-bold">{lang === "zh" ? "電話驗證" : "Phone Verification"}</h1>
+      <h1 className="text-2xl font-bold">{lang === "zh" ? "\u96fb\u8a71\u9a57\u8b49" : "Phone Verification"}</h1>
 
       <label className="block text-sm">
-        {lang === "zh" ? "電話號碼" : "Phone Number"}
+        {lang === "zh" ? "\u96fb\u8a71\u865f\u78bc" : "Phone Number"}
         <input
           value={phone}
           onChange={(e) => {
@@ -155,7 +182,7 @@ export default function VerifyPage() {
             setDigits(Array(CODE_LENGTH).fill(""));
           }}
           className="mt-1 w-full rounded border px-3 py-2"
-          placeholder={lang === "zh" ? "例如 9057709236" : "e.g. 9057709236"}
+          placeholder={lang === "zh" ? "\u4f8b\u5982 9057709236" : "e.g. 9057709236"}
         />
       </label>
 
@@ -167,16 +194,16 @@ export default function VerifyPage() {
       >
         {sending
           ? lang === "zh"
-            ? "發送中..."
+            ? "\u767c\u9001\u4e2d..."
             : "Sending..."
           : lang === "zh"
-            ? "發送驗證碼"
-            : "Send Verification Code"}
+            ? "\u9a57\u8b49\u4e26\u7e7c\u7e8c"
+            : "Verify and Continue"}
       </button>
 
       {codeSent ? (
         <div className="space-y-3 rounded border border-amber-900/20 p-3">
-          <div className="text-sm font-semibold">{lang === "zh" ? "輸入 6 位驗證碼" : "Enter 6-digit code"}</div>
+          <div className="text-sm font-semibold">{lang === "zh" ? "\u8f38\u5165 6 \u4f4d\u9a57\u8b49\u78bc" : "Enter 6-digit code"}</div>
           <div className="flex gap-2">
             {digits.map((digit, index) => (
               <input
@@ -200,7 +227,13 @@ export default function VerifyPage() {
             disabled={verifying || code.length !== CODE_LENGTH}
             className="rounded bg-[var(--brand)] px-4 py-2 text-white disabled:opacity-50"
           >
-            {verifying ? (lang === "zh" ? "驗證中..." : "Verifying...") : lang === "zh" ? "確認驗證碼" : "Verify Code"}
+            {verifying
+              ? lang === "zh"
+                ? "\u9a57\u8b49\u4e2d..."
+                : "Verifying..."
+              : lang === "zh"
+                ? "\u78ba\u8a8d\u9a57\u8b49\u78bc"
+                : "Verify Code"}
           </button>
         </div>
       ) : null}
