@@ -25,6 +25,7 @@ export function SiteHeader() {
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith("/admin");
+  const isMenuRoute = pathname === "/menu";
 
   async function refreshAccountSession() {
     try {
@@ -70,6 +71,22 @@ export function SiteHeader() {
   }, [drawerOpen]);
 
   useEffect(() => {
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
+    const prevBodyOverflowX = document.body.style.overflowX;
+    if (drawerOpen) {
+      document.documentElement.style.overflowX = "hidden";
+      document.body.style.overflowX = "hidden";
+    } else {
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+      document.body.style.overflowX = prevBodyOverflowX;
+    }
+    return () => {
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+      document.body.style.overflowX = prevBodyOverflowX;
+    };
+  }, [drawerOpen]);
+
+  useEffect(() => {
     function onFocus() {
       void refreshAccountSession();
     }
@@ -96,21 +113,46 @@ export function SiteHeader() {
     logout: lang === "zh" ? "\u767b\u51fa" : "Log Out"
   };
 
+  const languageToggle = (
+    <div className="inline-flex border border-[#c4a574]">
+      <button
+        type="button"
+        onClick={() => setLanguage("zh")}
+        className={`px-3 py-1.5 ${lang === "zh" ? "bg-[#c4a574] text-black" : "text-[#f5f0e8]"}`}
+      >
+        {"\u4e2d\u6587"}
+      </button>
+      <button
+        type="button"
+        onClick={() => setLanguage("en")}
+        className={`px-3 py-1.5 ${lang === "en" ? "bg-[#c4a574] text-black" : "text-[#f5f0e8]"}`}
+      >
+        EN
+      </button>
+    </div>
+  );
+
   return (
     <header className="sticky top-0 z-40 border-b border-[#a67c5245] bg-[#1a1a1a]/95 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 text-[#f5f0e8]">
-          <Image
-            src="/images/hongfarlogo.png"
-            alt="Hong Far Cafe"
-            width={42}
-            height={24}
-            className="h-7 w-auto"
-          />
-          <span className="font-['var(--font-noto-serif-sc)'] text-sm tracking-wide sm:text-base">
-            Hong Far Cafe
-          </span>
-        </Link>
+        {isMenuRoute ? (
+          <div className="flex items-center gap-3 text-[#f5f0e8]">
+            <Link href="/" className="inline-flex h-9 w-9 items-center justify-center text-2xl leading-none">
+              ←
+            </Link>
+            {languageToggle}
+          </div>
+        ) : (
+          <Link href="/" className="flex items-center gap-2 text-[#f5f0e8]">
+            <Image
+              src="/images/hongfarlogo.png"
+              alt="Hong Far Cafe"
+              width={42}
+              height={24}
+              className="h-7 w-auto"
+            />
+          </Link>
+        )}
         <nav className="flex items-center gap-3 text-sm text-[#f5f0e8]">
           {!isAdminRoute ? (
             <Link href="/cart" className="rounded bg-[var(--brand)] px-3 py-1.5 text-white">
@@ -160,7 +202,7 @@ export function SiteHeader() {
             }`}
           >
             <div className="mb-5 flex items-center justify-between">
-              <div className="text-lg font-semibold">Hong Far</div>
+              <div className="text-lg font-semibold">Hong Far Cafe</div>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
@@ -170,25 +212,12 @@ export function SiteHeader() {
                 x
               </button>
             </div>
-            <div className="mb-4">
-              <div className="mb-2 text-xs uppercase tracking-wide text-[#c4a574]">{t.language}</div>
-              <div className="inline-flex border border-[#c4a574]">
-                <button
-                  type="button"
-                  onClick={() => setLanguage("zh")}
-                  className={`px-3 py-1.5 ${lang === "zh" ? "bg-[#c4a574] text-black" : "text-[#f5f0e8]"}`}
-                >
-                  {"\u4e2d\u6587"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLanguage("en")}
-                  className={`px-3 py-1.5 ${lang === "en" ? "bg-[#c4a574] text-black" : "text-[#f5f0e8]"}`}
-                >
-                  EN
-                </button>
+            {!isMenuRoute ? (
+              <div className="mb-4">
+                <div className="mb-2 text-xs uppercase tracking-wide text-[#c4a574]">{t.language}</div>
+                {languageToggle}
               </div>
-            </div>
+            ) : null}
 
             {!loadingAccount && loggedIn ? (
               <div className="mb-4 border-b border-[#c4a57433] pb-3 text-sm">
