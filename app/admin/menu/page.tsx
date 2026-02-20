@@ -22,6 +22,9 @@ export default async function AdminMenuPage() {
         <Link href="/admin/settings" className="rounded border px-4 py-2 text-sm font-semibold">
           Settings
         </Link>
+        <Link href="/admin/analytics" className="rounded border px-4 py-2 text-sm font-semibold">
+          Analytics
+        </Link>
       </div>
       <h1 className="text-2xl font-bold">Menu (Read Only)</h1>
       <p className="rounded bg-amber-100 p-3 text-sm">

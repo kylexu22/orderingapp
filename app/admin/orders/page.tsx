@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } 
 import Link from "next/link";
 import { OrderStatus } from "@prisma/client";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
+import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 
 type AdminOrder = {
   id: string;
@@ -36,10 +37,34 @@ type AdminOrder = {
   }>;
 };
 
+type AdminSoundWindow = Window & {
+  __adminAudioContext?: AudioContext;
+  __adminKeepAliveAudio?: HTMLAudioElement;
+  __adminKeepAliveObjectUrl?: string;
+};
+
+type DayHours = {
+  isClosed: boolean;
+  open: string;
+  close: string;
+};
+
+type StoreHoursPayload = Record<string, Array<{ open: string; close: string }>>;
+
+const ET_TIMEZONE = "America/Toronto";
+
 export default function AdminOrdersPage() {
+  const [lang, setLang] = useState<Lang>("en");
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"CURRENT" | "PAST">("CURRENT");
+  const [pastScope, setPastScope] = useState<"TODAY" | "ALL">("TODAY");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [prepTimeMinutes, setPrepTimeMinutes] = useState<number | null>(null);
+  const [acceptingOrders, setAcceptingOrders] = useState<boolean | null>(null);
+  const [storeHoursByDay, setStoreHoursByDay] = useState<Record<string, DayHours>>({});
+  const [prepSaveLoading, setPrepSaveLoading] = useState(false);
+  const [prepSaveError, setPrepSaveError] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
@@ -62,8 +87,73 @@ export default function AdminOrdersPage() {
   const hasHydratedOrdersRef = useRef(false);
   const SWIPE_REVEAL_PX = 180;
 
+  useEffect(() => {
+    setLang(getClientLang());
+  }, []);
+
+  function setLanguage(next: Lang) {
+    document.cookie = `lang=${next}; path=/; max-age=31536000; samesite=lax`;
+    setLang(next);
+  }
+
+  const t = {
+    orders: lang === "zh" ? "訂單" : "Orders",
+    currentOrders: lang === "zh" ? "目前訂單" : "Current Orders",
+    pastOrders: lang === "zh" ? "過往訂單" : "Past Orders",
+    enableSound: lang === "zh" ? "開啟聲音提示" : "Enable Sound Alerts",
+    soundOn: lang === "zh" ? "聲音提示已啟用" : "Sound alerts enabled",
+    orderTime: lang === "zh" ? "備餐時間" : "Order Time",
+    current: lang === "zh" ? "目前" : "Current",
+    today: lang === "zh" ? "今日" : "Today",
+    allTime: lang === "zh" ? "全部" : "All Time",
+    print: lang === "zh" ? "列印" : "Print",
+    printKitchen: lang === "zh" ? "廚房列印" : "Print for Kitchen",
+    created: lang === "zh" ? "下單時間" : "Created",
+    pickup: lang === "zh" ? "取餐時間" : "Pickup",
+    notes: lang === "zh" ? "備註" : "Notes",
+    subtotal: lang === "zh" ? "小計" : "Subtotal",
+    tax: lang === "zh" ? "稅項" : "Tax",
+    total: lang === "zh" ? "總計" : "Total",
+    noOrders: lang === "zh" ? "此分類目前沒有訂單。" : "No orders in this section.",
+    analytics: lang === "zh" ? "分析" : "Analytics",
+    menu: lang === "zh" ? "餐單" : "Menu",
+    settings: lang === "zh" ? "設定" : "Settings",
+    admin: "Admin"
+  };
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/settings", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !data?.settings) return;
+      setPrepTimeMinutes(data.settings.prepTimeMinutes ?? null);
+      setAcceptingOrders(Boolean(data.settings.acceptingOrders));
+
+      const incoming = (data.settings.storeHours ?? {}) as StoreHoursPayload;
+      const normalized: Record<string, DayHours> = {};
+      for (let i = 0; i < 7; i += 1) {
+        const key = String(i);
+        const window = incoming[key]?.[0];
+        normalized[key] = window
+          ? { isClosed: false, open: window.open, close: window.close }
+          : { isClosed: true, open: "11:00", close: "21:00" };
+      }
+      setStoreHoursByDay(normalized);
+    } catch {
+      // no-op
+    }
+  }, []);
+
   const startSilentKeepAliveLoop = useCallback(async () => {
     try {
+      const w = window as AdminSoundWindow;
+      if (w.__adminKeepAliveAudio) {
+        keepAliveAudioRef.current = w.__adminKeepAliveAudio;
+      }
+      if (w.__adminKeepAliveObjectUrl) {
+        keepAliveObjectUrlRef.current = w.__adminKeepAliveObjectUrl;
+      }
+
       if (!keepAliveAudioRef.current) {
         const sampleRate = 8000;
         const seconds = 2;
@@ -102,9 +192,12 @@ export default function AdminOrdersPage() {
         audio.preload = "auto";
         audio.setAttribute("playsinline", "true");
         keepAliveAudioRef.current = audio;
+        w.__adminKeepAliveAudio = audio;
+        w.__adminKeepAliveObjectUrl = objectUrl;
       }
 
       await keepAliveAudioRef.current.play();
+      localStorage.setItem("admin_sound_enabled", "1");
       return true;
     } catch {
       return false;
@@ -119,8 +212,10 @@ export default function AdminOrdersPage() {
               (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)
           : null;
       if (!Ctx) return false;
+      const w = window as AdminSoundWindow;
       if (!audioContextRef.current) {
-        audioContextRef.current = new Ctx();
+        audioContextRef.current = w.__adminAudioContext ?? new Ctx();
+        w.__adminAudioContext = audioContextRef.current;
       }
       if (audioContextRef.current.state === "suspended") {
         await audioContextRef.current.resume();
@@ -221,7 +316,20 @@ export default function AdminOrdersPage() {
   }, [loadOrders]);
 
   useEffect(() => {
-    void ensureAudioReady();
+    void loadSettings();
+  }, [loadSettings]);
+
+  useEffect(() => {
+    const shouldAutoEnable = localStorage.getItem("admin_sound_enabled") === "1";
+    if (shouldAutoEnable) {
+      void ensureAudioReady().then(async (ready) => {
+        if (ready) {
+          await startSilentKeepAliveLoop();
+        }
+      });
+    } else {
+      void ensureAudioReady();
+    }
     const unlock = async () => {
       const ready = await ensureAudioReady();
       if (ready) {
@@ -237,13 +345,24 @@ export default function AdminOrdersPage() {
   }, [ensureAudioReady, startSilentKeepAliveLoop]);
 
   useEffect(() => {
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
+    const prevBodyOverflowX = document.body.style.overflowX;
+    if (drawerOpen) {
+      document.documentElement.style.overflowX = "hidden";
+      document.body.style.overflowX = "hidden";
+    } else {
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+      document.body.style.overflowX = prevBodyOverflowX;
+    }
     return () => {
-      if (keepAliveAudioRef.current) {
-        keepAliveAudioRef.current.pause();
-      }
-      if (keepAliveObjectUrlRef.current) {
-        URL.revokeObjectURL(keepAliveObjectUrlRef.current);
-      }
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+      document.body.style.overflowX = prevBodyOverflowX;
+    };
+  }, [drawerOpen]);
+
+  useEffect(() => {
+    return () => {
+      // Keep audio loop/context alive across admin page navigation.
     };
   }, []);
 
@@ -251,6 +370,33 @@ export default function AdminOrdersPage() {
     const ready = await ensureAudioReady();
     if (!ready) return;
     await startSilentKeepAliveLoop();
+  }
+
+  async function setPrepTimeQuick(nextPrep: number) {
+    if (acceptingOrders === null || Object.keys(storeHoursByDay).length === 0 || prepSaveLoading) return;
+    setPrepSaveLoading(true);
+    setPrepSaveError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prepTimeMinutes: nextPrep,
+          acceptingOrders,
+          storeHoursByDay
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPrepSaveError(data?.error ?? "Failed to update order time.");
+        return;
+      }
+      setPrepTimeMinutes(nextPrep);
+    } catch {
+      setPrepSaveError("Failed to update order time.");
+    } finally {
+      setPrepSaveLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -464,26 +610,79 @@ export default function AdminOrdersPage() {
   const currentOrders = sorted.filter(
     (order) => order.status !== OrderStatus.PICKED_UP && order.status !== OrderStatus.CANCELLED
   );
-  const pastOrders = sorted.filter(
-    (order) => order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.CANCELLED
-  );
+  const todayEt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ET_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+  const pastOrders = sorted.filter((order) => {
+    const isPast = order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.CANCELLED;
+    if (!isPast) return false;
+    if (pastScope === "ALL") return true;
+    const orderDateEt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ET_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(order.createdAt));
+    return orderDateEt === todayEt;
+  });
   const visibleOrders = tab === "CURRENT" ? currentOrders : pastOrders;
 
   return (
     <div className="space-y-4 pb-8">
-      <div className="flex items-center gap-2">
+      <div className="flex w-full items-center justify-between">
         <Link
           href="/admin/orders"
           className="rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
         >
-          Orders
+          {t.orders}
         </Link>
-        <Link href="/admin/menu" className="rounded border px-4 py-2 text-sm font-semibold">
-          Menu
-        </Link>
-        <Link href="/admin/settings" className="rounded border px-4 py-2 text-sm font-semibold">
-          Settings
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex border border-[#c4a574]">
+            <button
+              type="button"
+              onClick={() => setLanguage("zh")}
+              className={`px-3 py-1.5 text-xs font-semibold ${
+                lang === "zh" ? "bg-[#c4a574] text-black" : "bg-white text-black"
+              }`}
+            >
+              中文
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("en")}
+              className={`px-3 py-1.5 text-xs font-semibold ${
+                lang === "en" ? "bg-[#c4a574] text-black" : "bg-white text-black"
+              }`}
+            >
+              EN
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen((prev) => !prev)}
+            className="relative inline-flex h-9 w-9 items-center justify-center border"
+            aria-label="Open admin menu"
+          >
+            <span
+              className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
+                drawerOpen ? "translate-y-0 rotate-45" : "-translate-y-1.5"
+              }`}
+            />
+            <span
+              className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
+                drawerOpen ? "opacity-0" : "opacity-100"
+              }`}
+            />
+            <span
+              className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
+                drawerOpen ? "translate-y-0 -rotate-45" : "translate-y-1.5"
+              }`}
+            />
+          </button>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -493,7 +692,7 @@ export default function AdminOrdersPage() {
             tab === "CURRENT" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
           }`}
         >
-          Current Orders
+          {t.currentOrders}
         </button>
         <button
           type="button"
@@ -502,7 +701,7 @@ export default function AdminOrdersPage() {
             tab === "PAST" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
           }`}
         >
-          Past Orders
+          {t.pastOrders}
         </button>
         {!soundEnabled ? (
           <button
@@ -510,14 +709,54 @@ export default function AdminOrdersPage() {
             onClick={() => void enableSoundAlerts()}
             className="border px-4 py-2 text-sm font-semibold"
           >
-            Enable Sound Alerts
+            {t.enableSound}
           </button>
         ) : (
-          <span className="text-xs text-green-700">Sound alerts enabled</span>
+          <span className="text-xs text-green-700">{t.soundOn}</span>
         )}
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-base font-semibold">{t.orderTime}:</span>
+        {[15, 30, 45, 60].map((minutes) => (
+          <button
+            key={minutes}
+            type="button"
+            disabled={prepSaveLoading}
+            onClick={() => void setPrepTimeQuick(minutes)}
+            className={`rounded border px-4 py-2 text-base font-semibold ${
+              prepTimeMinutes === minutes ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+            } ${prepSaveLoading ? "opacity-60" : ""}`}
+          >
+            {minutes}
+          </button>
+        ))}
+        {prepTimeMinutes ? <span className="text-sm text-gray-600">{t.current}: {prepTimeMinutes} min</span> : null}
+      </div>
+      {tab === "PAST" ? (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPastScope("TODAY")}
+            className={`rounded border px-4 py-2 text-sm font-semibold ${
+              pastScope === "TODAY" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+            }`}
+          >
+            {t.today}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPastScope("ALL")}
+            className={`rounded border px-4 py-2 text-sm font-semibold ${
+              pastScope === "ALL" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+            }`}
+          >
+            {t.allTime}
+          </button>
+        </div>
+      ) : null}
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {prepSaveError ? <p className="text-sm text-red-700">{prepSaveError}</p> : null}
 
       {visibleOrders.map((order) => (
         <div key={order.id} className="relative overflow-hidden rounded-xl">
@@ -563,9 +802,9 @@ export default function AdminOrdersPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-semibold">#{order.orderNumber}</div>
-                <div className="text-sm">Created {fmtDateTime(order.createdAt)}</div>
+                <div className="text-sm">{t.created} {fmtDateTime(order.createdAt)}</div>
                 <div className="text-lg font-bold">
-                  Pickup:{" "}
+                  {t.pickup}:{" "}
                   {order.pickupType === "ASAP"
                     ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
                     : fmtDateTime(order.pickupTime as string)}
@@ -573,20 +812,20 @@ export default function AdminOrdersPage() {
                 <div className="text-sm">
                   {order.customerName} | {order.phone}
                 </div>
-                {order.notes ? <div className="text-sm">Notes: {order.notes}</div> : null}
+                {order.notes ? <div className="text-sm">{t.notes}: {order.notes}</div> : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => void printPassPrnt(order.orderNumber, order.id)}
                   className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
                 >
-                  Print
+                  {t.print}
                 </button>
                 <button
                   onClick={() => void printPassPrnt(order.orderNumber, order.id, true)}
                   className="rounded border border-black px-4 py-2 text-lg font-semibold text-black"
                 >
-                  Print for Kitchen
+                  {t.printKitchen}
                 </button>
               </div>
             </div>
@@ -595,15 +834,15 @@ export default function AdminOrdersPage() {
               {order.lines.map((line) => (
                 <div key={line.id}>
                   <div className="font-semibold">
-                    {line.qty} x {line.nameSnapshot}
+                    {line.qty} x {localizeText(line.nameSnapshot, lang)}
                   </div>
                   {line.selections.map((s) => (
                     <div key={s.id} className="pl-4 text-sm text-gray-700">
                       {s.selectionKind === "COMBO_PICK" ? (
-                        <>- {s.selectedItemNameSnapshot}</>
+                        <>- {localizeText(s.selectedItemNameSnapshot, lang)}</>
                       ) : (
                         <>
-                          - {s.label}: {s.selectedModifierOptionNameSnapshot}
+                          - {localizeText(s.label, lang)}: {localizeText(s.selectedModifierOptionNameSnapshot, lang)}
                           {s.priceDeltaSnapshotCents
                             ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})`
                             : ""}
@@ -615,28 +854,82 @@ export default function AdminOrdersPage() {
               ))}
             </div>
 
-            {tab === "CURRENT" ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
-                <span className="text-xs text-gray-600">Swipe card right to complete</span>
-              </div>
-            ) : (
+            {tab !== "CURRENT" ? (
               <div className="mt-3">
                 <span className="rounded bg-amber-100 px-3 py-1 font-medium">{order.status}</span>
               </div>
-            )}
+            ) : null}
 
             <div className="mt-3 text-sm">
-              Subtotal {centsToCurrency(order.subtotalCents)} | Tax {centsToCurrency(order.taxCents)} |
-              Total <strong>{centsToCurrency(order.totalCents)}</strong>
+              {t.subtotal} {centsToCurrency(order.subtotalCents)} | {t.tax} {centsToCurrency(order.taxCents)} |
+              {t.total} <strong>{centsToCurrency(order.totalCents)}</strong>
             </div>
           </article>
         </div>
       ))}
 
       {visibleOrders.length === 0 ? (
-        <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">No orders in this section.</div>
+        <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">{t.noOrders}</div>
       ) : null}
+      <button
+        type="button"
+        onClick={() => setDrawerOpen(false)}
+        className={`fixed inset-0 z-40 bg-black/45 transition-opacity duration-300 ${
+          drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        aria-label="Close admin menu backdrop"
+      />
+      <aside
+        className={`fixed inset-y-0 right-0 z-[60] h-screen w-80 max-w-[88vw] overflow-y-auto overflow-x-hidden border-l border-[#c4a57444] bg-[#101113] p-5 text-[#f5f0e8] shadow-2xl transition-transform duration-300 ${
+          drawerOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <div className="text-lg font-semibold">{t.admin}</div>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            className="inline-flex h-9 w-9 items-center justify-center text-[#f5f0e8]"
+            aria-label="Close admin menu"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <path d="M6 6L18 18" />
+              <path d="M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <div className="space-y-3 text-base">
+          <Link
+            href="/admin/analytics"
+            onClick={() => setDrawerOpen(false)}
+            className="block border-b border-[#c4a57433] pb-2 hover:text-[#c4a574]"
+          >
+            {t.analytics}
+          </Link>
+          <Link
+            href="/admin/menu"
+            onClick={() => setDrawerOpen(false)}
+            className="block border-b border-[#c4a57433] pb-2 hover:text-[#c4a574]"
+          >
+            {t.menu}
+          </Link>
+          <Link
+            href="/admin/settings"
+            onClick={() => setDrawerOpen(false)}
+            className="block border-b border-[#c4a57433] pb-2 hover:text-[#c4a574]"
+          >
+            {t.settings}
+          </Link>
+        </div>
+      </aside>
       <style jsx global>{`
         @keyframes newOrderPulseYellow {
           0% {

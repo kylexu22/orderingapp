@@ -121,6 +121,9 @@ export default function AdminSettingsPage() {
         <Link href="/admin/menu" className="rounded border px-4 py-2 text-sm font-semibold">
           Menu
         </Link>
+        <Link href="/admin/analytics" className="rounded border px-4 py-2 text-sm font-semibold">
+          Analytics
+        </Link>
         <Link
           href="/admin/settings"
           className="rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"

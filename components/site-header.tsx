@@ -212,10 +212,21 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                className="text-2xl leading-none text-[#f5f0e8]"
+                className="inline-flex h-9 w-9 items-center justify-center text-[#f5f0e8]"
                 aria-label="Close menu"
               >
-                x
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
+                  <path d="M6 6L18 18" />
+                  <path d="M18 6L6 18" />
+                </svg>
               </button>
             </div>
             {!isCustomerRoute ? (
