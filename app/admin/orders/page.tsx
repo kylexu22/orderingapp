@@ -149,7 +149,7 @@ export default function AdminOrdersPage() {
       const gain = context.createGain();
       gain.connect(context.destination);
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.08, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.2, start + 0.008);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
 
       const osc1 = context.createOscillator();
@@ -165,6 +165,13 @@ export default function AdminOrdersPage() {
       osc2.connect(gain);
       osc2.start(start + 0.11);
       osc2.stop(start + 0.22);
+
+      const osc3 = context.createOscillator();
+      osc3.type = "triangle";
+      osc3.frequency.setValueAtTime(1320, start + 0.04);
+      osc3.connect(gain);
+      osc3.start(start + 0.04);
+      osc3.stop(start + 0.18);
     }
 
     window.setTimeout(() => {
@@ -208,8 +215,11 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     void ensureAudioReady();
-    const unlock = () => {
-      void ensureAudioReady();
+    const unlock = async () => {
+      const ready = await ensureAudioReady();
+      if (ready) {
+        await startSilentKeepAliveLoop();
+      }
     };
     window.addEventListener("pointerdown", unlock, { passive: true });
     window.addEventListener("keydown", unlock);
@@ -217,7 +227,7 @@ export default function AdminOrdersPage() {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
     };
-  }, [ensureAudioReady]);
+  }, [ensureAudioReady, startSilentKeepAliveLoop]);
 
   useEffect(() => {
     return () => {

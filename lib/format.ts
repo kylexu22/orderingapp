@@ -1,3 +1,5 @@
+const DISPLAY_TIMEZONE = "America/Toronto";
+
 export function centsToCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -13,7 +15,11 @@ export function formatPhone(raw: string): string {
 export function fmtTime(value: Date | string | null | undefined): string {
   if (!value) return "-";
   const date = typeof value === "string" ? new Date(value) : value;
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: DISPLAY_TIMEZONE
+  });
 }
 
 export function fmtDateTime(value: Date | string): string {
@@ -23,6 +29,7 @@ export function fmtDateTime(value: Date | string): string {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    timeZone: DISPLAY_TIMEZONE
   });
 }
