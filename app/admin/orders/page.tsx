@@ -5,6 +5,8 @@ import Link from "next/link";
 import { OrderStatus } from "@prisma/client";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
+import { getStoreOrderState } from "@/lib/store-status";
+import type { StoreHours } from "@/lib/types";
 
 type AdminOrder = {
   id: string;
@@ -59,10 +61,13 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"CURRENT" | "PAST">("CURRENT");
   const [pastScope, setPastScope] = useState<"TODAY" | "ALL">("TODAY");
+  const [pastPage, setPastPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [prepTimeMinutes, setPrepTimeMinutes] = useState<number | null>(null);
   const [acceptingOrders, setAcceptingOrders] = useState<boolean | null>(null);
   const [storeHoursByDay, setStoreHoursByDay] = useState<Record<string, DayHours>>({});
+  const [storeTimezone, setStoreTimezone] = useState("America/Toronto");
+  const [statusNow, setStatusNow] = useState(() => new Date());
   const [prepSaveLoading, setPrepSaveLoading] = useState(false);
   const [prepSaveError, setPrepSaveError] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -86,6 +91,7 @@ export default function AdminOrdersPage() {
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
   const hasHydratedOrdersRef = useRef(false);
   const SWIPE_REVEAL_PX = 180;
+  const PAST_PAGE_SIZE = 20;
 
   useEffect(() => {
     setLang(getClientLang());
@@ -118,7 +124,11 @@ export default function AdminOrdersPage() {
     analytics: lang === "zh" ? "分析" : "Analytics",
     menu: lang === "zh" ? "餐單" : "Menu",
     settings: lang === "zh" ? "設定" : "Settings",
-    admin: "Admin"
+    admin: "Admin",
+    statusOpen: lang === "zh" ? "營業中，接受訂單" : "Store open, accepting orders",
+    statusClosed: lang === "zh" ? "店舖已關閉，暫停接受訂單" : "Store closed, not accepting orders",
+    statusOrderingOff:
+      lang === "zh" ? "已手動暫停接單（不接受訂單）" : "Ordering turned off (not accepting orders)"
   };
 
   const loadSettings = useCallback(async () => {
@@ -128,6 +138,7 @@ export default function AdminOrdersPage() {
       if (!res.ok || !data?.settings) return;
       setPrepTimeMinutes(data.settings.prepTimeMinutes ?? null);
       setAcceptingOrders(Boolean(data.settings.acceptingOrders));
+      setStoreTimezone(data.settings.timezone ?? "America/Toronto");
 
       const incoming = (data.settings.storeHours ?? {}) as StoreHoursPayload;
       const normalized: Record<string, DayHours> = {};
@@ -318,6 +329,11 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     void loadSettings();
   }, [loadSettings]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setStatusNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const shouldAutoEnable = localStorage.getItem("admin_sound_enabled") === "1";
@@ -628,7 +644,48 @@ export default function AdminOrdersPage() {
     }).format(new Date(order.createdAt));
     return orderDateEt === todayEt;
   });
-  const visibleOrders = tab === "CURRENT" ? currentOrders : pastOrders;
+  const totalPastPages = Math.max(1, Math.ceil(pastOrders.length / PAST_PAGE_SIZE));
+  const safePastPage = Math.min(Math.max(1, pastPage), totalPastPages);
+  const pagedPastOrders =
+    pastScope === "ALL"
+      ? pastOrders.slice((safePastPage - 1) * PAST_PAGE_SIZE, safePastPage * PAST_PAGE_SIZE)
+      : pastOrders;
+  const visibleOrders = tab === "CURRENT" ? currentOrders : pagedPastOrders;
+  const storeHours: StoreHours = useMemo(() => {
+    const out: StoreHours = {};
+    for (let i = 0; i < 7; i += 1) {
+      const key = String(i);
+      const day = storeHoursByDay[key];
+      if (!day || day.isClosed) {
+        out[key] = [];
+      } else {
+        out[key] = [{ open: day.open, close: day.close }];
+      }
+    }
+    return out;
+  }, [storeHoursByDay]);
+  const storeOrderState = useMemo(() => {
+    if (acceptingOrders === null) return null;
+    return getStoreOrderState(
+      {
+        acceptingOrders,
+        timezone: storeTimezone,
+        storeHours,
+        closedDates: []
+      },
+      statusNow
+    );
+  }, [acceptingOrders, storeHours, storeTimezone, statusNow]);
+
+  useEffect(() => {
+    setPastPage(1);
+  }, [pastScope]);
+
+  useEffect(() => {
+    if (pastPage > totalPastPages) {
+      setPastPage(totalPastPages);
+    }
+  }, [pastPage, totalPastPages]);
 
   return (
     <div className="space-y-4 pb-8">
@@ -732,8 +789,23 @@ export default function AdminOrdersPage() {
         ))}
         {prepTimeMinutes ? <span className="text-sm text-gray-600">{t.current}: {prepTimeMinutes} min</span> : null}
       </div>
+      {storeOrderState ? (
+        <div
+          className={`rounded border px-3 py-2 text-sm font-semibold ${
+            storeOrderState === "OPEN"
+              ? "border-green-700 bg-green-50 text-green-800"
+              : "border-red-700 bg-red-50 text-red-800"
+          }`}
+        >
+          {storeOrderState === "OPEN"
+            ? t.statusOpen
+            : storeOrderState === "CLOSED"
+              ? t.statusClosed
+              : t.statusOrderingOff}
+        </div>
+      ) : null}
       {tab === "PAST" ? (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setPastScope("TODAY")}
@@ -752,6 +824,31 @@ export default function AdminOrdersPage() {
           >
             {t.allTime}
           </button>
+          {pastScope === "ALL" ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setPastPage((p) => Math.max(1, p - 1))}
+                disabled={safePastPage <= 1}
+                className="rounded border px-3 py-2 text-sm font-semibold disabled:opacity-40"
+              >
+                {lang === "zh" ? "上一頁" : "Prev"}
+              </button>
+              <span className="text-sm">
+                {lang === "zh"
+                  ? `第 ${safePastPage} / ${totalPastPages} 頁`
+                  : `Page ${safePastPage} / ${totalPastPages}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPastPage((p) => Math.min(totalPastPages, p + 1))}
+                disabled={safePastPage >= totalPastPages}
+                className="rounded border px-3 py-2 text-sm font-semibold disabled:opacity-40"
+              >
+                {lang === "zh" ? "下一頁" : "Next"}
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
 
