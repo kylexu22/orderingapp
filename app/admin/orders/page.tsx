@@ -246,7 +246,7 @@ export default function AdminOrdersPage() {
     isAlertPlayingRef.current = true;
     const context = audioContextRef.current;
     const now = context.currentTime;
-    const totalDurationSeconds = 2.5;
+    const totalDurationSeconds = 3.5;
     const cycleSeconds = 0.5;
     const cycles = Math.floor(totalDurationSeconds / cycleSeconds);
     const limiter = context.createDynamicsCompressor();
