@@ -143,31 +143,38 @@ export default function AdminOrdersPage() {
     const totalDurationSeconds = 2.5;
     const cycleSeconds = 0.5;
     const cycles = Math.floor(totalDurationSeconds / cycleSeconds);
+    const limiter = context.createDynamicsCompressor();
+    limiter.threshold.setValueAtTime(-10, now);
+    limiter.knee.setValueAtTime(8, now);
+    limiter.ratio.setValueAtTime(20, now);
+    limiter.attack.setValueAtTime(0.002, now);
+    limiter.release.setValueAtTime(0.08, now);
+    limiter.connect(context.destination);
 
     for (let i = 0; i < cycles; i += 1) {
       const start = now + i * cycleSeconds;
       const gain = context.createGain();
-      gain.connect(context.destination);
+      gain.connect(limiter);
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.2, start + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.95, start + 0.005);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
 
       const osc1 = context.createOscillator();
-      osc1.type = "sine";
+      osc1.type = "square";
       osc1.frequency.setValueAtTime(880, start);
       osc1.connect(gain);
       osc1.start(start);
       osc1.stop(start + 0.11);
 
       const osc2 = context.createOscillator();
-      osc2.type = "sine";
+      osc2.type = "square";
       osc2.frequency.setValueAtTime(1040, start + 0.11);
       osc2.connect(gain);
       osc2.start(start + 0.11);
       osc2.stop(start + 0.22);
 
       const osc3 = context.createOscillator();
-      osc3.type = "triangle";
+      osc3.type = "sawtooth";
       osc3.frequency.setValueAtTime(1320, start + 0.04);
       osc3.connect(gain);
       osc3.start(start + 0.04);
