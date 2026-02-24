@@ -197,7 +197,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setDrawerOpen(false)}
-            className={`fixed inset-0 z-40 bg-black/45 transition-opacity duration-300 ${
+            className={`menu-backdrop fixed inset-0 z-40 bg-black/45 transition-opacity duration-300 ${
               drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
             aria-label="Close menu backdrop"

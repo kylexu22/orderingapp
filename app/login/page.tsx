@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ const CODE_LENGTH = 6;
 type VerifyStartResponse = {
   ok?: boolean;
   skipVerification?: boolean;
+  retryAfterSeconds?: number;
   error?: string;
 };
 
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
@@ -50,12 +52,44 @@ export default function LoginPage() {
 
   const code = useMemo(() => digits.join(""), [digits]);
 
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setRetryAfterSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [retryAfterSeconds]);
+
+  const t = {
+    titleLogin: lang === "zh" ? "登入 / 註冊" : "Log In / Sign Up",
+    titleCode: lang === "zh" ? "6 位數驗證碼" : "6 Digit Code",
+    mobilePlaceholder: lang === "zh" ? "手機號碼" : "Mobile Number",
+    consentPrefix: lang === "zh" ? "登入即表示你同意" : "By logging in, I agree to the",
+    terms: lang === "zh" ? "服務條款" : "Terms of Service",
+    privacy: lang === "zh" ? "隱私政策" : "Privacy Policy",
+    and: lang === "zh" ? "及" : "&",
+    working: lang === "zh" ? "處理中..." : "Working...",
+    continue: lang === "zh" ? "繼續" : "Continue",
+    sentCodeTo: lang === "zh" ? "我們已發送驗證碼至" : "We've sent a code to",
+    didntGetCode: lang === "zh" ? "未收到驗證碼？" : "Didn't get a code?",
+    clickToResend: lang === "zh" ? "點擊重發" : "Click to Resend",
+    resend: lang === "zh" ? "重發" : "Resend",
+    back: lang === "zh" ? "返回" : "Back",
+    verifyCode: lang === "zh" ? "驗證" : "Verify Code",
+    verifying: lang === "zh" ? "驗證中..." : "Verifying...",
+    close: lang === "zh" ? "關閉" : "Close",
+    startVerifyFailed: lang === "zh" ? "無法開始驗證。" : "Failed to start verification.",
+    verifyFailed: lang === "zh" ? "驗證失敗。" : "Verification failed.",
+    networkError: lang === "zh" ? "網路錯誤。" : "Network error."
+  };
+
   function afterLoginRedirect() {
     router.replace(lines.length ? "/checkout" : "/menu");
   }
 
   async function startLoginOrVerify() {
     setError("");
+    if (retryAfterSeconds > 0) return;
     setSending(true);
     try {
       const res = await fetch("/api/verify/start", {
@@ -71,7 +105,10 @@ export default function LoginPage() {
         data = {};
       }
       if (!res.ok) {
-        setError(data.error ?? (lang === "zh" ? "???????" : "Failed to start verification."));
+        if (typeof data.retryAfterSeconds === "number" && data.retryAfterSeconds > 0) {
+          setRetryAfterSeconds(data.retryAfterSeconds);
+        }
+        setError(data.error ?? t.startVerifyFailed);
         return;
       }
       if (data.skipVerification) {
@@ -79,10 +116,11 @@ export default function LoginPage() {
         return;
       }
       setCodeSent(true);
+      setRetryAfterSeconds(60);
       setDigits(Array(CODE_LENGTH).fill(""));
       setTimeout(() => inputRefs.current[0]?.focus(), 0);
     } catch {
-      setError(lang === "zh" ? "?????" : "Network error.");
+      setError(t.networkError);
     } finally {
       setSending(false);
     }
@@ -106,12 +144,12 @@ export default function LoginPage() {
         data = {};
       }
       if (!res.ok) {
-        setError(data.error ?? (lang === "zh" ? "?????" : "Verification failed."));
+        setError(data.error ?? t.verifyFailed);
         return;
       }
       afterLoginRedirect();
     } catch {
-      setError(lang === "zh" ? "?????" : "Network error.");
+      setError(t.networkError);
     } finally {
       setVerifying(false);
     }
@@ -155,19 +193,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center bg-[var(--bg)] px-4">
-      <div className="w-full max-w-2xl space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-3xl font-bold tracking-tight">Log In / Sign Up</h1>
+    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-6">
+      <div className="menu-food-card w-full max-w-xl border border-amber-900/20 bg-[var(--card)] p-6 shadow-sm sm:p-8">
+        <div className="mb-6 flex items-center justify-end">
           <Link
             href={lines.length ? "/cart" : "/menu"}
-            className="inline-flex h-10 w-10 items-center justify-center text-black/80"
-            aria-label="Close"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/85 text-white"
+            aria-label={t.close}
           >
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"
-              className="h-6 w-6"
+              className="h-5 w-5"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
@@ -179,53 +216,57 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <label className="block text-sm">
-          <input
-            value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              setCodeSent(false);
-              setDigits(Array(CODE_LENGTH).fill(""));
-            }}
-            className="w-full border border-black/10 bg-white px-4 py-3 text-2xl placeholder:text-black/45"
-            placeholder="Mobile Number"
-          />
-        </label>
-
         {!codeSent ? (
-          <label className="flex items-start gap-3 text-sm text-black/65">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-1 h-5 w-5"
-            />
-            <span>
-              By logging in, I agree to the{" "}
-              <Link href="/terms" className="underline">
-                Terms of Service
-              </Link>{" "}
-              &{" "}
-              <Link href="/privacy" className="underline">
-                Privacy Policy
-              </Link>
-            </span>
-          </label>
-        ) : null}
+          <div className="space-y-5">
+            <h1 className="text-center text-4xl font-bold tracking-tight">{t.titleLogin}</h1>
+            <label className="block text-sm">
+              <input
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setDigits(Array(CODE_LENGTH).fill(""));
+                  setRetryAfterSeconds(0);
+                }}
+                className="w-full border border-black/10 bg-white px-4 py-3 text-xl placeholder:text-black/45 sm:text-2xl"
+                placeholder={t.mobilePlaceholder}
+              />
+            </label>
 
-        <button
-          type="button"
-          onClick={startLoginOrVerify}
-          disabled={sending || !phone.trim() || !agreed}
-          className="w-full bg-[var(--brand)] px-4 py-3 text-xl font-semibold uppercase tracking-wide text-white disabled:cursor-not-allowed disabled:bg-black/15 disabled:text-black/35"
-        >
-          {sending ? "Working..." : "Continue"}
-        </button>
+            <label className="flex items-start gap-3 text-sm text-black/65">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-1 h-5 w-5"
+              />
+              <span>
+                {t.consentPrefix}{" "}
+                <Link href="/terms" className="underline">
+                  {t.terms}
+                </Link>{" "}
+                {t.and}{" "}
+                <Link href="/privacy" className="underline">
+                  {t.privacy}
+                </Link>
+              </span>
+            </label>
 
-        {codeSent ? (
-          <div className="space-y-3 border border-amber-900/20 bg-white p-3">
-            <div className="text-sm font-semibold">{lang === "zh" ? "?? 6 ????" : "Enter 6-digit code"}</div>
-            <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={startLoginOrVerify}
+              disabled={sending || !phone.trim() || !agreed || retryAfterSeconds > 0}
+              className="w-full bg-[var(--brand)] px-4 py-3 text-xl font-semibold uppercase tracking-wide text-white disabled:cursor-not-allowed disabled:bg-black/15 disabled:text-black/35"
+            >
+              {sending ? t.working : retryAfterSeconds > 0 ? `${t.continue} (${retryAfterSeconds}s)` : t.continue}
+            </button>
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-md flex-col items-center space-y-5 rounded-2xl bg-transparent p-5 text-center">
+            <h1 className="text-4xl font-bold tracking-tight">{t.titleCode}</h1>
+            <p className="text-lg text-black/70">
+              {t.sentCodeTo} <span className="font-semibold text-black/70">{phone}</span>
+            </p>
+            <div className="flex justify-center gap-2 sm:gap-3">
               {digits.map((digit, index) => (
                 <input
                   key={index}
@@ -238,22 +279,47 @@ export default function LoginPage() {
                   onPaste={onCodePaste}
                   inputMode="numeric"
                   maxLength={1}
-                  className="h-12 w-10 border text-center text-lg font-semibold"
+                  className="h-14 w-12 border border-amber-900/20 bg-white text-center text-2xl font-semibold text-[var(--ink)] sm:h-16 sm:w-14"
+                  style={{ borderRadius: 0 }}
                 />
               ))}
             </div>
-            <button
-              type="button"
-              onClick={verifyCode}
-              disabled={verifying || code.length !== CODE_LENGTH}
-              className="bg-[var(--brand)] px-4 py-2 text-white disabled:opacity-50"
-            >
-              {verifying ? (lang === "zh" ? "???..." : "Verifying...") : lang === "zh" ? "?????" : "Verify Code"}
-            </button>
+            <p className="text-base text-black/70">
+              {t.didntGetCode}{" "}
+              <button
+                type="button"
+                onClick={startLoginOrVerify}
+                disabled={sending || retryAfterSeconds > 0}
+                className="font-semibold text-[var(--brand)] underline disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {retryAfterSeconds > 0 ? `${t.resend} (${retryAfterSeconds}s)` : t.clickToResend}
+              </button>
+            </p>
+            <div className="grid w-full grid-row-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={verifyCode}
+                disabled={verifying || code.length !== CODE_LENGTH}
+                className="bg-[var(--brand)] px-4 py-3 text-lg font-bold uppercase tracking-wide text-white disabled:opacity-50"
+              >
+                {verifying ? t.verifying : t.verifyCode}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCodeSent(false);
+                  setDigits(Array(CODE_LENGTH).fill(""));
+                  setRetryAfterSeconds(0);
+                }}
+                className="bg-transparent border border-black/20 px-4 py-3 text-lg font-bold uppercase tracking-wide text-grey"
+              >
+                {t.back}
+              </button>
+            </div>
           </div>
-        ) : null}
+        )}
 
-        {error ? <div className="text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mt-4 text-sm text-red-700">{error}</div> : null}
       </div>
     </div>
   );

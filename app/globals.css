@@ -14,7 +14,6 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
 }
 
 body {
@@ -22,7 +21,6 @@ body {
   background: linear-gradient(165deg, #faf8f4 0%, #f2ede6 35%, #ebe6df 100%);
   color: var(--ink);
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 a {
@@ -43,6 +41,17 @@ a.hf-mobile-drawer-cta,
 a[href="/menu"].bg-\[var\(--brand\)\],
 a.bg-\[var\(--brand\)\] {
   border-radius: 9999px !important;
+}
+
+.menu-backdrop {
+  border-radius: 0 !important;
+}
+
+.menu-category-sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 4.25rem;
+  z-index: 35;
 }
 
 .menu-food-card {

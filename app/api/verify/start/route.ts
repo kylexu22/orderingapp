@@ -22,6 +22,9 @@ const schema = z.object({
   phone: z.string().min(1)
 });
 
+const VERIFY_COOLDOWN_MS = 60_000;
+const lastVerifyRequestAt = new Map<string, number>();
+
 export async function POST(req: Request) {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -69,13 +72,25 @@ export async function POST(req: Request) {
   const rate = checkRateLimit(`verify:start:${ip}:${phoneE164}`, 5, 10 * 60_000);
   if (!rate.allowed) {
     return NextResponse.json(
-      { error: `Too many attempts. Retry in ${rate.retryAfterSeconds}s.` },
+      { error: `Too many attempts. Retry in ${rate.retryAfterSeconds}s.`, retryAfterSeconds: rate.retryAfterSeconds },
+      { status: 429 }
+    );
+  }
+
+  const cooldownKey = `${ip}:${phoneE164}`;
+  const now = Date.now();
+  const lastSentAt = lastVerifyRequestAt.get(cooldownKey);
+  if (lastSentAt && now - lastSentAt < VERIFY_COOLDOWN_MS) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((VERIFY_COOLDOWN_MS - (now - lastSentAt)) / 1000));
+    return NextResponse.json(
+      { error: `Please wait ${retryAfterSeconds}s before requesting another code.`, retryAfterSeconds },
       { status: 429 }
     );
   }
 
   try {
     await sendVerifyCode(phoneE164);
+    lastVerifyRequestAt.set(cooldownKey, now);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

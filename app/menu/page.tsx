@@ -45,7 +45,7 @@ export default async function MenuPage() {
                 : "Ordering is currently turned off. You can still view the menu."}
           </div>
         ) : null}
-        <section className="sticky top-16 z-20 -mx-4 bg-[var(--bg)] px-4 py-2">
+        <section className="menu-category-sticky border-b border-amber-900/10 bg-[var(--bg)] py-2">
           <div className="flex gap-2 overflow-x-auto whitespace-nowrap">
             <a
               href={`#${combosAnchorId}`}
