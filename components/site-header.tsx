@@ -110,11 +110,12 @@ export function SiteHeader() {
     profile: lang === "zh" ? "\u500b\u4eba\u8cc7\u6599" : "Profile",
     orderHistory: lang === "zh" ? "\u8a02\u55ae\u8a18\u9304" : "Order History",
     login: lang === "zh" ? "\u767b\u5165" : "Log In",
-    logout: lang === "zh" ? "\u767b\u51fa" : "Log Out"
+    logout: lang === "zh" ? "\u767b\u51fa" : "Log Out",
+    privacy: lang === "zh" ? "\u96b1\u79c1\u653f\u7b56" : "Privacy Policy"
   };
 
   const languageToggle = (
-    <div className="inline-flex border border-[#c4a574]">
+    <div className="inline-flex overflow-hidden rounded-full border border-[#c4a574]">
       <button
         type="button"
         onClick={() => setLanguage("zh")}
@@ -207,63 +208,74 @@ export function SiteHeader() {
               drawerOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
-            <div className="mb-5 flex items-center justify-between">
-              <div className="text-lg font-semibold">Hong Far Cafe</div>
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center text-[#f5f0e8]"
-                aria-label="Close menu"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
+            <div className="flex h-full flex-col">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="text-lg font-semibold">Hong Far Cafe</div>
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center text-[#f5f0e8]"
+                  aria-label="Close menu"
                 >
-                  <path d="M6 6L18 18" />
-                  <path d="M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-            {!isCustomerRoute ? (
-              <div className="mb-4">
-                <div className="mb-2 text-xs uppercase tracking-wide text-[#c4a574]">{t.language}</div>
-                {languageToggle}
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  >
+                    <path d="M6 6L18 18" />
+                    <path d="M18 6L6 18" />
+                  </svg>
+                </button>
               </div>
-            ) : null}
+              {!isCustomerRoute ? (
+                <div className="mb-4">
+                  <div className="mb-2 text-xs uppercase tracking-wide text-[#c4a574]">{t.language}</div>
+                  {languageToggle}
+                </div>
+              ) : null}
 
-            {!loadingAccount && loggedIn ? (
-              <div className="mb-4 border-b border-[#c4a57433] pb-3 text-sm">
-                {t.loggedIn} {customerName || "Customer"}
+              {!loadingAccount && loggedIn ? (
+                <div className="mb-4 border-b border-[#c4a57433] pb-3 text-sm">
+                  {t.loggedIn} {customerName || "Customer"}
+                </div>
+              ) : null}
+
+              <div className="space-y-3 text-base">
+                {loggedIn ? (
+                  <>
+                    {hasAccount ? (
+                      <>
+                        <Link href="/profile" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
+                          {t.profile}
+                        </Link>
+                        <Link href="/orders" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
+                          {t.orderHistory}
+                        </Link>
+                      </>
+                    ) : null}
+                    <button type="button" onClick={logout} className="block w-full text-left hover:text-[#c4a574]">
+                      {t.logout}
+                    </button>
+                  </>
+                ) : (
+                  <Link href="/login" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
+                    {t.login}
+                  </Link>
+                )}
               </div>
-            ) : null}
-
-            <div className="space-y-3 text-base">
-              {loggedIn ? (
-                <>
-                  {hasAccount ? (
-                    <>
-                      <Link href="/profile" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
-                        {t.profile}
-                      </Link>
-                      <Link href="/orders" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
-                        {t.orderHistory}
-                      </Link>
-                    </>
-                  ) : null}
-                  <button type="button" onClick={logout} className="block w-full text-left hover:text-[#c4a574]">
-                    {t.logout}
-                  </button>
-                </>
-              ) : (
-                <Link href="/login" onClick={() => setDrawerOpen(false)} className="block hover:text-[#c4a574]">
-                  {t.login}
+              <div className="mt-auto pt-6">
+                <Link
+                  href="/privacy"
+                  onClick={() => setDrawerOpen(false)}
+                  className="block border-t border-[#c4a57433] pt-3 text-sm hover:text-[#c4a574]"
+                >
+                  {t.privacy}
                 </Link>
-              )}
+              </div>
             </div>
           </aside>
         </>

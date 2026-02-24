@@ -270,7 +270,7 @@ export default function CheckoutPage() {
     <div className="space-y-4 rounded-xl bg-[var(--card)] p-4 shadow-sm">
       <Link
         href="/cart"
-        className="inline-flex items-center gap-2 border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
       >
         {lang === "zh" ? "← 返回購物車" : "← Back to Cart"}
       </Link>

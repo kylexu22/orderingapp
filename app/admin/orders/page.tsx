@@ -697,7 +697,7 @@ export default function AdminOrdersPage() {
           {t.orders}
         </Link>
         <div className="flex items-center gap-2">
-          <div className="inline-flex border border-[#c4a574]">
+          <div className="inline-flex overflow-hidden rounded-full border border-[#c4a574]">
             <button
               type="button"
               onClick={() => setLanguage("zh")}

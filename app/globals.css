@@ -8,6 +8,8 @@
   --brand: #8b2e24;
   --brand-soft: #ebe4d8;
   --card: #fffdfa;
+  --radius-input: 8px;
+  --radius-card: 14px;
 }
 
 html {
@@ -28,10 +30,23 @@ a {
   text-decoration: none;
 }
 
-*,
-*::before,
-*::after {
-  border-radius: 0 !important;
+input,
+textarea,
+select {
+  border-radius: var(--radius-input) !important;
+}
+
+button,
+a.hf-order-btn,
+a.hf-nav-cta,
+a.hf-mobile-drawer-cta,
+a[href="/menu"].bg-\[var\(--brand\)\],
+a.bg-\[var\(--brand\)\] {
+  border-radius: 9999px !important;
+}
+
+.menu-food-card {
+  border-radius: var(--radius-card) !important;
 }
 
 /* Hong Far Landing */
@@ -332,6 +347,7 @@ a {
   padding: 0.65rem 1.05rem;
   color: #2c2420;
   text-decoration: none;
+  border-radius: 9999px !important;
 }
 .hf-hero-phone-icon {
   width: 36px;

@@ -5,10 +5,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import { centsToCurrency, roundToNearestNickel } from "@/lib/format";
 import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
+import { getStoreOrderState } from "@/lib/store-status";
+import type { StoreHours } from "@/lib/types";
 
 type MenuPayload = {
   categories: any[];
   combos: any[];
+  settings?: {
+    acceptingOrders: boolean;
+    timezone?: string;
+    storeHours: StoreHours;
+    closedDates: string[];
+  };
 };
 
 const CLIENT_TAX_RATE = (() => {
@@ -142,12 +150,21 @@ export default function CartPage() {
     () => roundToNearestNickel(subtotalCents + taxCents),
     [subtotalCents, taxCents]
   );
+  const orderState = useMemo(() => {
+    if (!menu?.settings) return "OPEN" as const;
+    return getStoreOrderState({
+      acceptingOrders: menu.settings.acceptingOrders,
+      timezone: menu.settings.timezone,
+      storeHours: menu.settings.storeHours,
+      closedDates: menu.settings.closedDates
+    });
+  }, [menu]);
 
   return (
     <div className="space-y-4">
       <Link
         href="/menu"
-        className="inline-flex items-center gap-2 border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)] px-3 py-1.5 text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
       >
         {lang === "zh" ? "← 返回餐牌" : "← Back to Menu"}
       </Link>
@@ -203,9 +220,33 @@ export default function CartPage() {
             <div className="mt-1 text-lg font-bold text-black">
               {lang === "zh" ? "總計" : "Total"}: {centsToCurrency(totalCents)}
             </div>
-            <Link href="/checkout" className="mt-3 inline-block rounded bg-[var(--brand)] px-4 py-2 text-white">
-              {lang === "zh" ? "前往結帳" : "Proceed to Checkout"}
-            </Link>
+            {orderState === "OPEN" ? (
+              <Link
+                href="/checkout"
+                className="mt-3 inline-block rounded-full bg-[var(--brand)] px-4 py-2 text-white"
+              >
+                {lang === "zh" ? "前往結帳" : "Proceed to Checkout"}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="mt-3 inline-block cursor-not-allowed rounded-full bg-gray-300 px-4 py-2 text-gray-600"
+              >
+                {lang === "zh" ? "前往結帳" : "Proceed to Checkout"}
+              </button>
+            )}
+            {orderState !== "OPEN" ? (
+              <div className="mt-2 text-sm text-red-700">
+                {orderState === "CLOSED"
+                  ? lang === "zh"
+                    ? "本店目前休息中，暫時不能結帳。"
+                    : "Store is currently closed. Checkout is unavailable."
+                  : lang === "zh"
+                    ? "目前暫停接單，暫時不能結帳。"
+                    : "Ordering is currently turned off. Checkout is unavailable."}
+              </div>
+            ) : null}
           </div>
         </div>
       )}

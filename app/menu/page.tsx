@@ -74,7 +74,7 @@ export default async function MenuPage() {
               <Link
                 key={combo.id}
                 href={`/combo/${combo.id}`}
-                className="rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
+                className="menu-food-card rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
               >
                 <div className="text-lg font-semibold">{localizeText(combo.name, lang)}</div>
                 <div className="text-sm text-gray-600">{localizeText(combo.description, lang)}</div>
@@ -96,7 +96,7 @@ export default async function MenuPage() {
                 <Link
                   key={item.id}
                   href={`/item/${item.id}`}
-                  className="rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
+                  className="menu-food-card rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
                 >
                   <div className="text-base font-semibold">{localizeText(item.name, lang)}</div>
                   <div className="text-sm text-gray-600">{localizeText(item.description, lang)}</div>
