@@ -559,6 +559,14 @@ export async function DELETE(req: Request) {
 
   const code = codeRaw.toUpperCase();
   const okCodes = new Set(["OK", "SUCCESS", "PRINTED"]);
+  logInfo("cloudprnt.job_delete_callback", {
+    jobId: job.id,
+    orderNumber: job.order.orderNumber,
+    copyType: job.copyType,
+    code,
+    message,
+    wasBasicAuthed: isBasicAuthed
+  });
   if (okCodes.has(code)) {
     await prisma.printJob.update({
       where: { id: job.id },
