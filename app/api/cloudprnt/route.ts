@@ -169,7 +169,8 @@ function buildTextPayload(params: {
   const { order, kitchen, restaurantName } = params;
   const ESC = "\x1B";
   const GS = "\x1D";
-  const FONT_NORMAL = `${GS}!\x00`;
+  // Avoid NUL byte (\x00) in payload strings; Postgres text cannot store it.
+  const FONT_NORMAL = "";
   const FONT_TALL = `${GS}!\x01`; // 2x height
   const FONT_DOUBLE = `${GS}!\x11`; // 2x width + 2x height
   const kitchenFontMode = (process.env.CLOUDPRNT_KITCHEN_FONT_MODE ?? "double").toLowerCase();
@@ -484,7 +485,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    const shouldCacheText = mimeType.startsWith("text/");
+    // Kitchen text payload includes printer control bytes; don't cache in DB text column.
+    const shouldCacheText = mimeType.startsWith("text/") && job.copyType !== PrintCopyType.KITCHEN;
     const payload =
       shouldCacheText && job.status === PrintJobStatus.DELIVERED && job.payloadCache
         ? job.payloadCache
