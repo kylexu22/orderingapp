@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
+import sharp from "sharp";
 
 type FontMode = "normal" | "tall" | "double";
 
@@ -117,6 +118,8 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
   const bodySize = Math.round(24 * kitchenScale);
   const lineSize = Math.round(34 * kitchenScale);
   const selectionSize = Math.round(28 * kitchenScale);
+  const headingWeight = payload.kitchen ? 500 : 700;
+  const lineWeight = payload.kitchen ? 500 : 700;
 
   const svg = await satori(
     <div
@@ -132,6 +135,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
         padding: "10px 12px",
         imageRendering: "pixelated",
         WebkitFontSmoothing: "none",
+        MozOsxFontSmoothing: "grayscale",
         textRendering: "geometricPrecision",
         ...( { fontSmooth: "never" } as Record<string, string> )
       }}
@@ -145,11 +149,11 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           textAlign: "center"
         }}
       >
-        <div style={{ fontSize: titleSize, fontWeight: 700 }}>{payload.restaurantName}</div>
+        <div style={{ fontSize: titleSize, fontWeight: headingWeight }}>{payload.restaurantName}</div>
         {payload.kitchen ? (
-          <div style={{ marginTop: 4, fontSize: bodySize, fontWeight: 700 }}>KITCHEN COPY</div>
+          <div style={{ marginTop: 4, fontSize: bodySize, fontWeight: headingWeight }}>KITCHEN COPY</div>
         ) : null}
-        <div style={{ marginTop: 8, fontSize: titleSize + 2, fontWeight: 700 }}>{`#${payload.orderNumber}`}</div>
+        <div style={{ marginTop: 8, fontSize: titleSize + 2, fontWeight: headingWeight }}>{`#${payload.orderNumber}`}</div>
         <div style={{ marginTop: 6, fontSize: bodySize }}>{`Created: ${payload.createdText}`}</div>
         <div style={{ marginTop: 4, fontSize: bodySize }}>{`Pickup: ${payload.pickupText}`}</div>
       </div>
@@ -163,7 +167,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           flexDirection: "column"
         }}
       >
-        <div style={{ fontSize: bodySize, fontWeight: 700 }}>{payload.customerText}</div>
+        <div style={{ fontSize: bodySize, fontWeight: headingWeight }}>{payload.customerText}</div>
         <div style={{ marginTop: 4, fontSize: bodySize }}>{payload.notesText}</div>
       </div>
 
@@ -185,7 +189,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
               marginTop: lineIndex === 0 ? 0 : 12
             }}
           >
-            <div style={{ fontSize: lineSize, fontWeight: 700 }}>{`${line.qty} x ${line.name}`}</div>
+            <div style={{ fontSize: lineSize, fontWeight: lineWeight }}>{`${line.qty} x ${line.name}`}</div>
             {line.selections.map((selection, selectionIndex) => (
               <div
                 key={`${lineIndex}-${selectionIndex}`}
@@ -225,7 +229,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           width: "100%",
           textAlign: "center",
           fontSize: bodySize + 4,
-          fontWeight: 700
+          fontWeight: headingWeight
         }}
       >
         {payload.paidText}
@@ -267,7 +271,23 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
     fitTo: { mode: "width", value: RECEIPT_WIDTH }
   });
   const pngData = resvg.render();
-  return Buffer.from(pngData.asPng());
+  const basePng = Buffer.from(pngData.asPng());
+
+  // Force a high-contrast 1-bit-like output to avoid printer-side anti-alias ambiguity.
+  const bwPng = await sharp(basePng)
+    .removeAlpha()
+    .grayscale()
+    .threshold(140, { grayscale: true })
+    .png({
+      palette: true,
+      colors: 2,
+      compressionLevel: 9,
+      effort: 10,
+      dither: 0
+    })
+    .toBuffer();
+
+  return bwPng;
 }
 
 export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise<string> {
