@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, PrintCopyType } from "@prisma/client";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 import { getStoreOrderState } from "@/lib/store-status";
@@ -41,6 +41,14 @@ type AdminOrder = {
   }>;
 };
 
+type CloudPrntPrinter = {
+  id: string;
+  name: string | null;
+  macAddress: string;
+  isActive: boolean;
+  lastSeenAt: string | null;
+};
+
 type AdminSoundWindow = Window & {
   __adminAudioContext?: AudioContext;
   __adminKeepAliveAudio?: HTMLAudioElement;
@@ -73,6 +81,9 @@ export default function AdminOrdersPage() {
   const [prepSaveLoading, setPrepSaveLoading] = useState(false);
   const [prepSaveError, setPrepSaveError] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [cloudPrntPrinterId, setCloudPrntPrinterId] = useState("");
+  const [cloudPrntPrinterName, setCloudPrntPrinterName] = useState("");
+  const [printBusyByOrderId, setPrintBusyByOrderId] = useState<Record<string, boolean>>({});
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
   const [swipeOffsetByOrderId, setSwipeOffsetByOrderId] = useState<Record<string, number>>({});
@@ -130,7 +141,10 @@ export default function AdminOrdersPage() {
     statusOpen: lang === "zh" ? "營業中，接受訂單" : "Store open, accepting orders",
     statusClosed: lang === "zh" ? "店舖已關閉，暫停接受訂單" : "Store closed, not accepting orders",
     statusOrderingOff:
-      lang === "zh" ? "已手動暫停接單（不接受訂單）" : "Ordering turned off (not accepting orders)"
+      lang === "zh" ? "已手動暫停接單（不接受訂單）" : "Ordering turned off (not accepting orders)",
+    cloudprntReady: lang === "zh" ? "CloudPRNT 已連接" : "CloudPRNT connected",
+    cloudprntMissing: lang === "zh" ? "未找到 CloudPRNT 打印機" : "No CloudPRNT printer found",
+    printQueueFailed: lang === "zh" ? "加入打印隊列失敗。" : "Failed to queue print job."
   };
 
   const loadSettings = useCallback(async () => {
@@ -324,9 +338,51 @@ export default function AdminOrdersPage() {
     knownOrderIdsRef.current = nextKnownIds;
   }, [playNewOrderSound]);
 
+  const loadCloudPrntPrinters = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/cloudprnt/queue", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const printers = ((data?.printers ?? []) as CloudPrntPrinter[]).filter((printer) => printer.isActive);
+      if (!printers.length) {
+        setCloudPrntPrinterId("");
+        setCloudPrntPrinterName("");
+        return;
+      }
+
+      const selectedExists = cloudPrntPrinterId
+        ? printers.some((printer) => printer.id === cloudPrntPrinterId)
+        : false;
+      if (selectedExists) {
+        const selected = printers.find((printer) => printer.id === cloudPrntPrinterId);
+        setCloudPrntPrinterName(selected?.name ?? selected?.macAddress ?? "");
+        return;
+      }
+
+      const sorted = [...printers].sort((a, b) => {
+        const aSeen = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : 0;
+        const bSeen = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : 0;
+        return bSeen - aSeen;
+      });
+      const preferred = sorted[0];
+      setCloudPrntPrinterId(preferred.id);
+      setCloudPrntPrinterName(preferred.name ?? preferred.macAddress);
+    } catch {
+      // no-op
+    }
+  }, [cloudPrntPrinterId]);
+
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  useEffect(() => {
+    void loadCloudPrntPrinters();
+    const timer = window.setInterval(() => {
+      void loadCloudPrntPrinters();
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [loadCloudPrntPrinters]);
 
   useEffect(() => {
     void loadSettings();
@@ -581,7 +637,13 @@ export default function AdminOrdersPage() {
     dragStateRef.current = null;
   }
 
-  async function printPassPrnt(orderNumber: string, orderId: string, kitchen = false) {
+  async function queueCloudPrntPrint(orderNumber: string, orderId: string, copyType: PrintCopyType) {
+    if (!cloudPrntPrinterId) {
+      alert(t.cloudprntMissing);
+      return;
+    }
+
+    setPrintBusyByOrderId((prev) => ({ ...prev, [orderId]: true }));
     setHighlightedOrderIds((prev) => {
       const next = new Set(prev);
       next.delete(orderId);
@@ -592,26 +654,30 @@ export default function AdminOrdersPage() {
       next.delete(orderId);
       return next;
     });
-    try {
-      const ticketRes = await fetch(
-        `/api/orders/${orderNumber}/ticket${kitchen ? "?kitchen=1" : ""}`
-      );
-      if (!ticketRes.ok) {
-        throw new Error("Ticket fetch failed");
-      }
-      const ticketHtml = await ticketRes.text();
-      const backUrl = `${window.location.origin}/close-tab`;
-      const passPrntUrl =
-        `starpassprnt://v1/print/nopreview` +
-        `?html=${encodeURIComponent(ticketHtml)}` +
-        `&back=${encodeURIComponent(backUrl)}` +
-        `&size=3` +
-        `&cut=partial` +
-        `&popup=no`;
 
-      window.location.replace(passPrntUrl);
-    } catch {
-      alert("PassPRNT print failed.");
+    try {
+      const res = await fetch("/api/admin/cloudprnt/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          printerId: cloudPrntPrinterId,
+          orderId,
+          orderNumber,
+          copyType
+        })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? t.printQueueFailed);
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : t.printQueueFailed);
+    } finally {
+      setPrintBusyByOrderId((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
     }
   }
 
@@ -773,6 +839,11 @@ export default function AdminOrdersPage() {
         ) : (
           <span className="text-xs text-green-700">{t.soundOn}</span>
         )}
+        <span className={`text-xs ${cloudPrntPrinterId ? "text-green-700" : "text-red-700"}`}>
+          {cloudPrntPrinterId
+            ? `${t.cloudprntReady}: ${cloudPrntPrinterName || cloudPrntPrinterId}`
+            : t.cloudprntMissing}
+        </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-base font-semibold">{t.orderTime}:</span>
@@ -915,14 +986,18 @@ export default function AdminOrdersPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => void printPassPrnt(order.orderNumber, order.id)}
-                  className="rounded bg-black px-4 py-2 text-lg font-semibold text-white"
+                  onClick={() => void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.FRONT)}
+                  disabled={!cloudPrntPrinterId || Boolean(printBusyByOrderId[order.id])}
+                  className="rounded bg-black px-4 py-2 text-lg font-semibold text-white disabled:opacity-50"
                 >
                   {t.print}
                 </button>
                 <button
-                  onClick={() => void printPassPrnt(order.orderNumber, order.id, true)}
-                  className="rounded border border-black px-4 py-2 text-lg font-semibold text-black"
+                  onClick={() =>
+                    void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.KITCHEN)
+                  }
+                  disabled={!cloudPrntPrinterId || Boolean(printBusyByOrderId[order.id])}
+                  className="rounded border border-black px-4 py-2 text-lg font-semibold text-black disabled:opacity-50"
                 >
                   {t.printKitchen}
                 </button>
