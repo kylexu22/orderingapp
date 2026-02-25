@@ -199,7 +199,7 @@ function buildBinaryPayload(params: {
       ? kitchenModeRaw
       : "double";
 
-  const encoding = process.env.CLOUDPRNT_TEXT_ENCODING ?? "big5";
+  const encoding = process.env.CLOUDPRNT_TEXT_ENCODING ?? "utf-8";
 
   return buildCloudPrntBinaryReceipt({
     restaurantName,
@@ -422,7 +422,7 @@ export async function GET(req: Request) {
         }
       });
     }
-    const textEncodingUsed = process.env.CLOUDPRNT_TEXT_ENCODING ?? "big5";
+    const textEncodingUsed = process.env.CLOUDPRNT_TEXT_ENCODING ?? "utf-8";
     const responseBody = payload instanceof Uint8Array ? payload : Uint8Array.from(payload);
 
     logInfo("cloudprnt.job_payload_served", {

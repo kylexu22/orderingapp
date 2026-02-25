@@ -1,8 +1,26 @@
-import iconv from "iconv-lite";
-
-type Align = "left" | "center";
+import receiptline from "receiptline";
 
 type FontMode = "normal" | "tall" | "double";
+
+type ReceiptlineEncoding =
+  | "cp437"
+  | "cp852"
+  | "cp858"
+  | "cp860"
+  | "cp863"
+  | "cp865"
+  | "cp866"
+  | "cp1252"
+  | "cp932"
+  | "cp936"
+  | "cp949"
+  | "cp950"
+  | "multilingual"
+  | "shiftjis"
+  | "gb18030"
+  | "ksc5601"
+  | "big5"
+  | "tis620";
 
 export type BinaryReceiptSelection = {
   text: string;
@@ -32,117 +50,175 @@ export type BinaryReceiptPayload = {
   kitchenFontMode?: FontMode;
 };
 
-const ESC = 0x1b;
-const GS = 0x1d;
-const LF = 0x0a;
+const DEFAULT_UTF8_INTL_COMMAND_HEX = "1B1D7420";
+const LINE_RULE = "--------------------------------";
 
-function alignByte(align: Align) {
-  return align === "center" ? 1 : 0;
+const RECEIPTLINE_ENCODINGS = new Set<ReceiptlineEncoding>([
+  "cp437",
+  "cp852",
+  "cp858",
+  "cp860",
+  "cp863",
+  "cp865",
+  "cp866",
+  "cp1252",
+  "cp932",
+  "cp936",
+  "cp949",
+  "cp950",
+  "multilingual",
+  "shiftjis",
+  "gb18030",
+  "ksc5601",
+  "big5",
+  "tis620"
+]);
+
+function escapeReceiptlineText(text: string) {
+  return text.replace(/([\\|{}~_"`^])/g, "\\$1");
 }
 
-function sizeByte(mode: FontMode) {
-  if (mode === "double") return 0x11;
-  if (mode === "tall") return 0x01;
-  return 0x00;
+function escapeReceiptlinePropertyValue(text: string) {
+  return text.replace(/([\\|{};])/g, "\\$1");
 }
 
-function encodeText(text: string, encoding: string) {
-  return iconv.encode(text, encoding);
+function normalizeEncoding(input: string | undefined) {
+  return (input ?? "utf-8").trim().toLowerCase();
 }
 
-function pushCommand(out: number[], ...bytes: number[]) {
-  out.push(...bytes);
-}
-
-function pushBuffer(out: number[], buffer: Buffer) {
-  for (const b of buffer) out.push(b);
-}
-
-function pushLine(
-  out: number[],
-  text: string,
-  opts: {
-    align?: Align;
-    bold?: boolean;
-    mode?: FontMode;
-    encoding: string;
+function resolveReceiptlineEncoding(normalizedEncoding: string): ReceiptlineEncoding {
+  if (RECEIPTLINE_ENCODINGS.has(normalizedEncoding as ReceiptlineEncoding)) {
+    return normalizedEncoding as ReceiptlineEncoding;
   }
-) {
-  pushCommand(out, ESC, 0x61, alignByte(opts.align ?? "left")); // align
-  pushCommand(out, ESC, 0x45, opts.bold ? 1 : 0); // bold on/off
-  pushCommand(out, GS, 0x21, sizeByte(opts.mode ?? "normal")); // char size
-  pushBuffer(out, encodeText(text, opts.encoding));
-  pushCommand(out, LF);
+
+  // receiptline does not accept utf-8 as an encoding token.
+  // For Traditional Chinese Star printers we map UTF-8 request to big5 command mode.
+  if (normalizedEncoding === "utf8" || normalizedEncoding === "utf-8") {
+    return "big5";
+  }
+
+  return "big5";
 }
 
-export function buildCloudPrntBinaryReceipt(payload: BinaryReceiptPayload): Uint8Array {
-  const encoding = payload.encoding ?? "big5";
+function parseHexBytes(hexValue: string | undefined) {
+  const clean = (hexValue ?? "").replace(/[^a-fA-F0-9]/g, "");
+  if (!clean || clean.length % 2 !== 0) return null;
+  const bytes: number[] = [];
+  for (let i = 0; i < clean.length; i += 2) {
+    bytes.push(Number.parseInt(clean.slice(i, i + 2), 16));
+  }
+  return bytes;
+}
+
+function bytesToReceiptlineEscapedCommand(bytes: number[]) {
+  return bytes.map((byte) => `\\x${byte.toString(16).padStart(2, "0")}`).join("");
+}
+
+function getKitchenScalePrefix(mode: FontMode) {
+  if (mode === "double") return "^^^";
+  if (mode === "tall") return "^^";
+  return "";
+}
+
+function withKitchenScale(text: string, mode: FontMode) {
+  const prefix = getKitchenScalePrefix(mode);
+  if (!prefix) return text;
+  return `${prefix}${text}`;
+}
+
+function buildReceiptlineDoc(payload: BinaryReceiptPayload, normalizedEncoding: string) {
   const kitchenMode = payload.kitchenFontMode ?? "double";
-  const out: number[] = [];
+  const lines: string[] = [];
 
-  // Initialize printer
-  pushCommand(out, ESC, 0x40);
-
-  const bigMode: FontMode = payload.kitchen ? kitchenMode : "normal";
-  const midMode: FontMode = payload.kitchen ? "tall" : "normal";
-
-  pushLine(out, payload.restaurantName, {
-    align: "center",
-    bold: true,
-    mode: midMode,
-    encoding
-  });
-  if (payload.kitchen) {
-    pushLine(out, "KITCHEN COPY", {
-      align: "center",
-      bold: true,
-      mode: midMode,
-      encoding
-    });
+  if (normalizedEncoding === "utf8" || normalizedEncoding === "utf-8") {
+    const commandBytes =
+      parseHexBytes(process.env.CLOUDPRNT_STAR_UTF8_INTL_COMMAND_HEX) ??
+      parseHexBytes(DEFAULT_UTF8_INTL_COMMAND_HEX);
+    if (commandBytes && commandBytes.length > 0) {
+      lines.push(`{command:${bytesToReceiptlineEscapedCommand(commandBytes)}}`);
+    }
   }
-  pushLine(out, `#${payload.orderNumber}`, {
-    align: "center",
-    bold: true,
-    mode: bigMode,
-    encoding
-  });
-  pushLine(out, `Created: ${payload.createdText}`, { align: "left", bold: false, mode: bigMode, encoding });
-  pushLine(out, `Pickup: ${payload.pickupText}`, { align: "left", bold: true, mode: bigMode, encoding });
-  pushLine(out, payload.customerText, { align: "left", bold: false, mode: bigMode, encoding });
-  pushLine(out, payload.notesText, { align: "left", bold: false, mode: bigMode, encoding });
-  pushLine(out, "--------------------------------", { align: "left", bold: false, mode: "normal", encoding });
+
+  lines.push(
+    `{text:${escapeReceiptlinePropertyValue(payload.restaurantName)};align:center}`
+  );
+  if (payload.kitchen) {
+    lines.push("{text:KITCHEN COPY;align:center}");
+  }
+  lines.push(`{text:^#${escapeReceiptlinePropertyValue(payload.orderNumber)};align:center}`);
+
+  const createdText = `Created: ${payload.createdText}`;
+  const pickupText = `Pickup: ${payload.pickupText}`;
+  const customerText = payload.customerText;
+  const notesText = payload.notesText;
+
+  lines.push(
+    payload.kitchen
+      ? withKitchenScale(escapeReceiptlineText(createdText), kitchenMode)
+      : escapeReceiptlineText(createdText)
+  );
+  lines.push(
+    payload.kitchen
+      ? withKitchenScale(escapeReceiptlineText(pickupText), kitchenMode)
+      : escapeReceiptlineText(pickupText)
+  );
+  lines.push(
+    payload.kitchen
+      ? withKitchenScale(escapeReceiptlineText(customerText), kitchenMode)
+      : escapeReceiptlineText(customerText)
+  );
+  lines.push(
+    payload.kitchen
+      ? withKitchenScale(escapeReceiptlineText(notesText), kitchenMode)
+      : escapeReceiptlineText(notesText)
+  );
+  lines.push(LINE_RULE);
 
   for (const line of payload.lines) {
-    pushLine(out, `${line.qty} x ${line.name}`, {
-      align: "left",
-      bold: true,
-      mode: bigMode,
-      encoding
-    });
+    const baseLine = `${line.qty} x ${line.name}`;
+    lines.push(
+      payload.kitchen
+        ? withKitchenScale(escapeReceiptlineText(baseLine), kitchenMode)
+        : escapeReceiptlineText(baseLine)
+    );
+
     for (const selection of line.selections) {
       const prefix = selection.indent ? "    - " : "  - ";
-      pushLine(out, `${prefix}${selection.text}`, {
-        align: "left",
-        bold: false,
-        mode: bigMode,
-        encoding
-      });
+      const selectionText = `${prefix}${selection.text}`;
+      lines.push(
+        payload.kitchen
+          ? withKitchenScale(escapeReceiptlineText(selectionText), kitchenMode)
+          : escapeReceiptlineText(selectionText)
+      );
     }
   }
 
   if (!payload.kitchen) {
-    pushLine(out, "--------------------------------", { align: "left", bold: false, mode: "normal", encoding });
-    pushLine(out, `Subtotal: ${payload.subtotalText ?? "-"}`, { align: "left", bold: false, mode: "normal", encoding });
-    pushLine(out, `Tax: ${payload.taxText ?? "-"}`, { align: "left", bold: false, mode: "normal", encoding });
-    pushLine(out, `Total: ${payload.totalText ?? "-"}`, { align: "left", bold: true, mode: "normal", encoding });
+    lines.push(LINE_RULE);
+    lines.push(escapeReceiptlineText(`Subtotal: ${payload.subtotalText ?? "-"}`));
+    lines.push(escapeReceiptlineText(`Tax: ${payload.taxText ?? "-"}`));
+    lines.push(escapeReceiptlineText(`Total: ${payload.totalText ?? "-"}`));
   }
 
-  pushLine(out, payload.paidText, { align: "center", bold: true, mode: bigMode, encoding });
-  pushLine(out, "", { align: "left", bold: false, mode: "normal", encoding });
+  lines.push(`{text:${escapeReceiptlinePropertyValue(payload.paidText)};align:center}`);
+  lines.push("=");
 
-  // Feed and cut
-  pushCommand(out, GS, 0x56, 0x42, 0x00);
-
-  return Uint8Array.from(out);
+  return lines.join("\n");
 }
 
+export function buildCloudPrntBinaryReceipt(payload: BinaryReceiptPayload): Uint8Array {
+  const normalizedEncoding = normalizeEncoding(payload.encoding);
+  const receiptlineEncoding = resolveReceiptlineEncoding(normalizedEncoding);
+  const receiptDoc = buildReceiptlineDoc(payload, normalizedEncoding);
+
+  const printer = {
+    cpl: 48,
+    encoding: receiptlineEncoding,
+    spacing: true,
+    cutting: true,
+    command: "starmbcs2" as const
+  };
+
+  const commands = receiptline.transform(receiptDoc, printer);
+  return Uint8Array.from(Buffer.from(commands, "binary"));
+}
