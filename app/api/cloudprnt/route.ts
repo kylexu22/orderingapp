@@ -18,6 +18,14 @@ function normalizeMac(raw: string | null | undefined) {
   return hex.match(/.{1,2}/g)?.join(":") ?? null;
 }
 
+function getHeaderValue(req: Request, keys: string[]) {
+  for (const key of keys) {
+    const value = req.headers.get(key);
+    if (value) return value;
+  }
+  return null;
+}
+
 function getCloudPrntUnauthorizedResponse() {
   return new NextResponse("Unauthorized", {
     status: 401,
@@ -75,19 +83,27 @@ function extractPrinterIdentity(
     searchParams.get("macAddress") ??
     searchParams.get("mac") ??
     searchParams.get("printerMAC") ??
-    searchParams.get("printerMac");
+    searchParams.get("printerMac") ??
+    getHeaderValue(req, [
+      "x-star-mac",
+      "x-printer-mac",
+      "x-cloudprnt-mac",
+      "x-mac-address"
+    ]);
 
   const uid =
     (body.uid as string | undefined) ??
     (body.printerUid as string | undefined) ??
     (bodyDevice.uid as string | undefined) ??
-    searchParams.get("uid");
+    searchParams.get("uid") ??
+    getHeaderValue(req, ["x-star-uid", "x-printer-uid", "x-device-uid"]);
 
   const name =
     (body.name as string | undefined) ??
     (body.printerName as string | undefined) ??
     (bodyDevice.name as string | undefined) ??
-    searchParams.get("name");
+    searchParams.get("name") ??
+    getHeaderValue(req, ["x-printer-name", "x-device-name"]);
 
   return {
     macAddress: normalizeMac(macRaw),
@@ -175,6 +191,59 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType) {
   return lines.join("\n");
 }
 
+async function findJobByTokenOrPrinter(
+  req: Request,
+  body: Record<string, unknown>,
+  statuses: PrintJobStatus[]
+) {
+  const { searchParams } = new URL(req.url);
+  const token =
+    searchParams.get("jobToken") ??
+    searchParams.get("token") ??
+    getHeaderValue(req, [
+      "x-job-token",
+      "x-cloudprnt-token",
+      "x-cloudprnt-job-token",
+      "x-star-job-token"
+    ]);
+
+  if (token) {
+    const byToken = await prisma.printJob.findUnique({
+      where: { jobToken: token },
+      include: {
+        printer: true,
+        order: {
+          select: { orderNumber: true }
+        }
+      }
+    });
+    if (byToken) return byToken;
+  }
+
+  const { macAddress } = extractPrinterIdentity(req, body);
+  if (!macAddress) return null;
+
+  const printer = await prisma.printer.findUnique({
+    where: { macAddress },
+    select: { id: true }
+  });
+  if (!printer) return null;
+
+  return prisma.printJob.findFirst({
+    where: {
+      printerId: printer.id,
+      status: { in: statuses }
+    },
+    orderBy: { requestedAt: "asc" },
+    include: {
+      printer: true,
+      order: {
+        select: { orderNumber: true }
+      }
+    }
+  });
+}
+
 export async function POST(req: Request) {
   if (!isCloudPrntAuthorized(req)) {
     return getCloudPrntUnauthorizedResponse();
@@ -245,23 +314,11 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const jobToken = searchParams.get("jobToken") ?? searchParams.get("token");
   const mimeType = searchParams.get("type") ?? "text/plain";
-  if (!jobToken) {
-    return new NextResponse("Missing job token", { status: 400 });
-  }
-
-  const job = await prisma.printJob.findUnique({
-    where: { jobToken },
-    include: {
-      printer: true,
-      order: {
-        select: {
-          orderNumber: true
-        }
-      }
-    }
-  });
+  const job = await findJobByTokenOrPrinter(req, {}, [
+    PrintJobStatus.QUEUED,
+    PrintJobStatus.DELIVERED
+  ]);
 
   if (!job) {
     return new NextResponse("Job not found", { status: 404 });
@@ -321,29 +378,18 @@ export async function DELETE(req: Request) {
   }
 
   const body = await readBodyAsJson(req);
-  const { searchParams } = new URL(req.url);
-  const jobToken =
-    (body.jobToken as string | undefined) ??
-    (body.token as string | undefined) ??
-    searchParams.get("jobToken") ??
-    searchParams.get("token");
   const codeRaw =
     (body.code as string | undefined) ??
-    searchParams.get("code") ??
+    new URL(req.url).searchParams.get("code") ??
     "OK";
   const message =
     (body.message as string | undefined) ??
-    searchParams.get("message") ??
+    new URL(req.url).searchParams.get("message") ??
     null;
-
-  if (!jobToken) {
-    return NextResponse.json({ error: "Missing job token." }, { status: 400 });
-  }
-
-  const job = await prisma.printJob.findUnique({
-    where: { jobToken },
-    include: { printer: true }
-  });
+  const job = await findJobByTokenOrPrinter(req, body, [
+    PrintJobStatus.QUEUED,
+    PrintJobStatus.DELIVERED
+  ]);
   if (!job) {
     return NextResponse.json({ error: "Job not found." }, { status: 404 });
   }
