@@ -47,15 +47,93 @@ function renderItemModifiers(line: any, menu: MenuPayload | undefined, lang: Lan
   if (!menu) return null;
   const item = menu.categories.flatMap((c: any) => c.items).find((i: any) => i.id === line.refId);
   if (!item) return null;
-  return line.modifiers.map((m: any) => {
-    const group = item.modifierGroups.find((g: any) => g.id === m.groupId);
-    const option = group?.options.find((o: any) => o.id === m.optionId);
-    return (
-      <div key={`${m.groupId}-${m.optionId}`} className="pl-3">
-        - {localizeText(group?.name ?? "", lang)}: {localizeText(option?.name ?? m.optionId, lang)}
+  const addDrinkGroupId = `modgrp_add_drink_${item.id}`;
+  const addDrinkTempGroupId = `modgrp_add_drink_temp_${item.id}`;
+  const addDrinkSugarGroupId = `modgrp_add_drink_sugar_${item.id}`;
+  const addDrinkSoftChoiceGroupId = `modgrp_add_drink_soft_choice_${item.id}`;
+  const drinkGroupIds = new Set([
+    addDrinkGroupId,
+    addDrinkTempGroupId,
+    addDrinkSugarGroupId,
+    addDrinkSoftChoiceGroupId
+  ]);
+
+  const selectedByGroup = new Map<string, any>();
+  for (const modifier of line.modifiers) {
+    selectedByGroup.set(modifier.groupId, modifier);
+  }
+
+  const getOptionByGroupId = (groupId: string) => {
+    const group = item.modifierGroups.find((g: any) => g.id === groupId);
+    const selected = selectedByGroup.get(groupId);
+    if (!group || !selected) return null;
+    const option = group.options.find((o: any) => o.id === selected.optionId);
+    if (!option) return null;
+    return { group, option };
+  };
+
+  const drink = getOptionByGroupId(addDrinkGroupId);
+  const drinkTemp = getOptionByGroupId(addDrinkTempGroupId);
+  const drinkSugar = getOptionByGroupId(addDrinkSugarGroupId);
+  const drinkSoftChoice = getOptionByGroupId(addDrinkSoftChoiceGroupId);
+
+  const drinkPrefix = `modopt_add_drink_${item.id}_`;
+  const selectedDrinkId =
+    drink?.option.id?.startsWith(drinkPrefix) ? drink.option.id.slice(drinkPrefix.length) : "";
+  const isDrinkNone = selectedDrinkId === "none";
+  const isSoftDrink = selectedDrinkId === "drink_soft";
+
+  const regularRows = line.modifiers
+    .filter((m: any) => !drinkGroupIds.has(m.groupId))
+    .map((m: any) => {
+      const group = item.modifierGroups.find((g: any) => g.id === m.groupId);
+      const option = group?.options.find((o: any) => o.id === m.optionId);
+      return (
+        <div key={`${m.groupId}-${m.optionId}`} className="pl-3">
+          - {localizeText(group?.name ?? "", lang)}: {localizeText(option?.name ?? m.optionId, lang)}
+        </div>
+      );
+    });
+
+  const drinkRows: JSX.Element[] = [];
+  if (drink && !isDrinkNone) {
+    const drinkDisplayName = isSoftDrink && drinkSoftChoice
+      ? localizeText(drinkSoftChoice.option.name, lang)
+      : localizeText(drink.option.name, lang);
+    drinkRows.push(
+      <div key="drink-main" className="pl-3">
+        - {isSoftDrink && drinkSoftChoice ? drinkDisplayName : `${lang === "zh" ? "飲品" : "Drink"}: ${drinkDisplayName}`}
       </div>
     );
-  });
+
+    if (drinkTemp && !(isSoftDrink && drinkSoftChoice)) {
+      let tempDelta = drinkTemp.option.priceDeltaCents;
+      const addOnSurcharge = getAddDrinkSurchargeCents(line, item);
+      if (addOnSurcharge > 0) tempDelta += addOnSurcharge;
+      drinkRows.push(
+        <div key="drink-temp" className="pl-8">
+          - {localizeText(drinkTemp.option.name, lang)}
+          {tempDelta ? ` (${centsToCurrency(tempDelta)})` : ""}
+        </div>
+      );
+    }
+
+    if (drinkSugar) {
+      drinkRows.push(
+        <div key="drink-sugar" className="pl-8">
+          - {localizeText(drinkSugar.option.name, lang)}
+          {drinkSugar.option.priceDeltaCents ? ` (${centsToCurrency(drinkSugar.option.priceDeltaCents)})` : ""}
+        </div>
+      );
+    }
+  }
+
+  return (
+    <>
+      {regularRows}
+      {drinkRows}
+    </>
+  );
 }
 
 function getAddDrinkSurchargeCents(line: any, item: any) {

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { localizeText } from "@/lib/i18n";
 import { getServerLang } from "@/lib/i18n-server";
+import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
 
 export default async function ConfirmationPage({
   params
@@ -62,19 +63,16 @@ export default async function ConfirmationPage({
             <div className="font-semibold">
               {line.qty} x {localizeText(line.nameSnapshot, lang)}
             </div>
-            {line.selections.map((selection) => (
-              <div key={selection.id} className="pl-4 text-sm text-gray-700">
-                {selection.selectionKind === "COMBO_PICK" ? (
-                  <>- {localizeText(selection.selectedItemNameSnapshot, lang)}</>
-                ) : (
-                  <>
-                    - {localizeText(selection.label, lang)}:{" "}
-                    {localizeText(selection.selectedModifierOptionNameSnapshot, lang)}
-                    {selection.priceDeltaSnapshotCents
-                      ? ` (${centsToCurrency(selection.priceDeltaSnapshotCents)})`
-                      : ""}
-                  </>
-                )}
+            {formatOrderSelectionsForDisplay({
+              selections: line.selections.map((selection) => ({
+                ...selection,
+                selectedModifierOptionId: selection.selectedModifierOptionId ?? null
+              })),
+              lang,
+              localize: (value) => localizeText(value, lang)
+            }).map((row) => (
+              <div key={row.key} className={`${row.indent ? "pl-8" : "pl-4"} text-sm text-gray-700`}>
+                - {row.text}
               </div>
             ))}
             <div className="mt-1 text-sm">

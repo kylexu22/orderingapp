@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { logInfo } from "@/lib/logger";
 import { localizeText } from "@/lib/i18n";
+import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -49,17 +50,19 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const lineHtml = order.lines
     .map((line) => {
-      const selectionHtml = line.selections
-        .filter((s) => !(kitchen && s.selectionKind === "MODIFIER" && isDrinkModifier(s)))
-        .map((s) => {
-          const rawSelected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
-          const selected = kitchen ? toZh(rawSelected) : rawSelected;
-          const delta = s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : "";
-          if (s.selectionKind === "COMBO_PICK") {
-            return `<div class="subline">- ${esc(selected)}${delta}</div>`;
-          }
-          const label = kitchen ? toZh(s.label) : s.label;
-          return `<div class="subline">- ${esc(label)}: ${esc(selected)}${delta}</div>`;
+      const selectionHtml = formatOrderSelectionsForDisplay({
+        selections: line.selections
+          .filter((s) => !(kitchen && s.selectionKind === "MODIFIER" && isDrinkModifier(s)))
+          .map((s) => ({
+            ...s,
+            selectedModifierOptionId: s.selectedModifierOptionId ?? null
+          })),
+        lang: kitchen ? "zh" : "en",
+        localize: (value) => (kitchen ? toZh(value) : value ?? "")
+      })
+        .map((row) => {
+          const leftPad = row.indent ? " style=\"padding-left: 48px\"" : "";
+          return `<div class="subline"${leftPad}>- ${esc(row.text)}</div>`;
         })
         .join("");
       const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
@@ -85,18 +88,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     for (const line of order.lines) {
       const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
       lines.push(`${line.qty} x ${lineName}`);
-      for (const s of line.selections.filter(
-        (sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel))
-      )) {
-        const rawSelected = s.selectedItemNameSnapshot || s.selectedModifierOptionNameSnapshot || "";
-        const selected = kitchen ? toZh(rawSelected) : rawSelected;
-        const delta = s.priceDeltaSnapshotCents ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})` : "";
-        if (s.selectionKind === "COMBO_PICK") {
-          lines.push(`  - ${selected}${delta}`);
-        } else {
-          const label = kitchen ? toZh(s.label) : s.label;
-          lines.push(`  - ${label}: ${selected}${delta}`);
-        }
+      for (const row of formatOrderSelectionsForDisplay({
+        selections: line.selections
+          .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))
+          .map((sel) => ({
+            ...sel,
+            selectedModifierOptionId: sel.selectedModifierOptionId ?? null
+          })),
+        lang: kitchen ? "zh" : "en",
+        localize: (value) => (kitchen ? toZh(value) : value ?? "")
+      })) {
+        lines.push(`${row.indent ? "    " : "  "}- ${row.text}`);
       }
     }
     if (!kitchen) {

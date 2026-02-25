@@ -7,6 +7,7 @@ import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 import { getStoreOrderState } from "@/lib/store-status";
 import type { StoreHours } from "@/lib/types";
+import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
 
 type AdminOrder = {
   id: string;
@@ -34,6 +35,7 @@ type AdminOrder = {
       label: string;
       selectedItemNameSnapshot: string | null;
       selectedModifierOptionNameSnapshot: string | null;
+      selectedModifierOptionId?: string | null;
       priceDeltaSnapshotCents: number;
     }>;
   }>;
@@ -933,18 +935,16 @@ export default function AdminOrdersPage() {
                   <div className="font-semibold">
                     {line.qty} x {localizeText(line.nameSnapshot, lang)}
                   </div>
-                  {line.selections.map((s) => (
-                    <div key={s.id} className="pl-4 text-sm text-gray-700">
-                      {s.selectionKind === "COMBO_PICK" ? (
-                        <>- {localizeText(s.selectedItemNameSnapshot, lang)}</>
-                      ) : (
-                        <>
-                          - {localizeText(s.label, lang)}: {localizeText(s.selectedModifierOptionNameSnapshot, lang)}
-                          {s.priceDeltaSnapshotCents
-                            ? ` (${centsToCurrency(s.priceDeltaSnapshotCents)})`
-                            : ""}
-                        </>
-                      )}
+                  {formatOrderSelectionsForDisplay({
+                    selections: line.selections,
+                    lang,
+                    localize: (value) => localizeText(value, lang)
+                  }).map((row) => (
+                    <div
+                      key={row.key}
+                      className={`${row.indent ? "pl-8" : "pl-4"} text-sm text-gray-700`}
+                    >
+                      - {row.text}
                     </div>
                   ))}
                 </div>

@@ -18,7 +18,12 @@ const notoSerifSc = Noto_Serif_SC({
 
 export const metadata = {
   title: "Hong Far Cafe - Pickup Ordering",
-  description: "Hong Far Cafe pickup ordering app"
+  description: "Hong Far Cafe pickup ordering app",
+  icons: {
+    icon: "/images/hongfarlogo.png",
+    shortcut: "/images/hongfarlogo.png",
+    apple: "/images/hongfarlogo.png"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

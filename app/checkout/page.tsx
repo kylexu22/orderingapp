@@ -338,6 +338,9 @@ export default function CheckoutPage() {
           onChange={(e) => setNotes(e.target.value)}
           className="mt-1 w-full rounded border px-3 py-2"
         />
+        <div className="mt-1 text-xs text-gray-600">
+          Please specify any allergies or dietary restrictions. / 如有任何食物過敏或飲食限制，請在此註明。
+        </div>
       </label>
 
       <div className="rounded border border-amber-900/20 p-3">
