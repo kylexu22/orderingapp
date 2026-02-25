@@ -371,13 +371,23 @@ export async function POST(req: Request) {
     }
   });
 
-  const nextJob = await prisma.printJob.findFirst({
+  const queuedJob = await prisma.printJob.findFirst({
     where: {
       printerId: printer.id,
       status: PrintJobStatus.QUEUED
     },
     orderBy: { requestedAt: "asc" }
   });
+  const retryDeliveredJob = queuedJob
+    ? null
+    : await prisma.printJob.findFirst({
+        where: {
+          printerId: printer.id,
+          status: PrintJobStatus.DELIVERED
+        },
+        orderBy: { requestedAt: "asc" }
+      });
+  const nextJob = queuedJob ?? retryDeliveredJob;
 
   if (!nextJob) {
     return NextResponse.json({
@@ -391,7 +401,9 @@ export async function POST(req: Request) {
     printerId: printer.id,
     macAddress,
     jobId: nextJob.id,
-    jobToken: nextJob.jobToken
+    jobToken: nextJob.jobToken,
+    copyType: nextJob.copyType,
+    status: nextJob.status
   });
 
   return NextResponse.json({
@@ -456,6 +468,8 @@ export async function GET(req: Request) {
     logInfo("cloudprnt.job_payload_served", {
       jobId: job.id,
       orderNumber: job.order.orderNumber,
+      copyType: job.copyType,
+      jobStatus: job.status,
       mimeType,
       byteLength:
         typeof payload === "string"
