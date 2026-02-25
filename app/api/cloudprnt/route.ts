@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { localizeText } from "@/lib/i18n";
 import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
+import { renderReceiptHtmlToPng } from "@/lib/cloudprnt-render";
 import { logError, logInfo } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -283,8 +284,8 @@ function buildHtmlPayload(params: {
 }
 
 function supportedMimeTypesForJob(copyType: PrintCopyType) {
-  if (copyType === PrintCopyType.KITCHEN) return ["text/vnd.star.markup", "text/plain"];
-  return ["text/vnd.star.markup", "text/plain"];
+  if (copyType === PrintCopyType.KITCHEN) return ["image/png", "text/plain"];
+  return ["image/png", "text/plain"];
 }
 
 function buildMarkupPayload(params: {
@@ -362,11 +363,9 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, m
     throw new Error(`Order not found for CloudPRNT payload: ${orderNumber}`);
   }
 
-  if (mimeType === "text/html") {
-    return buildHtmlPayload({ order, kitchen, restaurantName });
-  }
-  if (mimeType === "text/vnd.star.markup") {
-    return buildMarkupPayload({ order, kitchen, restaurantName });
+  if (mimeType === "image/png") {
+    const html = buildHtmlPayload({ order, kitchen, restaurantName });
+    return renderReceiptHtmlToPng(html);
   }
 
   return buildTextPayload({ order, kitchen, restaurantName });
@@ -515,21 +514,29 @@ export async function GET(req: Request) {
   }
 
   try {
-    const payload = await buildPrintPayload(job.order.orderNumber, job.copyType, mimeType);
+    const shouldCacheText = mimeType.startsWith("text/");
+    const payload =
+      shouldCacheText && job.status === PrintJobStatus.DELIVERED && job.payloadCache
+        ? job.payloadCache
+        : await buildPrintPayload(job.order.orderNumber, job.copyType, mimeType);
     if (job.status === PrintJobStatus.QUEUED) {
       await prisma.printJob.update({
         where: { id: job.id },
         data: {
           status: PrintJobStatus.DELIVERED,
           deliveredAt: new Date(),
-          payloadCache: payload
+          payloadCache: shouldCacheText && typeof payload === "string" ? payload : null
         }
       });
     }
-    return new NextResponse(payload, {
+    const responseBody =
+      typeof payload === "string" ? payload : new Uint8Array(payload);
+    return new NextResponse(responseBody, {
       status: 200,
       headers: {
-        "Content-Type": `${mimeType}; charset=utf-8`,
+        "Content-Type": mimeType.startsWith("text/")
+          ? `${mimeType}; charset=utf-8`
+          : mimeType,
         "Cache-Control": "no-store"
       }
     });
