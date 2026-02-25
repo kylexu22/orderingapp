@@ -167,6 +167,16 @@ function buildTextPayload(params: {
   restaurantName: string;
 }) {
   const { order, kitchen, restaurantName } = params;
+  const ESC = "\x1B";
+  const GS = "\x1D";
+  const FONT_NORMAL = `${GS}!\x00`;
+  const FONT_TALL = `${GS}!\x01`; // 2x height
+  const FONT_DOUBLE = `${GS}!\x11`; // 2x width + 2x height
+  const kitchenFontMode = (process.env.CLOUDPRNT_KITCHEN_FONT_MODE ?? "double").toLowerCase();
+  const kitchenLargeFont =
+    kitchenFontMode === "tall" ? FONT_TALL : kitchenFontMode === "normal" ? FONT_NORMAL : FONT_DOUBLE;
+  const fontFor = (large: boolean) => (kitchen && large ? kitchenLargeFont : FONT_NORMAL);
+  const initialize = kitchen ? `${ESC}@` : "";
   const toZh = (value: string | null | undefined) => localizeText(value, "zh");
   const pickupText =
     order.pickupType === "ASAP"
@@ -174,18 +184,19 @@ function buildTextPayload(params: {
       : fmtDateTime(order.pickupTime as Date);
 
   const lines: string[] = [];
-  lines.push(restaurantName);
-  if (kitchen) lines.push("KITCHEN COPY");
-  lines.push(`#${order.orderNumber}`);
-  lines.push(`Created: ${fmtDateTime(order.createdAt)}`);
-  lines.push(`Pickup: ${pickupText}`);
-  lines.push(`${order.customerName} | ${order.phone}`);
-  lines.push(`Notes: ${order.notes ?? "-"}`);
+  if (initialize) lines.push(initialize);
+  lines.push(`${fontFor(true)}${restaurantName}`);
+  if (kitchen) lines.push(`${fontFor(true)}KITCHEN COPY`);
+  lines.push(`${fontFor(true)}#${order.orderNumber}`);
+  lines.push(`${fontFor(true)}Created: ${fmtDateTime(order.createdAt)}`);
+  lines.push(`${fontFor(true)}Pickup: ${pickupText}`);
+  lines.push(`${fontFor(true)}${order.customerName} | ${order.phone}`);
+  lines.push(`${fontFor(true)}Notes: ${order.notes ?? "-"}`);
   lines.push("------------------------------");
 
   for (const line of order.lines) {
     const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
-    lines.push(`${line.qty} x ${lineName}`);
+    lines.push(`${fontFor(true)}${line.qty} x ${lineName}`);
     const displaySelections = formatOrderSelectionsForDisplay({
       selections: line.selections
         .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))
@@ -197,7 +208,7 @@ function buildTextPayload(params: {
       localize: (value) => (kitchen ? toZh(value) : value ?? "")
     });
     for (const row of displaySelections) {
-      lines.push(`${row.indent ? "    " : "  "}- ${row.text}`);
+      lines.push(`${fontFor(true)}${row.indent ? "    " : "  "}- ${row.text}`);
     }
   }
 
@@ -208,7 +219,8 @@ function buildTextPayload(params: {
     lines.push(`Total: ${centsToCurrency(order.totalCents)}`);
   }
 
-  lines.push("PAY AT PICKUP (CASH)");
+  lines.push(`${fontFor(true)}PAY AT PICKUP (CASH)`);
+  if (kitchen) lines.push(FONT_NORMAL);
   return lines.join("\n");
 }
 
