@@ -509,11 +509,8 @@ export async function GET(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  if (!isCloudPrntAuthorized(req)) {
-    return getCloudPrntUnauthorizedResponse();
-  }
-
   const body = await readBodyAsJson(req);
+  const isBasicAuthed = isCloudPrntAuthorized(req);
   const codeRaw =
     (body.code as string | undefined) ??
     new URL(req.url).searchParams.get("code") ??
@@ -526,6 +523,13 @@ export async function DELETE(req: Request) {
     PrintJobStatus.QUEUED,
     PrintJobStatus.DELIVERED
   ]);
+
+  // Some printer/firmware flows do not send Basic auth on DELETE callback.
+  // Allow DELETE if a valid CloudPRNT job token resolves to an active job.
+  if (!isBasicAuthed && !job) {
+    return getCloudPrntUnauthorizedResponse();
+  }
+
   if (!job) {
     return NextResponse.json({ error: "Job not found." }, { status: 404 });
   }
