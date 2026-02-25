@@ -81,9 +81,11 @@ export default function AdminOrdersPage() {
   const [prepSaveLoading, setPrepSaveLoading] = useState(false);
   const [prepSaveError, setPrepSaveError] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
   const [cloudPrntPrinterId, setCloudPrntPrinterId] = useState("");
   const [cloudPrntPrinterName, setCloudPrntPrinterName] = useState("");
   const [printBusyByOrderId, setPrintBusyByOrderId] = useState<Record<string, boolean>>({});
+  const [printSentByOrderId, setPrintSentByOrderId] = useState<Record<string, string>>({});
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [attentionOrderIds, setAttentionOrderIds] = useState<Set<string>>(new Set());
   const [swipeOffsetByOrderId, setSwipeOffsetByOrderId] = useState<Record<string, number>>({});
@@ -102,6 +104,7 @@ export default function AdminOrdersPage() {
   const reconnectTimerRef = useRef<number | null>(null);
   const lastRealtimeMessageAtRef = useRef<number>(Date.now());
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
+  const autoPrintedOrderIdsRef = useRef<Set<string>>(new Set());
   const hasHydratedOrdersRef = useRef(false);
   const SWIPE_REVEAL_PX = 180;
   const PAST_PAGE_SIZE = 20;
@@ -121,6 +124,8 @@ export default function AdminOrdersPage() {
     pastOrders: lang === "zh" ? "過往訂單" : "Past Orders",
     enableSound: lang === "zh" ? "開啟聲音提示" : "Enable Sound Alerts",
     soundOn: lang === "zh" ? "聲音提示已啟用" : "Sound alerts enabled",
+    autoPrint: lang === "zh" ? "自動打印" : "Auto Print",
+    autoPrintOn: lang === "zh" ? "自動打印已啟用" : "Auto print enabled",
     orderTime: lang === "zh" ? "備餐時間" : "Order Time",
     current: lang === "zh" ? "目前" : "Current",
     today: lang === "zh" ? "今日" : "Today",
@@ -144,7 +149,8 @@ export default function AdminOrdersPage() {
       lang === "zh" ? "已手動暫停接單（不接受訂單）" : "Ordering turned off (not accepting orders)",
     cloudprntReady: lang === "zh" ? "CloudPRNT 已連接" : "CloudPRNT connected",
     cloudprntMissing: lang === "zh" ? "未找到 CloudPRNT 打印機" : "No CloudPRNT printer found",
-    printQueueFailed: lang === "zh" ? "加入打印隊列失敗。" : "Failed to queue print job."
+    printQueueFailed: lang === "zh" ? "加入打印隊列失敗。" : "Failed to queue print job.",
+    sentToPrinter: lang === "zh" ? "已發送至打印機" : "Sent to Printer"
   };
 
   const loadSettings = useCallback(async () => {
@@ -308,6 +314,80 @@ export default function AdminOrdersPage() {
     }, totalDurationSeconds * 1000 + 100);
   }, [ensureAudioReady]);
 
+  const queueCloudPrntPrint = useCallback(
+    async (
+      orderNumber: string,
+      orderId: string,
+      copyType: PrintCopyType,
+      options?: { clearAttention?: boolean; showSentMessage?: boolean; suppressAlert?: boolean }
+    ) => {
+      if (!cloudPrntPrinterId) {
+        if (!options?.suppressAlert) {
+          alert(t.cloudprntMissing);
+        }
+        return false;
+      }
+
+      const clearAttention = options?.clearAttention ?? true;
+      const showSentMessage = options?.showSentMessage ?? false;
+
+      setPrintBusyByOrderId((prev) => ({ ...prev, [orderId]: true }));
+      if (clearAttention) {
+        setHighlightedOrderIds((prev) => {
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+        setAttentionOrderIds((prev) => {
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+      }
+
+      try {
+        const res = await fetch("/api/admin/cloudprnt/queue", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            printerId: cloudPrntPrinterId,
+            orderId,
+            orderNumber,
+            copyType
+          })
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.error ?? t.printQueueFailed);
+        }
+        if (showSentMessage) {
+          setPrintSentByOrderId((prev) => ({ ...prev, [orderId]: t.sentToPrinter }));
+          window.setTimeout(() => {
+            setPrintSentByOrderId((prev) => {
+              if (!prev[orderId]) return prev;
+              const next = { ...prev };
+              delete next[orderId];
+              return next;
+            });
+          }, 2500);
+        }
+        return true;
+      } catch (error) {
+        if (!options?.suppressAlert) {
+          alert(error instanceof Error ? error.message : t.printQueueFailed);
+        }
+        return false;
+      } finally {
+        setPrintBusyByOrderId((prev) => {
+          const next = { ...prev };
+          delete next[orderId];
+          return next;
+        });
+      }
+    },
+    [cloudPrntPrinterId, t.cloudprntMissing, t.printQueueFailed, t.sentToPrinter]
+  );
+
   const loadOrders = useCallback(async () => {
     const res = await fetch("/api/orders");
     if (!res.ok) return;
@@ -333,10 +413,33 @@ export default function AdminOrdersPage() {
       setHighlightedOrderIds((prev) => new Set([...prev, ...newIds]));
       setAttentionOrderIds((prev) => new Set([...prev, ...newIds]));
       void playNewOrderSound();
+      if (autoPrintEnabled && cloudPrntPrinterId) {
+        for (const order of newlySeenActiveOrders) {
+          if (autoPrintedOrderIdsRef.current.has(order.id)) continue;
+          autoPrintedOrderIdsRef.current.add(order.id);
+          // Auto queue both front and kitchen copies for new orders.
+          // Errors are suppressed here to avoid interrupting the console flow.
+          void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.FRONT, {
+            clearAttention: false,
+            showSentMessage: false,
+            suppressAlert: true
+          }).then((ok) => {
+            if (!ok) {
+              autoPrintedOrderIdsRef.current.delete(order.id);
+              return;
+            }
+            void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.KITCHEN, {
+              clearAttention: false,
+              showSentMessage: false,
+              suppressAlert: true
+            });
+          });
+        }
+      }
     }
 
     knownOrderIdsRef.current = nextKnownIds;
-  }, [playNewOrderSound]);
+  }, [autoPrintEnabled, cloudPrntPrinterId, playNewOrderSound, queueCloudPrntPrint]);
 
   const loadCloudPrntPrinters = useCallback(async () => {
     try {
@@ -395,6 +498,8 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const shouldAutoEnable = localStorage.getItem("admin_sound_enabled") === "1";
+    const autoPrintSaved = localStorage.getItem("admin_auto_print_enabled") === "1";
+    setAutoPrintEnabled(autoPrintSaved);
     if (shouldAutoEnable) {
       void ensureAudioReady().then(async (ready) => {
         if (ready) {
@@ -417,6 +522,10 @@ export default function AdminOrdersPage() {
       window.removeEventListener("keydown", unlock);
     };
   }, [ensureAudioReady, startSilentKeepAliveLoop]);
+
+  useEffect(() => {
+    localStorage.setItem("admin_auto_print_enabled", autoPrintEnabled ? "1" : "0");
+  }, [autoPrintEnabled]);
 
   useEffect(() => {
     const prevHtmlOverflowX = document.documentElement.style.overflowX;
@@ -506,18 +615,6 @@ export default function AdminOrdersPage() {
 
       events.addEventListener("ORDER_CREATED", (event) => {
         lastRealtimeMessageAtRef.current = Date.now();
-        try {
-          const payload = JSON.parse((event as MessageEvent).data ?? "{}") as { id?: string };
-          const orderId = payload.id;
-          if (orderId) {
-            setHighlightedOrderIds((prev) => new Set([...prev, orderId]));
-            setAttentionOrderIds((prev) => new Set([...prev, orderId]));
-            knownOrderIdsRef.current.add(orderId);
-          }
-        } catch {
-          // ignore payload parse errors
-        }
-        void playNewOrderSound();
         void loadOrders();
       });
 
@@ -635,50 +732,6 @@ export default function AdminOrdersPage() {
     }));
     setDraggingOrderId(null);
     dragStateRef.current = null;
-  }
-
-  async function queueCloudPrntPrint(orderNumber: string, orderId: string, copyType: PrintCopyType) {
-    if (!cloudPrntPrinterId) {
-      alert(t.cloudprntMissing);
-      return;
-    }
-
-    setPrintBusyByOrderId((prev) => ({ ...prev, [orderId]: true }));
-    setHighlightedOrderIds((prev) => {
-      const next = new Set(prev);
-      next.delete(orderId);
-      return next;
-    });
-    setAttentionOrderIds((prev) => {
-      const next = new Set(prev);
-      next.delete(orderId);
-      return next;
-    });
-
-    try {
-      const res = await fetch("/api/admin/cloudprnt/queue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          printerId: cloudPrntPrinterId,
-          orderId,
-          orderNumber,
-          copyType
-        })
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error ?? t.printQueueFailed);
-      }
-    } catch (error) {
-      alert(error instanceof Error ? error.message : t.printQueueFailed);
-    } finally {
-      setPrintBusyByOrderId((prev) => {
-        const next = { ...prev };
-        delete next[orderId];
-        return next;
-      });
-    }
   }
 
   const sorted = useMemo(
@@ -839,6 +892,16 @@ export default function AdminOrdersPage() {
         ) : (
           <span className="text-xs text-green-700">{t.soundOn}</span>
         )}
+        <button
+          type="button"
+          onClick={() => setAutoPrintEnabled((prev) => !prev)}
+          className={`rounded border px-4 py-2 text-sm font-semibold ${
+            autoPrintEnabled ? "bg-green-700 text-white" : "bg-white text-black"
+          }`}
+        >
+          {t.autoPrint}
+        </button>
+        {autoPrintEnabled ? <span className="text-xs text-green-700">{t.autoPrintOn}</span> : null}
         <span className={`text-xs ${cloudPrntPrinterId ? "text-green-700" : "text-red-700"}`}>
           {cloudPrntPrinterId
             ? `${t.cloudprntReady}: ${cloudPrntPrinterName || cloudPrntPrinterId}`
@@ -986,7 +1049,12 @@ export default function AdminOrdersPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.FRONT)}
+                  onClick={() =>
+                    void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.FRONT, {
+                      clearAttention: true,
+                      showSentMessage: true
+                    })
+                  }
                   disabled={!cloudPrntPrinterId || Boolean(printBusyByOrderId[order.id])}
                   className="rounded bg-black px-4 py-2 text-lg font-semibold text-white disabled:opacity-50"
                 >
@@ -994,7 +1062,10 @@ export default function AdminOrdersPage() {
                 </button>
                 <button
                   onClick={() =>
-                    void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.KITCHEN)
+                    void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.KITCHEN, {
+                      clearAttention: true,
+                      showSentMessage: true
+                    })
                   }
                   disabled={!cloudPrntPrinterId || Boolean(printBusyByOrderId[order.id])}
                   className="rounded border border-black px-4 py-2 text-lg font-semibold text-black disabled:opacity-50"
@@ -1003,6 +1074,9 @@ export default function AdminOrdersPage() {
                 </button>
               </div>
             </div>
+            {printSentByOrderId[order.id] ? (
+              <div className="mt-2 text-sm font-semibold text-green-700">{printSentByOrderId[order.id]}</div>
+            ) : null}
 
             <div className="mt-3 space-y-2 text-base">
               {order.lines.map((line) => (
