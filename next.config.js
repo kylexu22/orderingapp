@@ -1,23 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ["@sparticuz/chromium", "puppeteer-core"]
-  },
   outputFileTracingIncludes: {
     "/api/cloudprnt": [
-      "node_modules/@sparticuz/chromium/**",
-      "node_modules/puppeteer-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**"
+      "node_modules/@fontsource/noto-sans-sc/files/**",
+      "node_modules/@resvg/resvg-js/**"
     ],
     "/api/cloudprnt/route": [
-      "node_modules/@sparticuz/chromium/**",
-      "node_modules/puppeteer-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**"
+      "node_modules/@fontsource/noto-sans-sc/files/**",
+      "node_modules/@resvg/resvg-js/**"
     ],
     "/app/api/cloudprnt/route": [
-      "node_modules/@sparticuz/chromium/**",
-      "node_modules/puppeteer-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**"
+      "node_modules/@fontsource/noto-sans-sc/files/**",
+      "node_modules/@resvg/resvg-js/**"
     ]
   }
 };
