@@ -115,9 +115,9 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
         {payload.kitchen ? (
           <div style={{ marginTop: 4, fontSize: bodySize, fontWeight: 700 }}>KITCHEN COPY</div>
         ) : null}
-        <div style={{ marginTop: 8, fontSize: titleSize + 2, fontWeight: 700 }}>#{payload.orderNumber}</div>
-        <div style={{ marginTop: 6, fontSize: bodySize }}>Created: {payload.createdText}</div>
-        <div style={{ marginTop: 4, fontSize: bodySize }}>Pickup: {payload.pickupText}</div>
+        <div style={{ marginTop: 8, fontSize: titleSize + 2, fontWeight: 700 }}>{`#${payload.orderNumber}`}</div>
+        <div style={{ marginTop: 6, fontSize: bodySize }}>{`Created: ${payload.createdText}`}</div>
+        <div style={{ marginTop: 4, fontSize: bodySize }}>{`Pickup: ${payload.pickupText}`}</div>
       </div>
 
       <div
@@ -151,9 +151,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
               marginTop: lineIndex === 0 ? 0 : 12
             }}
           >
-            <div style={{ fontSize: lineSize, fontWeight: 700 }}>
-              {line.qty} x {line.name}
-            </div>
+            <div style={{ fontSize: lineSize, fontWeight: 700 }}>{`${line.qty} x ${line.name}`}</div>
             {line.selections.map((selection, selectionIndex) => (
               <div
                 key={`${lineIndex}-${selectionIndex}`}
@@ -163,7 +161,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
                   fontSize: selectionSize
                 }}
               >
-                - {selection.text}
+                {`- ${selection.text}`}
               </div>
             ))}
           </div>
@@ -181,9 +179,9 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
             fontSize: bodySize
           }}
         >
-          <div>Subtotal: {payload.subtotalText ?? "-"}</div>
-          <div style={{ marginTop: 4 }}>Tax: {payload.taxText ?? "-"}</div>
-          <div style={{ marginTop: 6, fontWeight: 700 }}>Total: {payload.totalText ?? "-"}</div>
+          <div>{`Subtotal: ${payload.subtotalText ?? "-"}`}</div>
+          <div style={{ marginTop: 4 }}>{`Tax: ${payload.taxText ?? "-"}`}</div>
+          <div style={{ marginTop: 6, fontWeight: 700 }}>{`Total: ${payload.totalText ?? "-"}`}</div>
         </div>
       ) : null}
 
