@@ -4,6 +4,8 @@ import { z } from "zod";
 import { isAuthedRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logInfo } from "@/lib/logger";
+import { buildReceiptRenderPayload } from "@/lib/cloudprnt-payload";
+import { renderReceiptToPng } from "@/lib/cloudprnt-render";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,7 +17,7 @@ const createPrintJobSchema = z.object({
   orderId: z.string().min(1).optional(),
   orderNumber: z.string().min(1).optional(),
   copyType: z.nativeEnum(PrintCopyType).default(PrintCopyType.FRONT),
-  requestedMime: z.string().default("text/plain")
+  requestedMime: z.string().default("image/png")
 });
 
 function normalizeMac(raw: string | null | undefined) {
@@ -121,6 +123,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
   }
 
+  let payloadCacheBase64: string | null = null;
+  try {
+    const restaurantName = process.env.RESTAURANT_NAME ?? "Restaurant";
+    const renderPayload = await buildReceiptRenderPayload({
+      orderNumber: order.orderNumber,
+      copyType: payload.copyType,
+      restaurantName
+    });
+    const png = await renderReceiptToPng(renderPayload);
+    payloadCacheBase64 = png.toString("base64");
+  } catch {
+    return NextResponse.json({ error: "Failed to render print payload." }, { status: 500 });
+  }
+
   const created = await prisma.printJob.create({
     data: {
       printerId: printer.id,
@@ -128,8 +144,9 @@ export async function POST(req: NextRequest) {
       orderNumberSnapshot: order.orderNumber,
       copyType: payload.copyType,
       status: PrintJobStatus.QUEUED,
-      requestedMime: payload.requestedMime,
-      jobToken: newJobToken()
+      requestedMime: "image/png",
+      jobToken: newJobToken(),
+      payloadCache: payloadCacheBase64
     }
   });
 

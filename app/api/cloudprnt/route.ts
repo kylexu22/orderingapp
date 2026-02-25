@@ -133,6 +133,15 @@ function supportedMimeTypesForJob(copyType: PrintCopyType) {
   return ["image/png"];
 }
 
+function decodePayloadCache(payloadCache: string | null | undefined) {
+  if (!payloadCache) return null;
+  try {
+    return Buffer.from(payloadCache, "base64");
+  } catch {
+    return null;
+  }
+}
+
 async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, mimeType: string) {
   const restaurantName = process.env.RESTAURANT_NAME ?? "Restaurant";
 
@@ -317,18 +326,15 @@ export async function GET(req: Request) {
   }
 
   try {
-    const shouldCacheText = false;
-    const payload =
-      shouldCacheText && job.status === PrintJobStatus.DELIVERED && job.payloadCache
-        ? job.payloadCache
-        : await buildPrintPayload(job.order.orderNumber, job.copyType, mimeType);
+    const cachedPayload = decodePayloadCache(job.payloadCache);
+    const payload = cachedPayload ?? (await buildPrintPayload(job.order.orderNumber, job.copyType, mimeType));
     if (job.status === PrintJobStatus.QUEUED) {
       await prisma.printJob.update({
         where: { id: job.id },
         data: {
           status: PrintJobStatus.DELIVERED,
           deliveredAt: new Date(),
-          payloadCache: shouldCacheText && typeof payload === "string" ? payload : null
+          payloadCache: cachedPayload ? job.payloadCache : Buffer.from(payload).toString("base64")
         }
       });
     }
