@@ -9,6 +9,7 @@ import { logError, logInfo } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const runtime = "nodejs";
 
 const CLOUDPRNT_POLL_INTERVAL_MS = 5000;
 
