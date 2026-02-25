@@ -126,10 +126,21 @@ function isDrinkModifier(
   );
 }
 
-async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType) {
-  const kitchen = copyType === PrintCopyType.KITCHEN;
-  const restaurantName = process.env.RESTAURANT_NAME ?? "Restaurant";
-  const order = await prisma.order.findUnique({
+function esc(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function escMarkup(value: string | null | undefined) {
+  const text = value ?? "";
+  return text.replaceAll("[", "(").replaceAll("]", ")").replaceAll("\\", "/");
+}
+
+async function getOrderForPayload(orderNumber: string) {
+  return prisma.order.findUnique({
     where: { orderNumber },
     include: {
       lines: {
@@ -141,11 +152,14 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType) {
       }
     }
   });
+}
 
-  if (!order) {
-    throw new Error(`Order not found for CloudPRNT payload: ${orderNumber}`);
-  }
-
+function buildTextPayload(params: {
+  order: NonNullable<Awaited<ReturnType<typeof getOrderForPayload>>>;
+  kitchen: boolean;
+  restaurantName: string;
+}) {
+  const { order, kitchen, restaurantName } = params;
   const toZh = (value: string | null | undefined) => localizeText(value, "zh");
   const pickupText =
     order.pickupType === "ASAP"
@@ -189,6 +203,173 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType) {
 
   lines.push("PAY AT PICKUP (CASH)");
   return lines.join("\n");
+}
+
+function buildHtmlPayload(params: {
+  order: NonNullable<Awaited<ReturnType<typeof getOrderForPayload>>>;
+  kitchen: boolean;
+  restaurantName: string;
+}) {
+  const { order, kitchen, restaurantName } = params;
+  const toZh = (value: string | null | undefined) => localizeText(value, "zh");
+  const pickupText =
+    order.pickupType === "ASAP"
+      ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
+      : fmtDateTime(order.pickupTime as Date);
+
+  const lineHtml = order.lines
+    .map((line) => {
+      const selectionHtml = formatOrderSelectionsForDisplay({
+        selections: line.selections
+          .filter((s) => !(kitchen && s.selectionKind === "MODIFIER" && isDrinkModifier(s)))
+          .map((s) => ({
+            ...s,
+            selectedModifierOptionId: s.selectedModifierOptionId ?? null
+          })),
+        lang: kitchen ? "zh" : "en",
+        localize: (value) => (kitchen ? toZh(value) : value ?? "")
+      })
+        .map((row) => {
+          const leftPad = row.indent ? " style=\"padding-left: 48px\"" : "";
+          return `<div class="subline"${leftPad}>- ${esc(row.text)}</div>`;
+        })
+        .join("");
+      const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
+      return `<div class="line"><div><strong>${line.qty} x ${esc(lineName)}</strong></div>${selectionHtml}</div>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ticket ${esc(order.orderNumber)}</title>
+  <style>
+    @page { size: 80mm auto; margin: 2mm; }
+    body { font-family: ${kitchen ? '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif' : '"Arial", sans-serif'}; width: 100%; margin: 0; font-size: ${kitchen ? "22px" : "42px"}; line-height: 1.2; }
+    .center { text-align: center; }
+    .title { font-size: ${kitchen ? "28px" : "40px"}; font-weight: 700; }
+    .number { font-size: ${kitchen ? "32px" : "40px"}; font-weight: 800; margin: 18px 0; }
+    .section { margin-top: 24px; border-top: 1px dashed #222; padding-top: 24px; }
+    .line { margin-top: 18px; font-size: ${kitchen ? "63px" : "42px"}; }
+    .line strong { font-size: ${kitchen ? "66px" : "42px"}; }
+    .subline { padding-left: 24px; font-size: ${kitchen ? "57px" : "39px"}; }
+    .totals { margin-top: 30px; border-top: 1px dashed #222; padding-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="center title">${esc(restaurantName)}</div>
+  ${kitchen ? `<div class="center"><strong>KITCHEN COPY</strong></div>` : ""}
+  <div class="center number">#${esc(order.orderNumber)}</div>
+  <div class="center">Created: ${esc(fmtDateTime(order.createdAt))}</div>
+  <div class="center">Pickup: ${esc(pickupText)}</div>
+  <div class="section">
+    <div><strong>${esc(order.customerName)}</strong> | ${esc(order.phone)}</div>
+    <div>Notes: ${esc(order.notes ?? "-")}</div>
+  </div>
+  <div class="section">${lineHtml}</div>
+  ${
+    kitchen
+      ? ""
+      : `<div class="totals">
+    <div>Subtotal: ${centsToCurrency(order.subtotalCents)}</div>
+    <div>Tax: ${centsToCurrency(order.taxCents)}</div>
+    <div><strong>Total: ${centsToCurrency(order.totalCents)}</strong></div>
+  </div>`
+  }
+</body>
+</html>`;
+}
+
+function supportedMimeTypesForJob(copyType: PrintCopyType) {
+  if (copyType === PrintCopyType.KITCHEN) return ["text/vnd.star.markup", "text/plain"];
+  return ["text/vnd.star.markup", "text/plain"];
+}
+
+function buildMarkupPayload(params: {
+  order: NonNullable<Awaited<ReturnType<typeof getOrderForPayload>>>;
+  kitchen: boolean;
+  restaurantName: string;
+}) {
+  const { order, kitchen, restaurantName } = params;
+  const toZh = (value: string | null | undefined) => localizeText(value, "zh");
+  const pickupText =
+    order.pickupType === "ASAP"
+      ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
+      : fmtDateTime(order.pickupTime as Date);
+
+  const out: string[] = [];
+  out.push("[align: center]");
+  out.push(`[bold: on][magnify: width 2; height 2]${escMarkup(restaurantName)}[plain]`);
+  if (kitchen) {
+    out.push("[bold: on][magnify: width 2; height 2]KITCHEN COPY[plain]");
+  }
+  out.push(`[bold: on]#${escMarkup(order.orderNumber)}[plain]`);
+  out.push(`Created: ${escMarkup(fmtDateTime(order.createdAt))}`);
+  out.push(`Pickup: ${escMarkup(pickupText)}`);
+  out.push("[feed]");
+  out.push("[align: left]");
+  out.push(`[bold: on]${escMarkup(order.customerName)} | ${escMarkup(order.phone)}[plain]`);
+  out.push(`Notes: ${escMarkup(order.notes ?? "-")}`);
+  out.push("----------------------------------------");
+
+  for (const line of order.lines) {
+    const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
+    out.push(`[bold: on][magnify: width 2; height 2]${line.qty} x ${escMarkup(lineName)}[plain]`);
+    const rows = formatOrderSelectionsForDisplay({
+      selections: line.selections
+        .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))
+        .map((sel) => ({
+          ...sel,
+          selectedModifierOptionId: sel.selectedModifierOptionId ?? null
+        })),
+      lang: kitchen ? "zh" : "en",
+      localize: (value) => (kitchen ? toZh(value) : value ?? "")
+    });
+
+    for (const row of rows) {
+      if (row.indent) {
+        out.push(`[column: left "    - ${escMarkup(row.text)}"]`);
+      } else {
+        out.push(`- ${escMarkup(row.text)}`);
+      }
+    }
+    out.push("[feed]");
+  }
+
+  if (!kitchen) {
+    out.push("----------------------------------------");
+    out.push(`[column: left Subtotal; right ${centsToCurrency(order.subtotalCents)}]`);
+    out.push(`[column: left Tax; right ${centsToCurrency(order.taxCents)}]`);
+    out.push(`[bold: on][column: left Total; right ${centsToCurrency(order.totalCents)}][plain]`);
+    out.push("[feed]");
+  }
+
+  out.push("[align: center]");
+  out.push("[bold: on][magnify: width 2; height 2]PAY AT PICKUP (CASH)[plain]");
+  out.push("[feed: length 6mm]");
+  out.push("[cut: partial]");
+  return out.join("\n");
+}
+
+async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, mimeType: string) {
+  const kitchen = copyType === PrintCopyType.KITCHEN;
+  const restaurantName = process.env.RESTAURANT_NAME ?? "Restaurant";
+  const order = await getOrderForPayload(orderNumber);
+
+  if (!order) {
+    throw new Error(`Order not found for CloudPRNT payload: ${orderNumber}`);
+  }
+
+  if (mimeType === "text/html") {
+    return buildHtmlPayload({ order, kitchen, restaurantName });
+  }
+  if (mimeType === "text/vnd.star.markup") {
+    return buildMarkupPayload({ order, kitchen, restaurantName });
+  }
+
+  return buildTextPayload({ order, kitchen, restaurantName });
 }
 
 async function findJobByTokenOrPrinter(
@@ -301,7 +482,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     jobReady: true,
-    mediaTypes: [nextJob.requestedMime],
+    mediaTypes: supportedMimeTypesForJob(nextJob.copyType),
     jobToken: nextJob.jobToken,
     deleteMethod: "DELETE",
     clientAction: "GET"
@@ -314,7 +495,6 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const mimeType = searchParams.get("type") ?? "text/plain";
   const job = await findJobByTokenOrPrinter(req, {}, [
     PrintJobStatus.QUEUED,
     PrintJobStatus.DELIVERED
@@ -324,7 +504,9 @@ export async function GET(req: Request) {
     return new NextResponse("Job not found", { status: 404 });
   }
 
-  if (job.requestedMime !== mimeType) {
+  const supportedTypes = supportedMimeTypesForJob(job.copyType);
+  const mimeType = searchParams.get("type") ?? supportedTypes[0];
+  if (!supportedTypes.includes(mimeType)) {
     return new NextResponse("Unsupported media type request", { status: 415 });
   }
 
@@ -333,10 +515,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const payload =
-      job.status === PrintJobStatus.DELIVERED && job.payloadCache
-        ? job.payloadCache
-        : await buildPrintPayload(job.order.orderNumber, job.copyType);
+    const payload = await buildPrintPayload(job.order.orderNumber, job.copyType, mimeType);
     if (job.status === PrintJobStatus.QUEUED) {
       await prisma.printJob.update({
         where: { id: job.id },
