@@ -285,8 +285,8 @@ function buildHtmlPayload(params: {
 }
 
 function supportedMimeTypesForJob(copyType: PrintCopyType) {
-  if (copyType === PrintCopyType.KITCHEN) return ["image/png", "text/plain"];
-  return ["image/png", "text/plain"];
+  if (copyType === PrintCopyType.KITCHEN) return ["image/png"];
+  return ["image/png"];
 }
 
 function buildMarkupPayload(params: {
@@ -506,6 +506,13 @@ export async function GET(req: Request) {
 
   const supportedTypes = supportedMimeTypesForJob(job.copyType);
   const mimeType = searchParams.get("type") ?? supportedTypes[0];
+  logInfo("cloudprnt.job_payload_request", {
+    jobId: job.id,
+    orderNumber: job.order.orderNumber,
+    requestedType: searchParams.get("type") ?? null,
+    resolvedType: mimeType,
+    supportedTypes
+  });
   if (!supportedTypes.includes(mimeType)) {
     return new NextResponse("Unsupported media type request", { status: 415 });
   }
@@ -532,6 +539,15 @@ export async function GET(req: Request) {
     }
     const responseBody =
       typeof payload === "string" ? payload : new Uint8Array(payload);
+    logInfo("cloudprnt.job_payload_served", {
+      jobId: job.id,
+      orderNumber: job.order.orderNumber,
+      mimeType,
+      byteLength:
+        typeof payload === "string"
+          ? Buffer.byteLength(payload, "utf8")
+          : payload.byteLength
+    });
     return new NextResponse(responseBody, {
       status: 200,
       headers: {
