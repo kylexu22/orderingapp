@@ -37,6 +37,23 @@ function getCloudPrntUnauthorizedResponse() {
   });
 }
 
+async function isKnownPrinterMac(macAddress: string | null | undefined) {
+  if (!macAddress) return false;
+  const printer = await prisma.printer.findUnique({
+    where: { macAddress },
+    select: { id: true }
+  });
+  return Boolean(printer);
+}
+
+async function hasValidJobToken(req: Request, body?: Record<string, unknown>) {
+  const found = await findJobByTokenOrPrinter(req, body ?? {}, [
+    PrintJobStatus.QUEUED,
+    PrintJobStatus.DELIVERED
+  ]);
+  return Boolean(found);
+}
+
 function isCloudPrntAuthorized(req: Request) {
   const expectedUser = process.env.CLOUDPRNT_BASIC_USER;
   const expectedPass = process.env.CLOUDPRNT_BASIC_PASS;
@@ -340,12 +357,15 @@ async function findJobByTokenOrPrinter(
 }
 
 export async function POST(req: Request) {
-  if (!isCloudPrntAuthorized(req)) {
-    return getCloudPrntUnauthorizedResponse();
-  }
-
   const body = await readBodyAsJson(req);
+  const isBasicAuthed = isCloudPrntAuthorized(req);
   const { macAddress, uid, name } = extractPrinterIdentity(req, body);
+  if (!isBasicAuthed) {
+    const knownPrinter = await isKnownPrinterMac(macAddress);
+    if (!knownPrinter) {
+      return getCloudPrntUnauthorizedResponse();
+    }
+  }
   if (!macAddress) {
     return NextResponse.json(
       { error: "Missing printer MAC address." },
@@ -417,7 +437,10 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   if (!isCloudPrntAuthorized(req)) {
-    return getCloudPrntUnauthorizedResponse();
+    const tokenOk = await hasValidJobToken(req);
+    if (!tokenOk) {
+      return getCloudPrntUnauthorizedResponse();
+    }
   }
 
   const { searchParams } = new URL(req.url);

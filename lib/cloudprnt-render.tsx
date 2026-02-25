@@ -97,9 +97,10 @@ function loadTCBoldFont() {
 }
 
 function estimateReceiptHeight(payload: ReceiptRenderPayload) {
-  const base = payload.kitchen ? 360 : 320;
-  const lineHeight = payload.kitchen ? 70 : 56;
-  const selectionHeight = payload.kitchen ? 50 : 42;
+  // Keep kitchen and front on the same layout profile for CloudPRNT stability.
+  const base = 320;
+  const lineHeight = 56;
+  const selectionHeight = 42;
 
   let total = base;
   for (const line of payload.lines) {
@@ -120,10 +121,11 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
   ]);
   const height = estimateReceiptHeight(payload);
 
-  const titleSize = payload.kitchen ? 36 : 34;
-  const bodySize = payload.kitchen ? 26 : 24;
-  const lineSize = payload.kitchen ? 44 : 34;
-  const selectionSize = payload.kitchen ? 34 : 28;
+  // Same visual density for both print types (kitchen/front) during troubleshooting.
+  const titleSize = 34;
+  const bodySize = 24;
+  const lineSize = 34;
+  const selectionSize = 28;
 
   const svg = await satori(
     <div
