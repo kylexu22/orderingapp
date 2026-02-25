@@ -3,6 +3,8 @@ import path from "node:path";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 
+type FontMode = "normal" | "tall" | "double";
+
 export type ReceiptRenderSelection = {
   text: string;
   indent: boolean;
@@ -27,9 +29,12 @@ export type ReceiptRenderPayload = {
   taxText?: string;
   totalText?: string;
   paidText: string;
+  kitchenFontMode?: FontMode;
 };
 
 const RECEIPT_WIDTH = 576;
+const COLOR_BLACK = "#000000";
+const COLOR_WHITE = "#FFFFFF";
 
 let fontSCRegularPromise: Promise<Buffer> | null = null;
 let fontSCBoldPromise: Promise<Buffer> | null = null;
@@ -38,14 +43,7 @@ let fontTCBoldPromise: Promise<Buffer> | null = null;
 
 function loadSCRegularFont() {
   if (!fontSCRegularPromise) {
-    const fontPath = path.join(
-      process.cwd(),
-      "node_modules",
-      "@fontsource",
-      "noto-sans-sc",
-      "files",
-      "noto-sans-sc-chinese-simplified-400-normal.woff"
-    );
+    const fontPath = path.join(process.cwd(), "assets", "fonts", "noto-sans-sc-400.woff");
     fontSCRegularPromise = readFile(fontPath);
   }
   return fontSCRegularPromise;
@@ -53,14 +51,7 @@ function loadSCRegularFont() {
 
 function loadSCBoldFont() {
   if (!fontSCBoldPromise) {
-    const fontPath = path.join(
-      process.cwd(),
-      "node_modules",
-      "@fontsource",
-      "noto-sans-sc",
-      "files",
-      "noto-sans-sc-chinese-simplified-700-normal.woff"
-    );
+    const fontPath = path.join(process.cwd(), "assets", "fonts", "noto-sans-sc-700.woff");
     fontSCBoldPromise = readFile(fontPath);
   }
   return fontSCBoldPromise;
@@ -68,14 +59,7 @@ function loadSCBoldFont() {
 
 function loadTCRegularFont() {
   if (!fontTCRegularPromise) {
-    const fontPath = path.join(
-      process.cwd(),
-      "node_modules",
-      "@fontsource",
-      "noto-sans-tc",
-      "files",
-      "noto-sans-tc-chinese-traditional-400-normal.woff"
-    );
+    const fontPath = path.join(process.cwd(), "assets", "fonts", "noto-sans-tc-400.woff");
     fontTCRegularPromise = readFile(fontPath);
   }
   return fontTCRegularPromise;
@@ -83,24 +67,24 @@ function loadTCRegularFont() {
 
 function loadTCBoldFont() {
   if (!fontTCBoldPromise) {
-    const fontPath = path.join(
-      process.cwd(),
-      "node_modules",
-      "@fontsource",
-      "noto-sans-tc",
-      "files",
-      "noto-sans-tc-chinese-traditional-700-normal.woff"
-    );
+    const fontPath = path.join(process.cwd(), "assets", "fonts", "noto-sans-tc-700.woff");
     fontTCBoldPromise = readFile(fontPath);
   }
   return fontTCBoldPromise;
 }
 
 function estimateReceiptHeight(payload: ReceiptRenderPayload) {
-  // Keep kitchen and front on the same layout profile for CloudPRNT stability.
-  const base = 320;
-  const lineHeight = 56;
-  const selectionHeight = 42;
+  const kitchenMode = payload.kitchenFontMode ?? "double";
+  const kitchenScale = payload.kitchen
+    ? kitchenMode === "double"
+      ? 1.35
+      : kitchenMode === "tall"
+        ? 1.2
+        : 1.05
+    : 1;
+  const base = Math.round(320 * kitchenScale);
+  const lineHeight = Math.round(56 * kitchenScale);
+  const selectionHeight = Math.round(42 * kitchenScale);
 
   let total = base;
   for (const line of payload.lines) {
@@ -120,25 +104,36 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
     loadTCBoldFont()
   ]);
   const height = estimateReceiptHeight(payload);
+  const kitchenMode = payload.kitchenFontMode ?? "double";
+  const kitchenScale = payload.kitchen
+    ? kitchenMode === "double"
+      ? 1.35
+      : kitchenMode === "tall"
+        ? 1.2
+        : 1.05
+    : 1;
 
-  // Same visual density for both print types (kitchen/front) during troubleshooting.
-  const titleSize = 34;
-  const bodySize = 24;
-  const lineSize = 34;
-  const selectionSize = 28;
+  const titleSize = Math.round(34 * kitchenScale);
+  const bodySize = Math.round(24 * kitchenScale);
+  const lineSize = Math.round(34 * kitchenScale);
+  const selectionSize = Math.round(28 * kitchenScale);
 
   const svg = await satori(
     <div
       style={{
         width: RECEIPT_WIDTH,
         minHeight: height,
-        backgroundColor: "#fff",
-        color: "#000",
+        backgroundColor: COLOR_WHITE,
+        color: COLOR_BLACK,
         display: "flex",
         flexDirection: "column",
         fontFamily: "Noto Sans TC, Noto Sans SC",
         boxSizing: "border-box",
-        padding: "10px 12px"
+        padding: "10px 12px",
+        imageRendering: "pixelated",
+        WebkitFontSmoothing: "none",
+        textRendering: "geometricPrecision",
+        ...( { fontSmooth: "never" } as Record<string, string> )
       }}
     >
       <div
@@ -162,7 +157,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
       <div
         style={{
           marginTop: 14,
-          borderTop: "1px dashed #222",
+          borderTop: "1px dashed #000000",
           paddingTop: 12,
           display: "flex",
           flexDirection: "column"
@@ -175,7 +170,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
       <div
         style={{
           marginTop: 14,
-          borderTop: "1px dashed #222",
+          borderTop: "1px dashed #000000",
           paddingTop: 12,
           display: "flex",
           flexDirection: "column"
@@ -210,11 +205,11 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
       {!payload.kitchen ? (
         <div
           style={{
-            marginTop: 14,
-            borderTop: "1px dashed #222",
-            paddingTop: 12,
-            display: "flex",
-            flexDirection: "column",
+          marginTop: 14,
+          borderTop: "1px dashed #000000",
+          paddingTop: 12,
+          display: "flex",
+          flexDirection: "column",
             fontSize: bodySize
           }}
         >

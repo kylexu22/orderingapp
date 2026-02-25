@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { localizeText } from "@/lib/i18n";
 import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
-import { buildCloudPrntBinaryReceipt } from "@/lib/cloudprnt-binary";
+import { renderReceiptToPng } from "@/lib/cloudprnt-render";
 import { logError, logInfo } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -160,7 +160,7 @@ async function getOrderForPayload(orderNumber: string) {
   });
 }
 
-function buildBinaryPayload(params: {
+async function buildPngPayload(params: {
   order: NonNullable<Awaited<ReturnType<typeof getOrderForPayload>>>;
   kitchen: boolean;
   restaurantName: string;
@@ -199,9 +199,7 @@ function buildBinaryPayload(params: {
       ? kitchenModeRaw
       : "double";
 
-  const encoding = process.env.CLOUDPRNT_TEXT_ENCODING ?? "utf-8";
-
-  return buildCloudPrntBinaryReceipt({
+  return renderReceiptToPng({
     restaurantName,
     orderNumber: order.orderNumber,
     createdText: fmtDateTime(order.createdAt),
@@ -214,13 +212,12 @@ function buildBinaryPayload(params: {
     taxText: kitchen ? undefined : centsToCurrency(order.taxCents),
     totalText: kitchen ? undefined : centsToCurrency(order.totalCents),
     paidText: kitchen ? "\u5230\u5e97\u4ed8\u6b3e\uff08\u73fe\u91d1\uff09" : "PAY AT PICKUP (CASH)",
-    encoding,
     kitchenFontMode
   });
 }
 
 function supportedMimeTypesForJob(copyType: PrintCopyType) {
-  return ["text/plain"];
+  return ["image/png"];
 }
 
 async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, mimeType: string) {
@@ -232,11 +229,11 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, m
     throw new Error(`Order not found for CloudPRNT payload: ${orderNumber}`);
   }
 
-  if (mimeType !== "text/plain") {
-    throw new Error(`Unsupported CloudPRNT mime type for binary generator: ${mimeType}`);
+  if (mimeType !== "image/png") {
+    throw new Error(`Unsupported CloudPRNT mime type for Satori renderer: ${mimeType}`);
   }
 
-  return buildBinaryPayload({ order, kitchen, restaurantName });
+  return buildPngPayload({ order, kitchen, restaurantName });
 }
 
 async function findJobByTokenOrPrinter(
@@ -422,7 +419,6 @@ export async function GET(req: Request) {
         }
       });
     }
-    const textEncodingUsed = process.env.CLOUDPRNT_TEXT_ENCODING ?? "utf-8";
     const responseBody = payload instanceof Uint8Array ? payload : Uint8Array.from(payload);
 
     logInfo("cloudprnt.job_payload_served", {
@@ -431,7 +427,6 @@ export async function GET(req: Request) {
       copyType: job.copyType,
       jobStatus: job.status,
       mimeType,
-      textEncodingUsed,
       byteLength: responseBody.byteLength
     });
     const byteLength =
@@ -439,7 +434,7 @@ export async function GET(req: Request) {
     return new NextResponse(responseBody as BodyInit, {
       status: 200,
       headers: {
-        "Content-Type": `${mimeType}; charset=${textEncodingUsed}`,
+        "Content-Type": mimeType,
         "Content-Length": String(byteLength),
         "Cache-Control": "no-store"
       }
