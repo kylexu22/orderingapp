@@ -523,7 +523,8 @@ export async function createOrder(input: CreateOrderInput) {
     },
     select: {
       id: true,
-      name: true
+      name: true,
+      email: true
     }
   });
 
@@ -545,6 +546,11 @@ export async function createOrder(input: CreateOrderInput) {
       }
     },
     include: {
+      customer: {
+        select: {
+          email: true
+        }
+      },
       lines: {
         include: {
           selections: true

@@ -4,6 +4,7 @@ import { OrderStatus, PickupType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createOrder } from "@/lib/order-service";
+import { sendOrderConfirmationEmail } from "@/lib/order-confirmation-email";
 import { broadcastOrderEvent } from "@/lib/sse";
 import { logError, logInfo } from "@/lib/logger";
 import { getVerifiedPhoneFromCookieHeader } from "@/lib/verify-session";
@@ -102,6 +103,29 @@ export async function POST(req: Request) {
         createdAt: order.createdAt.toISOString()
       }
     });
+    try {
+      const emailResult = await sendOrderConfirmationEmail({
+        order,
+        recipientEmail: order.customer?.email ?? parsed.email
+      });
+      if (emailResult.skipped) {
+        logInfo("order.confirmation_email.skipped", {
+          orderNumber: order.orderNumber,
+          reason: emailResult.reason
+        });
+      } else {
+        logInfo("order.confirmation_email.sent", {
+          orderNumber: order.orderNumber,
+          messageId: emailResult.messageId
+        });
+      }
+    } catch (emailError) {
+      logError("order.confirmation_email_failed", {
+        orderNumber: order.orderNumber,
+        message: emailError instanceof Error ? emailError.message : "unknown"
+      });
+    }
+
     const res = NextResponse.json({
       id: order.id,
       orderNumber: order.orderNumber

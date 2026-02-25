@@ -266,7 +266,7 @@ export default function LoginPage() {
             <p className="text-lg text-black/70">
               {t.sentCodeTo} <span className="font-semibold text-black/70">{phone}</span>
             </p>
-            <div className="flex justify-center gap-2 sm:gap-3">
+            <div className="grid w-full max-w-sm grid-cols-6 gap-2 sm:gap-3">
               {digits.map((digit, index) => (
                 <input
                   key={index}
@@ -279,7 +279,7 @@ export default function LoginPage() {
                   onPaste={onCodePaste}
                   inputMode="numeric"
                   maxLength={1}
-                  className="h-14 w-12 border border-amber-900/20 bg-white text-center text-2xl font-semibold text-[var(--ink)] sm:h-16 sm:w-14"
+                  className="h-14 w-full min-w-0 border border-amber-900/20 bg-white text-center text-2xl font-semibold text-[var(--ink)] sm:h-16"
                   style={{ borderRadius: 0 }}
                 />
               ))}
