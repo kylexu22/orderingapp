@@ -14,6 +14,7 @@ export type ReceiptRenderSelection = {
 export type ReceiptRenderLine = {
   qty: number;
   name: string;
+  lineTotalText?: string;
   selections: ReceiptRenderSelection[];
 };
 
@@ -29,7 +30,6 @@ export type ReceiptRenderPayload = {
   subtotalText?: string;
   taxText?: string;
   totalText?: string;
-  paidText: string;
   kitchenFontMode?: FontMode;
 };
 
@@ -83,18 +83,51 @@ function estimateReceiptHeight(payload: ReceiptRenderPayload) {
         ? 1.2
         : 1.05
     : 1;
-  const base = Math.round(320 * kitchenScale);
-  const lineHeight = Math.round(56 * kitchenScale);
-  const selectionHeight = Math.round(42 * kitchenScale);
+  const headerSize = Math.round(22 * kitchenScale);
+  const orderNumberSize = Math.round(28 * kitchenScale);
+  const pickupSize = payload.kitchen ? Math.round(24 * kitchenScale) : Math.round(30 * kitchenScale);
+  const lineSize = Math.round(38 * kitchenScale);
+  const selectionSize = lineSize;
 
-  let total = base;
+  const weightedLength = (value: string) =>
+    Array.from(value).reduce((acc, char) => {
+      const code = char.codePointAt(0) ?? 0;
+      const isCjk = (code >= 0x3400 && code <= 0x9fff) || (code >= 0xF900 && code <= 0xFAFF);
+      return acc + (isCjk ? 1.05 : 0.58);
+    }, 0);
+  const wrappedRows = (value: string, fontSize: number, paddingLeft = 0) => {
+    const usableWidth = RECEIPT_WIDTH - 24 - paddingLeft;
+    const estimatedWidth = weightedLength(value) * fontSize;
+    return Math.max(1, Math.ceil(estimatedWidth / Math.max(usableWidth, 1)));
+  };
+
+  let total = 36;
+  total += Math.ceil(headerSize * 1.5);
+  if (payload.kitchen) total += Math.ceil(headerSize * 1.5);
+  total += Math.ceil(orderNumberSize * 1.5);
+  total += Math.ceil(headerSize * 1.6); // created
+  total += Math.ceil(pickupSize * 1.6);
+  total += 28; // first divider/padding
+  total += Math.ceil(headerSize * 1.5); // customer row
+  total += Math.ceil(headerSize * 1.5); // notes row
+  total += 28; // second divider/padding
   for (const line of payload.lines) {
-    total += lineHeight;
-    total += line.selections.length * selectionHeight;
-    total += 10;
+    total += wrappedRows(`${line.qty} x ${line.name}`, lineSize) * Math.ceil(lineSize * 1.35);
+    if (!payload.kitchen && line.lineTotalText) {
+      total += Math.ceil(headerSize * 1.3);
+    }
+    for (const selection of line.selections) {
+      const left = selection.indent ? 40 : 18;
+      total +=
+        wrappedRows(`- ${selection.text}`, selectionSize, left) * Math.ceil(selectionSize * 1.28);
+    }
+    total += 14;
   }
-  if (!payload.kitchen) total += 180;
-  return Math.min(Math.max(total + 80, 600), 8000);
+  if (!payload.kitchen) {
+    total += 26;
+    total += Math.ceil(headerSize * 1.4) * 3;
+  }
+  return Math.min(Math.max(total + 140, 800), 15000);
 }
 
 export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise<Buffer> {
@@ -114,10 +147,12 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
         : 1.05
     : 1;
 
-  const titleSize = Math.round(34 * kitchenScale);
-  const bodySize = Math.round(24 * kitchenScale);
-  const lineSize = Math.round(34 * kitchenScale);
-  const selectionSize = Math.round(28 * kitchenScale);
+  const titleSize = Math.round(22 * kitchenScale);
+  const orderNumberSize = Math.round(28 * kitchenScale);
+  const bodySize = Math.round(21 * kitchenScale);
+  const pickupSize = payload.kitchen ? Math.round(24 * kitchenScale) : Math.round(30 * kitchenScale);
+  const lineSize = Math.round(38 * kitchenScale);
+  const selectionSize = lineSize;
   const headingWeight = payload.kitchen ? 500 : 700;
   const lineWeight = payload.kitchen ? 500 : 700;
 
@@ -153,9 +188,9 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
         {payload.kitchen ? (
           <div style={{ marginTop: 4, fontSize: bodySize, fontWeight: headingWeight }}>KITCHEN COPY</div>
         ) : null}
-        <div style={{ marginTop: 8, fontSize: titleSize + 2, fontWeight: headingWeight }}>{`#${payload.orderNumber}`}</div>
+        <div style={{ marginTop: 8, fontSize: orderNumberSize, fontWeight: headingWeight }}>{`#${payload.orderNumber}`}</div>
         <div style={{ marginTop: 6, fontSize: bodySize }}>{`Created: ${payload.createdText}`}</div>
-        <div style={{ marginTop: 4, fontSize: bodySize }}>{`Pickup: ${payload.pickupText}`}</div>
+        <div style={{ marginTop: 4, fontSize: pickupSize, fontWeight: 700 }}>{`Pickup: ${payload.pickupText}`}</div>
       </div>
 
       <div
@@ -190,6 +225,9 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
             }}
           >
             <div style={{ fontSize: lineSize, fontWeight: lineWeight }}>{`${line.qty} x ${line.name}`}</div>
+            {!payload.kitchen && line.lineTotalText ? (
+              <div style={{ marginTop: 2, fontSize: bodySize }}>{line.lineTotalText}</div>
+            ) : null}
             {line.selections.map((selection, selectionIndex) => (
               <div
                 key={`${lineIndex}-${selectionIndex}`}
@@ -222,18 +260,6 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           <div style={{ marginTop: 6, fontWeight: 700 }}>{`Total: ${payload.totalText ?? "-"}`}</div>
         </div>
       ) : null}
-
-      <div
-        style={{
-          marginTop: 16,
-          width: "100%",
-          textAlign: "center",
-          fontSize: bodySize + 4,
-          fontWeight: headingWeight
-        }}
-      >
-        {payload.paidText}
-      </div>
     </div>,
     {
       width: RECEIPT_WIDTH,
@@ -307,10 +333,12 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
         : 1.05
     : 1;
 
-  const titleSize = Math.round(34 * kitchenScale);
-  const bodySize = Math.round(24 * kitchenScale);
-  const lineSize = Math.round(34 * kitchenScale);
-  const selectionSize = Math.round(28 * kitchenScale);
+  const titleSize = Math.round(22 * kitchenScale);
+  const orderNumberSize = Math.round(28 * kitchenScale);
+  const bodySize = Math.round(21 * kitchenScale);
+  const pickupSize = payload.kitchen ? Math.round(24 * kitchenScale) : Math.round(30 * kitchenScale);
+  const lineSize = Math.round(38 * kitchenScale);
+  const selectionSize = lineSize;
 
   return satori(
     <div
@@ -343,9 +371,9 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
         {payload.kitchen ? (
           <div style={{ marginTop: 4, fontSize: bodySize, fontWeight: 700 }}>KITCHEN COPY</div>
         ) : null}
-        <div style={{ marginTop: 8, fontSize: titleSize + 2, fontWeight: 700 }}>{`#${payload.orderNumber}`}</div>
+        <div style={{ marginTop: 8, fontSize: orderNumberSize, fontWeight: 700 }}>{`#${payload.orderNumber}`}</div>
         <div style={{ marginTop: 6, fontSize: bodySize }}>{`Created: ${payload.createdText}`}</div>
-        <div style={{ marginTop: 4, fontSize: bodySize }}>{`Pickup: ${payload.pickupText}`}</div>
+        <div style={{ marginTop: 4, fontSize: pickupSize, fontWeight: 700 }}>{`Pickup: ${payload.pickupText}`}</div>
       </div>
 
       <div
@@ -379,7 +407,10 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
               marginTop: lineIndex === 0 ? 0 : 12
             }}
           >
-            <div style={{ fontSize: lineSize, fontWeight: 700 }}>{`${line.qty} x ${line.name}`}</div>
+            <div style={{ fontSize: lineSize, fontWeight: payload.kitchen ? 500 : 700 }}>{`${line.qty} x ${line.name}`}</div>
+            {!payload.kitchen && line.lineTotalText ? (
+              <div style={{ marginTop: 2, fontSize: bodySize }}>{line.lineTotalText}</div>
+            ) : null}
             {line.selections.map((selection, selectionIndex) => (
               <div
                 key={`${lineIndex}-${selectionIndex}`}
@@ -412,18 +443,6 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
           <div style={{ marginTop: 6, fontWeight: 700 }}>{`Total: ${payload.totalText ?? "-"}`}</div>
         </div>
       ) : null}
-
-      <div
-        style={{
-          marginTop: 16,
-          width: "100%",
-          textAlign: "center",
-          fontSize: bodySize + 4,
-          fontWeight: 700
-        }}
-      >
-        {payload.paidText}
-      </div>
     </div>,
     {
       width: RECEIPT_WIDTH,

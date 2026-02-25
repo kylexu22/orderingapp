@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { localizeText } from "@/lib/i18n";
 import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
-import type { ReceiptRenderPayload } from "@/lib/cloudprnt-render";
+import type { ReceiptRenderPayload, ReceiptRenderLine } from "@/lib/cloudprnt-render";
 
 function isDrinkModifier(
   selection: {
@@ -50,7 +50,7 @@ export async function buildReceiptRenderPayload(params: {
       ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
       : fmtDateTime(order.pickupTime as Date);
 
-  const lines = order.lines.map((line) => {
+  const lines: ReceiptRenderLine[] = order.lines.map((line) => {
     const displaySelections = formatOrderSelectionsForDisplay({
       selections: line.selections
         .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))
@@ -65,6 +65,7 @@ export async function buildReceiptRenderPayload(params: {
     return {
       qty: line.qty,
       name: kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot,
+      lineTotalText: kitchen ? undefined : centsToCurrency(line.lineTotalCents),
       selections: displaySelections.map((selection) => ({
         text: selection.text,
         indent: Boolean(selection.indent)
@@ -90,7 +91,6 @@ export async function buildReceiptRenderPayload(params: {
     subtotalText: kitchen ? undefined : centsToCurrency(order.subtotalCents),
     taxText: kitchen ? undefined : centsToCurrency(order.taxCents),
     totalText: kitchen ? undefined : centsToCurrency(order.totalCents),
-    paidText: kitchen ? "\u5230\u5e97\u4ed8\u6b3e\uff08\u73fe\u91d1\uff09" : "PAY AT PICKUP (CASH)",
     kitchenFontMode
   };
 }
