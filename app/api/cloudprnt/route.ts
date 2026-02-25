@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma, PrintCopyType, PrintJobStatus } from "@prisma/client";
+import iconv from "iconv-lite";
 import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { localizeText } from "@/lib/i18n";
@@ -486,28 +487,47 @@ export async function GET(req: Request) {
         }
       });
     }
-    const responseBody =
-      typeof payload === "string" ? payload : new Uint8Array(payload);
+    const kitchenTextEncoding = process.env.CLOUDPRNT_KITCHEN_TEXT_ENCODING ?? "big5";
+    const isTextPayload = typeof payload === "string";
+    const isKitchenTextPayload = isTextPayload && mimeType.startsWith("text/") && job.copyType === PrintCopyType.KITCHEN;
+    let textEncodingUsed = "utf-8";
+
+    let responseBody: string | Uint8Array;
+    if (!isTextPayload) {
+      const buffer = Buffer.from(payload);
+      responseBody = Uint8Array.from(buffer);
+    } else if (isKitchenTextPayload) {
+      try {
+        responseBody = Uint8Array.from(iconv.encode(payload, kitchenTextEncoding));
+        textEncodingUsed = kitchenTextEncoding;
+      } catch {
+        responseBody = payload;
+      }
+    } else {
+      responseBody = payload;
+    }
+
     logInfo("cloudprnt.job_payload_served", {
       jobId: job.id,
       orderNumber: job.order.orderNumber,
       copyType: job.copyType,
       jobStatus: job.status,
       mimeType,
+      textEncodingUsed: isTextPayload ? textEncodingUsed : null,
       byteLength:
         typeof payload === "string"
           ? Buffer.byteLength(payload, "utf8")
           : payload.byteLength
     });
     const byteLength =
-      typeof payload === "string"
-        ? Buffer.byteLength(payload, "utf8")
-        : payload.byteLength;
-    return new NextResponse(responseBody, {
+      typeof responseBody === "string"
+        ? Buffer.byteLength(responseBody, "utf8")
+        : responseBody.byteLength;
+    return new NextResponse(responseBody as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": mimeType.startsWith("text/")
-          ? `${mimeType}; charset=utf-8`
+          ? `${mimeType}; charset=${textEncodingUsed}`
           : mimeType,
         "Content-Length": String(byteLength),
         "Cache-Control": "no-store"
