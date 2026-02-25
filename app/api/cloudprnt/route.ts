@@ -215,41 +215,72 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, m
         ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
         : fmtDateTime(order.pickupTime as Date);
 
-    const lines = order.lines.map((line) => {
-      const selections = formatOrderSelectionsForDisplay({
-        selections: line.selections
-          .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))
-          .map((sel) => ({
-            ...sel,
-            selectedModifierOptionId: sel.selectedModifierOptionId ?? null
-          })),
-        lang: kitchen ? "zh" : "en",
-        localize: (value) => (kitchen ? toZh(value) : value ?? "")
-      });
-      return {
-        qty: line.qty,
-        name: kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot,
-        selections: selections.map((selection) => ({
-          text: selection.text,
-          indent: Boolean(selection.indent)
-        }))
-      };
-    });
+    const mapLines = (useKitchenFilter: boolean, useChinese: boolean) =>
+      order.lines.map((line) => {
+        const selections = formatOrderSelectionsForDisplay({
+          selections: line.selections
+            .filter(
+              (sel) =>
+                !(useKitchenFilter && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel))
+            )
+            .map((sel) => ({
+              ...sel,
+              selectedModifierOptionId: sel.selectedModifierOptionId ?? null
+            })),
+          lang: useChinese ? "zh" : "en",
+          localize: (value) => (useChinese ? toZh(value) : value ?? "")
+        });
 
-    return renderReceiptToPng({
+        return {
+          qty: line.qty,
+          name: useChinese ? toZh(line.nameSnapshot) : line.nameSnapshot,
+          selections: selections.map((selection) => ({
+            text: selection.text,
+            indent: Boolean(selection.indent)
+          }))
+        };
+      });
+
+    const basePayload = {
       restaurantName,
       orderNumber: order.orderNumber,
       createdText: fmtDateTime(order.createdAt),
       pickupText,
-      customerText: `${order.customerName} | ${order.phone}`,
-      notesText: `${kitchen ? "備註" : "Notes"}: ${order.notes ?? "-"}`,
+      customerText: `${order.customerName} | ${order.phone}`
+    };
+
+    const primaryPayload = {
+      ...basePayload,
+      notesText: `${kitchen ? "\u5099\u8a3b" : "Notes"}: ${order.notes ?? "-"}`,
       kitchen,
-      lines,
+      lines: mapLines(kitchen, kitchen),
       subtotalText: kitchen ? undefined : centsToCurrency(order.subtotalCents),
       taxText: kitchen ? undefined : centsToCurrency(order.taxCents),
       totalText: kitchen ? undefined : centsToCurrency(order.totalCents),
-      paidText: kitchen ? "到店付款（現金）" : "PAY AT PICKUP (CASH)"
-    });
+      paidText: kitchen ? "\u5230\u5e97\u4ed8\u6b3e\uff08\u73fe\u91d1\uff09" : "PAY AT PICKUP (CASH)"
+    };
+
+    try {
+      return await renderReceiptToPng(primaryPayload);
+    } catch (error) {
+      if (!kitchen) throw error;
+
+      logError("cloudprnt.kitchen_render_fallback", {
+        orderNumber: order.orderNumber,
+        message: error instanceof Error ? error.message : "unknown"
+      });
+
+      return renderReceiptToPng({
+        ...basePayload,
+        notesText: `Notes: ${order.notes ?? "-"}`,
+        kitchen: true,
+        lines: mapLines(true, false),
+        subtotalText: undefined,
+        taxText: undefined,
+        totalText: undefined,
+        paidText: "PAY AT PICKUP (CASH)"
+      });
+    }
   }
 
   return buildTextPayload({ order, kitchen, restaurantName });

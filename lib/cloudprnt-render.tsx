@@ -31,11 +31,13 @@ export type ReceiptRenderPayload = {
 
 const RECEIPT_WIDTH = 576;
 
-let fontRegularPromise: Promise<Buffer> | null = null;
-let fontBoldPromise: Promise<Buffer> | null = null;
+let fontSCRegularPromise: Promise<Buffer> | null = null;
+let fontSCBoldPromise: Promise<Buffer> | null = null;
+let fontTCRegularPromise: Promise<Buffer> | null = null;
+let fontTCBoldPromise: Promise<Buffer> | null = null;
 
-function loadRegularFont() {
-  if (!fontRegularPromise) {
+function loadSCRegularFont() {
+  if (!fontSCRegularPromise) {
     const fontPath = path.join(
       process.cwd(),
       "node_modules",
@@ -44,13 +46,13 @@ function loadRegularFont() {
       "files",
       "noto-sans-sc-chinese-simplified-400-normal.woff"
     );
-    fontRegularPromise = readFile(fontPath);
+    fontSCRegularPromise = readFile(fontPath);
   }
-  return fontRegularPromise;
+  return fontSCRegularPromise;
 }
 
-function loadBoldFont() {
-  if (!fontBoldPromise) {
+function loadSCBoldFont() {
+  if (!fontSCBoldPromise) {
     const fontPath = path.join(
       process.cwd(),
       "node_modules",
@@ -59,9 +61,39 @@ function loadBoldFont() {
       "files",
       "noto-sans-sc-chinese-simplified-700-normal.woff"
     );
-    fontBoldPromise = readFile(fontPath);
+    fontSCBoldPromise = readFile(fontPath);
   }
-  return fontBoldPromise;
+  return fontSCBoldPromise;
+}
+
+function loadTCRegularFont() {
+  if (!fontTCRegularPromise) {
+    const fontPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "@fontsource",
+      "noto-sans-tc",
+      "files",
+      "noto-sans-tc-chinese-traditional-400-normal.woff"
+    );
+    fontTCRegularPromise = readFile(fontPath);
+  }
+  return fontTCRegularPromise;
+}
+
+function loadTCBoldFont() {
+  if (!fontTCBoldPromise) {
+    const fontPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "@fontsource",
+      "noto-sans-tc",
+      "files",
+      "noto-sans-tc-chinese-traditional-700-normal.woff"
+    );
+    fontTCBoldPromise = readFile(fontPath);
+  }
+  return fontTCBoldPromise;
 }
 
 function estimateReceiptHeight(payload: ReceiptRenderPayload) {
@@ -80,7 +112,12 @@ function estimateReceiptHeight(payload: ReceiptRenderPayload) {
 }
 
 export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise<Buffer> {
-  const [regularFont, boldFont] = await Promise.all([loadRegularFont(), loadBoldFont()]);
+  const [scRegular, scBold, tcRegular, tcBold] = await Promise.all([
+    loadSCRegularFont(),
+    loadSCBoldFont(),
+    loadTCRegularFont(),
+    loadTCBoldFont()
+  ]);
   const height = estimateReceiptHeight(payload);
 
   const titleSize = payload.kitchen ? 36 : 34;
@@ -97,7 +134,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
         color: "#000",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "Noto Sans SC",
+        fontFamily: "Noto Sans TC, Noto Sans SC",
         boxSizing: "border-box",
         padding: "10px 12px"
       }}
@@ -202,14 +239,26 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
       height,
       fonts: [
         {
+          name: "Noto Sans TC",
+          data: tcRegular,
+          weight: 400,
+          style: "normal"
+        },
+        {
+          name: "Noto Sans TC",
+          data: tcBold,
+          weight: 700,
+          style: "normal"
+        },
+        {
           name: "Noto Sans SC",
-          data: regularFont,
+          data: scRegular,
           weight: 400,
           style: "normal"
         },
         {
           name: "Noto Sans SC",
-          data: boldFont,
+          data: scBold,
           weight: 700,
           style: "normal"
         }

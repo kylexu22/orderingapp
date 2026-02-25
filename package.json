@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@fontsource/noto-sans-sc": "^5.2.9",
+    "@fontsource/noto-sans-tc": "^5.2.9",
     "@prisma/client": "^5.20.0",
     "@resvg/resvg-js": "^2.6.2",
     "clsx": "^2.1.1",
