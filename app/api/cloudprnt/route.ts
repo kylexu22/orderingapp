@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { Prisma, PrintCopyType, PrintJobStatus } from "@prisma/client";
-import iconv from "iconv-lite";
 import { prisma } from "@/lib/prisma";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 import { localizeText } from "@/lib/i18n";
 import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
-import { renderReceiptToPng } from "@/lib/cloudprnt-render";
+import { buildCloudPrntBinaryReceipt } from "@/lib/cloudprnt-binary";
 import { logError, logInfo } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -161,43 +160,18 @@ async function getOrderForPayload(orderNumber: string) {
   });
 }
 
-function buildTextPayload(params: {
+function buildBinaryPayload(params: {
   order: NonNullable<Awaited<ReturnType<typeof getOrderForPayload>>>;
   kitchen: boolean;
   restaurantName: string;
 }) {
   const { order, kitchen, restaurantName } = params;
-  const ESC = "\x1B";
-  const GS = "\x1D";
-  // Avoid NUL byte (\x00) in payload strings; Postgres text cannot store it.
-  const FONT_NORMAL = "";
-  const FONT_TALL = `${GS}!\x01`; // 2x height
-  const FONT_DOUBLE = `${GS}!\x11`; // 2x width + 2x height
-  const kitchenFontMode = (process.env.CLOUDPRNT_KITCHEN_FONT_MODE ?? "double").toLowerCase();
-  const kitchenLargeFont =
-    kitchenFontMode === "tall" ? FONT_TALL : kitchenFontMode === "normal" ? FONT_NORMAL : FONT_DOUBLE;
-  const fontFor = (large: boolean) => (kitchen && large ? kitchenLargeFont : FONT_NORMAL);
-  const initialize = kitchen ? `${ESC}@` : "";
   const toZh = (value: string | null | undefined) => localizeText(value, "zh");
   const pickupText =
     order.pickupType === "ASAP"
       ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
       : fmtDateTime(order.pickupTime as Date);
-
-  const lines: string[] = [];
-  if (initialize) lines.push(initialize);
-  lines.push(`${fontFor(true)}${restaurantName}`);
-  if (kitchen) lines.push(`${fontFor(true)}KITCHEN COPY`);
-  lines.push(`${fontFor(true)}#${order.orderNumber}`);
-  lines.push(`${fontFor(true)}Created: ${fmtDateTime(order.createdAt)}`);
-  lines.push(`${fontFor(true)}Pickup: ${pickupText}`);
-  lines.push(`${fontFor(true)}${order.customerName} | ${order.phone}`);
-  lines.push(`${fontFor(true)}Notes: ${order.notes ?? "-"}`);
-  lines.push("------------------------------");
-
-  for (const line of order.lines) {
-    const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
-    lines.push(`${fontFor(true)}${line.qty} x ${lineName}`);
+  const lines = order.lines.map((line) => {
     const displaySelections = formatOrderSelectionsForDisplay({
       selections: line.selections
         .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))
@@ -208,26 +182,45 @@ function buildTextPayload(params: {
       lang: kitchen ? "zh" : "en",
       localize: (value) => (kitchen ? toZh(value) : value ?? "")
     });
-    for (const row of displaySelections) {
-      lines.push(`${fontFor(true)}${row.indent ? "    " : "  "}- ${row.text}`);
-    }
-  }
 
-  if (!kitchen) {
-    lines.push("------------------------------");
-    lines.push(`Subtotal: ${centsToCurrency(order.subtotalCents)}`);
-    lines.push(`Tax: ${centsToCurrency(order.taxCents)}`);
-    lines.push(`Total: ${centsToCurrency(order.totalCents)}`);
-  }
+    return {
+      qty: line.qty,
+      name: kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot,
+      selections: displaySelections.map((selection) => ({
+        text: selection.text,
+        indent: Boolean(selection.indent)
+      }))
+    };
+  });
 
-  lines.push(`${fontFor(true)}PAY AT PICKUP (CASH)`);
-  if (kitchen) lines.push(FONT_NORMAL);
-  return lines.join("\n");
+  const kitchenModeRaw = (process.env.CLOUDPRNT_KITCHEN_FONT_MODE ?? "double").toLowerCase();
+  const kitchenFontMode =
+    kitchenModeRaw === "normal" || kitchenModeRaw === "tall" || kitchenModeRaw === "double"
+      ? kitchenModeRaw
+      : "double";
+
+  const encoding = process.env.CLOUDPRNT_TEXT_ENCODING ?? "big5";
+
+  return buildCloudPrntBinaryReceipt({
+    restaurantName,
+    orderNumber: order.orderNumber,
+    createdText: fmtDateTime(order.createdAt),
+    pickupText,
+    customerText: `${order.customerName} | ${order.phone}`,
+    notesText: `${kitchen ? "\u5099\u8a3b" : "Notes"}: ${order.notes ?? "-"}`,
+    kitchen,
+    lines,
+    subtotalText: kitchen ? undefined : centsToCurrency(order.subtotalCents),
+    taxText: kitchen ? undefined : centsToCurrency(order.taxCents),
+    totalText: kitchen ? undefined : centsToCurrency(order.totalCents),
+    paidText: kitchen ? "\u5230\u5e97\u4ed8\u6b3e\uff08\u73fe\u91d1\uff09" : "PAY AT PICKUP (CASH)",
+    encoding,
+    kitchenFontMode
+  });
 }
 
 function supportedMimeTypesForJob(copyType: PrintCopyType) {
-  if (copyType === PrintCopyType.KITCHEN) return ["text/plain"];
-  return ["image/png"];
+  return ["text/plain"];
 }
 
 async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, mimeType: string) {
@@ -239,82 +232,11 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, m
     throw new Error(`Order not found for CloudPRNT payload: ${orderNumber}`);
   }
 
-  if (mimeType === "image/png") {
-    const toZh = (value: string | null | undefined) => localizeText(value, "zh");
-    const pickupText =
-      order.pickupType === "ASAP"
-        ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
-        : fmtDateTime(order.pickupTime as Date);
-
-    const mapLines = (useKitchenFilter: boolean, useChinese: boolean) =>
-      order.lines.map((line) => {
-        const selections = formatOrderSelectionsForDisplay({
-          selections: line.selections
-            .filter(
-              (sel) =>
-                !(useKitchenFilter && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel))
-            )
-            .map((sel) => ({
-              ...sel,
-              selectedModifierOptionId: sel.selectedModifierOptionId ?? null
-            })),
-          lang: useChinese ? "zh" : "en",
-          localize: (value) => (useChinese ? toZh(value) : value ?? "")
-        });
-
-        return {
-          qty: line.qty,
-          name: useChinese ? toZh(line.nameSnapshot) : line.nameSnapshot,
-          selections: selections.map((selection) => ({
-            text: selection.text,
-            indent: Boolean(selection.indent)
-          }))
-        };
-      });
-
-    const basePayload = {
-      restaurantName,
-      orderNumber: order.orderNumber,
-      createdText: fmtDateTime(order.createdAt),
-      pickupText,
-      customerText: `${order.customerName} | ${order.phone}`
-    };
-
-    const primaryPayload = {
-      ...basePayload,
-      notesText: `${kitchen ? "\u5099\u8a3b" : "Notes"}: ${order.notes ?? "-"}`,
-      kitchen,
-      lines: mapLines(kitchen, kitchen),
-      subtotalText: kitchen ? undefined : centsToCurrency(order.subtotalCents),
-      taxText: kitchen ? undefined : centsToCurrency(order.taxCents),
-      totalText: kitchen ? undefined : centsToCurrency(order.totalCents),
-      paidText: kitchen ? "\u5230\u5e97\u4ed8\u6b3e\uff08\u73fe\u91d1\uff09" : "PAY AT PICKUP (CASH)"
-    };
-
-    try {
-      return await renderReceiptToPng(primaryPayload);
-    } catch (error) {
-      if (!kitchen) throw error;
-
-      logError("cloudprnt.kitchen_render_fallback", {
-        orderNumber: order.orderNumber,
-        message: error instanceof Error ? error.message : "unknown"
-      });
-
-      return renderReceiptToPng({
-        ...basePayload,
-        notesText: `Notes: ${order.notes ?? "-"}`,
-        kitchen: true,
-        lines: mapLines(true, false),
-        subtotalText: undefined,
-        taxText: undefined,
-        totalText: undefined,
-        paidText: "PAY AT PICKUP (CASH)"
-      });
-    }
+  if (mimeType !== "text/plain") {
+    throw new Error(`Unsupported CloudPRNT mime type for binary generator: ${mimeType}`);
   }
 
-  return buildTextPayload({ order, kitchen, restaurantName });
+  return buildBinaryPayload({ order, kitchen, restaurantName });
 }
 
 async function findJobByTokenOrPrinter(
@@ -485,8 +407,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Kitchen text payload includes printer control bytes; don't cache in DB text column.
-    const shouldCacheText = mimeType.startsWith("text/") && job.copyType !== PrintCopyType.KITCHEN;
+    const shouldCacheText = false;
     const payload =
       shouldCacheText && job.status === PrintJobStatus.DELIVERED && job.payloadCache
         ? job.payloadCache
@@ -501,25 +422,8 @@ export async function GET(req: Request) {
         }
       });
     }
-    const kitchenTextEncoding = process.env.CLOUDPRNT_KITCHEN_TEXT_ENCODING ?? "big5";
-    const isTextPayload = typeof payload === "string";
-    const isKitchenTextPayload = isTextPayload && mimeType.startsWith("text/") && job.copyType === PrintCopyType.KITCHEN;
-    let textEncodingUsed = "utf-8";
-
-    let responseBody: string | Uint8Array;
-    if (!isTextPayload) {
-      const buffer = Buffer.from(payload);
-      responseBody = Uint8Array.from(buffer);
-    } else if (isKitchenTextPayload) {
-      try {
-        responseBody = Uint8Array.from(iconv.encode(payload, kitchenTextEncoding));
-        textEncodingUsed = kitchenTextEncoding;
-      } catch {
-        responseBody = payload;
-      }
-    } else {
-      responseBody = payload;
-    }
+    const textEncodingUsed = process.env.CLOUDPRNT_TEXT_ENCODING ?? "big5";
+    const responseBody = payload instanceof Uint8Array ? payload : Uint8Array.from(payload);
 
     logInfo("cloudprnt.job_payload_served", {
       jobId: job.id,
@@ -527,22 +431,15 @@ export async function GET(req: Request) {
       copyType: job.copyType,
       jobStatus: job.status,
       mimeType,
-      textEncodingUsed: isTextPayload ? textEncodingUsed : null,
-      byteLength:
-        typeof payload === "string"
-          ? Buffer.byteLength(payload, "utf8")
-          : payload.byteLength
+      textEncodingUsed,
+      byteLength: responseBody.byteLength
     });
     const byteLength =
-      typeof responseBody === "string"
-        ? Buffer.byteLength(responseBody, "utf8")
-        : responseBody.byteLength;
+      responseBody.byteLength;
     return new NextResponse(responseBody as BodyInit, {
       status: 200,
       headers: {
-        "Content-Type": mimeType.startsWith("text/")
-          ? `${mimeType}; charset=${textEncodingUsed}`
-          : mimeType,
+        "Content-Type": `${mimeType}; charset=${textEncodingUsed}`,
         "Content-Length": String(byteLength),
         "Cache-Control": "no-store"
       }
