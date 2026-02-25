@@ -248,8 +248,10 @@ function buildHtmlPayload(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ticket ${esc(order.orderNumber)}</title>
   <style>
-    @page { size: 80mm auto; margin: 2mm; }
-    body { font-family: ${kitchen ? '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif' : '"Arial", sans-serif'}; width: 100%; margin: 0; font-size: ${kitchen ? "22px" : "42px"}; line-height: 1.2; }
+    @page { size: 576px auto; margin: 0; }
+    html, body { width: 576px; max-width: 576px; margin: 0; padding: 0; overflow: hidden; }
+    body { font-family: ${kitchen ? '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif' : '"Arial", sans-serif'}; font-size: ${kitchen ? "22px" : "42px"}; line-height: 1.2; box-sizing: border-box; padding: 8px 12px; }
+    .ticket { width: 552px; }
     .center { text-align: center; }
     .title { font-size: ${kitchen ? "28px" : "40px"}; font-weight: 700; }
     .number { font-size: ${kitchen ? "32px" : "40px"}; font-weight: 800; margin: 18px 0; }
@@ -261,6 +263,7 @@ function buildHtmlPayload(params: {
   </style>
 </head>
 <body>
+  <div class="ticket">
   <div class="center title">${esc(restaurantName)}</div>
   ${kitchen ? `<div class="center"><strong>KITCHEN COPY</strong></div>` : ""}
   <div class="center number">#${esc(order.orderNumber)}</div>
@@ -280,6 +283,7 @@ function buildHtmlPayload(params: {
     <div><strong>Total: ${centsToCurrency(order.totalCents)}</strong></div>
   </div>`
   }
+  </div>
 </body>
 </html>`;
 }
@@ -548,12 +552,17 @@ export async function GET(req: Request) {
           ? Buffer.byteLength(payload, "utf8")
           : payload.byteLength
     });
+    const byteLength =
+      typeof payload === "string"
+        ? Buffer.byteLength(payload, "utf8")
+        : payload.byteLength;
     return new NextResponse(responseBody, {
       status: 200,
       headers: {
         "Content-Type": mimeType.startsWith("text/")
           ? `${mimeType}; charset=utf-8`
           : mimeType,
+        "Content-Length": String(byteLength),
         "Cache-Control": "no-store"
       }
     });
