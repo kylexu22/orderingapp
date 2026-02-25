@@ -153,6 +153,9 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
   const pickupSize = payload.kitchen ? Math.round(24 * kitchenScale) : Math.round(30 * kitchenScale);
   const lineSize = Math.round(38 * kitchenScale);
   const selectionSize = lineSize;
+  const customerIdentitySize = payload.kitchen ? bodySize : Math.round(bodySize * 1.25);
+  const customerLinePriceSize = payload.kitchen ? bodySize : Math.round(bodySize * 1.22);
+  const totalsSize = payload.kitchen ? bodySize : Math.round(bodySize * 1.25);
   const headingWeight = payload.kitchen ? 500 : 700;
   const lineWeight = payload.kitchen ? 500 : 700;
 
@@ -202,7 +205,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           flexDirection: "column"
         }}
       >
-        <div style={{ fontSize: bodySize, fontWeight: headingWeight }}>{payload.customerText}</div>
+        <div style={{ fontSize: customerIdentitySize, fontWeight: headingWeight }}>{payload.customerText}</div>
         <div style={{ marginTop: 4, fontSize: bodySize }}>{payload.notesText}</div>
       </div>
 
@@ -226,7 +229,7 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           >
             <div style={{ fontSize: lineSize, fontWeight: lineWeight }}>{`${line.qty} x ${line.name}`}</div>
             {!payload.kitchen && line.lineTotalText ? (
-              <div style={{ marginTop: 2, fontSize: bodySize }}>{line.lineTotalText}</div>
+              <div style={{ marginTop: 2, fontSize: customerLinePriceSize }}>{line.lineTotalText}</div>
             ) : null}
             {line.selections.map((selection, selectionIndex) => (
               <div
@@ -252,12 +255,12 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
           paddingTop: 12,
           display: "flex",
           flexDirection: "column",
-            fontSize: bodySize
+            fontSize: totalsSize
           }}
         >
           <div>{`Subtotal: ${payload.subtotalText ?? "-"}`}</div>
           <div style={{ marginTop: 4 }}>{`Tax: ${payload.taxText ?? "-"}`}</div>
-          <div style={{ marginTop: 6, fontWeight: 700 }}>{`Total: ${payload.totalText ?? "-"}`}</div>
+          <div style={{ marginTop: 6, fontWeight: 700, fontSize: Math.round(totalsSize * 1.1) }}>{`Total: ${payload.totalText ?? "-"}`}</div>
         </div>
       ) : null}
     </div>,
@@ -339,6 +342,9 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
   const pickupSize = payload.kitchen ? Math.round(24 * kitchenScale) : Math.round(30 * kitchenScale);
   const lineSize = Math.round(38 * kitchenScale);
   const selectionSize = lineSize;
+  const customerIdentitySize = payload.kitchen ? bodySize : Math.round(bodySize * 1.25);
+  const customerLinePriceSize = payload.kitchen ? bodySize : Math.round(bodySize * 1.22);
+  const totalsSize = payload.kitchen ? bodySize : Math.round(bodySize * 1.25);
 
   return satori(
     <div
@@ -385,7 +391,7 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
           flexDirection: "column"
         }}
       >
-        <div style={{ fontSize: bodySize, fontWeight: 700 }}>{payload.customerText}</div>
+        <div style={{ fontSize: customerIdentitySize, fontWeight: 700 }}>{payload.customerText}</div>
         <div style={{ marginTop: 4, fontSize: bodySize }}>{payload.notesText}</div>
       </div>
 
@@ -409,7 +415,7 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
           >
             <div style={{ fontSize: lineSize, fontWeight: payload.kitchen ? 500 : 700 }}>{`${line.qty} x ${line.name}`}</div>
             {!payload.kitchen && line.lineTotalText ? (
-              <div style={{ marginTop: 2, fontSize: bodySize }}>{line.lineTotalText}</div>
+              <div style={{ marginTop: 2, fontSize: customerLinePriceSize }}>{line.lineTotalText}</div>
             ) : null}
             {line.selections.map((selection, selectionIndex) => (
               <div
@@ -435,12 +441,12 @@ export async function renderReceiptToSvg(payload: ReceiptRenderPayload): Promise
             paddingTop: 12,
             display: "flex",
             flexDirection: "column",
-            fontSize: bodySize
+            fontSize: totalsSize
           }}
         >
           <div>{`Subtotal: ${payload.subtotalText ?? "-"}`}</div>
           <div style={{ marginTop: 4 }}>{`Tax: ${payload.taxText ?? "-"}`}</div>
-          <div style={{ marginTop: 6, fontWeight: 700 }}>{`Total: ${payload.totalText ?? "-"}`}</div>
+          <div style={{ marginTop: 6, fontWeight: 700, fontSize: Math.round(totalsSize * 1.1) }}>{`Total: ${payload.totalText ?? "-"}`}</div>
         </div>
       ) : null}
     </div>,
