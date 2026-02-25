@@ -212,7 +212,7 @@ function buildTextPayload(params: {
 }
 
 function supportedMimeTypesForJob(copyType: PrintCopyType) {
-  if (copyType === PrintCopyType.KITCHEN) return ["image/png"];
+  if (copyType === PrintCopyType.KITCHEN) return ["text/plain"];
   return ["image/png"];
 }
 
