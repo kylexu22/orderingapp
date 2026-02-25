@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 
@@ -35,8 +36,13 @@ let fontBoldPromise: Promise<Buffer> | null = null;
 
 function loadRegularFont() {
   if (!fontRegularPromise) {
-    const fontPath = require.resolve(
-      "@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-400-normal.woff"
+    const fontPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "@fontsource",
+      "noto-sans-sc",
+      "files",
+      "noto-sans-sc-chinese-simplified-400-normal.woff"
     );
     fontRegularPromise = readFile(fontPath);
   }
@@ -45,8 +51,13 @@ function loadRegularFont() {
 
 function loadBoldFont() {
   if (!fontBoldPromise) {
-    const fontPath = require.resolve(
-      "@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-700-normal.woff"
+    const fontPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "@fontsource",
+      "noto-sans-sc",
+      "files",
+      "noto-sans-sc-chinese-simplified-700-normal.woff"
     );
     fontBoldPromise = readFile(fontPath);
   }
@@ -214,4 +225,3 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
   const pngData = resvg.render();
   return Buffer.from(pngData.asPng());
 }
-
