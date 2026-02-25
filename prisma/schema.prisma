@@ -35,6 +35,19 @@ enum SelectionKind {
   MODIFIER
 }
 
+enum PrintCopyType {
+  FRONT
+  KITCHEN
+}
+
+enum PrintJobStatus {
+  QUEUED
+  DELIVERED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 model Category {
   id        String  @id @default(cuid())
   name      String
@@ -153,6 +166,7 @@ model Order {
   customer            Customer?   @relation(fields: [customerId], references: [id])
 
   lines               OrderLine[]
+  printJobs           PrintJob[]
 
   @@index([createdAt])
   @@index([status])
@@ -200,4 +214,46 @@ model OrderSelection {
   sortOrder                         Int          @default(0)
 
   @@index([orderLineId])
+}
+
+model Printer {
+  id             String   @id @default(cuid())
+  name           String?
+  macAddress     String   @unique
+  uid            String?
+  isActive       Boolean  @default(true)
+  lastSeenAt     DateTime?
+  lastStatusJson Json?
+  lastError      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  printJobs      PrintJob[]
+
+  @@index([isActive])
+  @@index([lastSeenAt])
+}
+
+model PrintJob {
+  id                  String        @id @default(cuid())
+  printerId           String
+  printer             Printer       @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  orderId             String
+  order               Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderNumberSnapshot String
+  copyType            PrintCopyType
+  status              PrintJobStatus @default(QUEUED)
+  jobToken            String        @unique
+  requestedMime       String        @default("text/plain")
+  requestedAt         DateTime      @default(now())
+  deliveredAt         DateTime?
+  completedAt         DateTime?
+  failureCode         String?
+  failureMessage      String?
+  payloadCache        String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([printerId, status, createdAt])
+  @@index([orderId, createdAt])
 }
