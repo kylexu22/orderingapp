@@ -882,8 +882,9 @@ export default function AdminOrdersPage() {
   }, [pastPage, totalPastPages]);
 
   return (
-    <div className="space-y-4 pb-8">
-      <div className="flex w-full items-center justify-between">
+    <>
+      <div className="space-y-4 pb-8">
+        <div className="flex w-full items-center justify-between pt-4">
         <Link
           href="/admin/orders"
           className="rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
@@ -1161,9 +1162,10 @@ export default function AdminOrdersPage() {
         </div>
       ))}
 
-      {visibleOrders.length === 0 ? (
-        <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">{t.noOrders}</div>
-      ) : null}
+        {visibleOrders.length === 0 ? (
+          <div className="rounded-xl bg-[var(--card)] p-4 shadow-sm">{t.noOrders}</div>
+        ) : null}
+      </div>
       <button
         type="button"
         onClick={() => setDrawerOpen(false)}
@@ -1173,7 +1175,7 @@ export default function AdminOrdersPage() {
         aria-label="Close admin menu backdrop"
       />
       <aside
-        className={`fixed inset-y-0 right-0 z-[60] h-screen w-80 max-w-[88vw] overflow-y-auto overflow-x-hidden border-l border-[#c4a57444] bg-[#101113] p-5 text-[#f5f0e8] shadow-2xl transition-transform duration-300 ${
+        className={`fixed inset-y-0 right-0 z-[60] h-screen w-80 max-w-[88vw] overflow-y-auto overflow-x-hidden border-l border-[#c4a57444] bg-[#101113] px-5 pb-5 pt-4 text-[#f5f0e8] shadow-2xl transition-transform duration-300 ${
           drawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -1314,6 +1316,6 @@ export default function AdminOrdersPage() {
           animation: newOrderPulseYellow 2.2s ease-in-out infinite;
         }
       `}</style>
-    </div>
+    </>
   );
 }

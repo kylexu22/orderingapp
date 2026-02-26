@@ -150,7 +150,7 @@ export function SiteHeader() {
             {languageToggle}
           </div>
         ) : (
-          <Link href="/" className="flex items-center gap-2 text-[#f5f0e8]">
+          <div className="flex items-center gap-2 text-[#f5f0e8]">
             <Image
               src="/images/hongfarlogo.png"
               alt="Hong Far Cafe"
@@ -158,7 +158,7 @@ export function SiteHeader() {
               height={24}
               className="h-7 w-auto"
             />
-          </Link>
+          </div>
         )}
         <nav className="flex items-center gap-3 text-sm text-[#f5f0e8]">
           {!isAdminRoute ? (
