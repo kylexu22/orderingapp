@@ -1,7 +1,13 @@
 import "@/app/globals.css";
 import { CartProvider } from "@/lib/cart-store";
-import { Lora, Noto_Serif_SC } from "next/font/google";
+import { Lora, Noto_Sans, Noto_Sans_SC } from "next/font/google";
 import { LayoutShell } from "@/components/layout-shell";
+
+const notoSans = Noto_Sans({
+  subsets: ["latin"],
+  variable: "--font-noto-sans",
+  display: "swap"
+});
 
 const lora = Lora({
   subsets: ["latin"],
@@ -9,9 +15,10 @@ const lora = Lora({
   display: "swap"
 });
 
-const notoSerifSc = Noto_Serif_SC({
+const notoSansSc = Noto_Sans_SC({
   subsets: ["latin"],
   weight: ["400", "600", "700"],
+  // Keep existing variable name to avoid touching every usage site.
   variable: "--font-noto-serif-sc",
   display: "swap"
 });
@@ -29,7 +36,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${lora.variable} ${notoSerifSc.variable}`}>
+      <body className={`${notoSans.variable} ${lora.variable} ${notoSansSc.variable}`}>
         <CartProvider>
           <LayoutShell>{children}</LayoutShell>
         </CartProvider>

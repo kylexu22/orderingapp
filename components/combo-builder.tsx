@@ -253,7 +253,7 @@ export function ComboBuilder({
 
       {groups.map((group) => (
         <div key={group.id} className="rounded-lg border border-amber-900/20 p-3">
-          <div className="font-semibold">
+          <div className="font-display-serif font-semibold">
             {localizeText(group.name, lang)}
             <span className="ml-2 text-sm text-gray-500">
               {lang === "zh" ? "選擇" : "Choose"} {group.minSelect}
@@ -296,7 +296,7 @@ export function ComboBuilder({
                         className="flex w-full items-center justify-between px-3 py-2 text-left font-medium"
                         onClick={() => toggleSection(group.id, section.id)}
                       >
-                        <span>
+                        <span className="font-display-serif">
                           {localizeText(section.name, lang)}
                           {selectedInSection > 0 ? ` (${selectedInSection} Selected)` : ""}
                         </span>
@@ -333,7 +333,9 @@ export function ComboBuilder({
                                         onChange={() => toggleOption(group.id, option.id)}
                                         className="mr-2"
                                       />
-                                      {localizeText(itemById.get(option.refId)?.name ?? "Item", lang)}
+                                      <span className="font-display-serif">
+                                        {localizeText(itemById.get(option.refId)?.name ?? "Item", lang)}
+                                      </span>
                                     </span>
                                     <span className="text-sm">
                                       {option.priceDeltaCents ? `+${centsToCurrency(option.priceDeltaCents)}` : ""}
@@ -342,7 +344,10 @@ export function ComboBuilder({
                                   {active && option.allowModifiers && selectedItem ? (
                                     <div className="mt-2 space-y-2 rounded bg-amber-50 p-2">
                                       <div className="text-sm font-medium">
-                                        {localizeText(selectedItem.name, lang)} {lang === "zh" ? "選項" : "modifiers"}
+                                        <span className="font-display-serif">
+                                          {localizeText(selectedItem.name, lang)}
+                                        </span>{" "}
+                                        {lang === "zh" ? "選項" : "modifiers"}
                                       </div>
                                       {selectedItem.modifierGroups.map((groupMod) => (
                                         <div key={groupMod.id} className="text-sm">
@@ -407,7 +412,7 @@ export function ComboBuilder({
                           className="mr-2"
                         />
                         {option.optionType === "ITEM"
-                          ? localizeText(itemById.get(option.refId)?.name ?? "Item", lang)
+                          ? <span className="font-display-serif">{localizeText(itemById.get(option.refId)?.name ?? "Item", lang)}</span>
                           : lang === "zh"
                             ? "從分類中選擇"
                             : "Choose from category"}
@@ -433,7 +438,8 @@ export function ComboBuilder({
                     {active && option.allowModifiers && selectedItem ? (
                       <div className="mt-2 space-y-2 rounded bg-amber-50 p-2">
                         <div className="text-sm font-medium">
-                          {localizeText(selectedItem.name, lang)} {lang === "zh" ? "選項" : "modifiers"}
+                          <span className="font-display-serif">{localizeText(selectedItem.name, lang)}</span>{" "}
+                          {lang === "zh" ? "選項" : "modifiers"}
                         </div>
                         {selectedItem.modifierGroups.map((groupMod) => (
                           <div key={groupMod.id} className="text-sm">
@@ -477,7 +483,9 @@ export function ComboBuilder({
       </label>
       {selectedItemNames.length ? (
         <div className="rounded border border-amber-900/20 bg-amber-50 p-3 text-sm">
-          <div className="font-semibold">{lang === "zh" ? "已選項目" : "Selected items"}</div>
+          <div className="font-display-serif font-semibold">
+            {lang === "zh" ? "已選項目" : "Selected items"}
+          </div>
           <div>{selectedItemNames.join(", ")}</div>
         </div>
       ) : null}

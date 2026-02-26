@@ -246,7 +246,7 @@ export default function CartPage() {
       >
         {lang === "zh" ? "← 返回餐牌" : "← Back to Menu"}
       </Link>
-      <h1 className="text-2xl font-bold">{lang === "zh" ? "購物車" : "Cart"}</h1>
+      <h1 className="font-display-serif text-2xl font-bold">{lang === "zh" ? "購物車" : "Cart"}</h1>
       {lines.length === 0 ? (
         <div className="rounded bg-[var(--card)] p-4">{lang === "zh" ? "購物車是空的。" : "Your cart is empty."}</div>
       ) : (
@@ -255,7 +255,9 @@ export default function CartPage() {
             <div key={`${line.refId}-${idx}`} className="rounded-xl bg-[var(--card)] p-4 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold">{localizeText(getLineLabel(line, menu), lang)}</div>
+                  <div className="font-display-serif font-semibold">
+                    {localizeText(getLineLabel(line, menu), lang)}
+                  </div>
                   {line.lineType === "ITEM" ? (
                     <div className="mt-1 text-sm text-gray-600">{renderItemModifiers(line, menu, lang)}</div>
                   ) : (

@@ -288,15 +288,17 @@ export default function CheckoutPage() {
       >
         {lang === "zh" ? "← 返回購物車" : "← Back to Cart"}
       </Link>
-      <h1 className="text-2xl font-bold">{lang === "zh" ? "結帳" : "Checkout"}</h1>
+      <h1 className="font-display-serif text-2xl font-bold">{lang === "zh" ? "結帳" : "Checkout"}</h1>
       <div className="rounded border border-amber-900/20 p-3">
-        <div className="font-semibold">{lang === "zh" ? "訂單摘要" : "Order Summary"}</div>
+        <div className="font-display-serif font-semibold">{lang === "zh" ? "訂單摘要" : "Order Summary"}</div>
         <div className="mt-2 space-y-1 text-sm">
           {lines.map((line, idx) => (
             <div key={`${line.refId}-${idx}`} className="flex items-start justify-between gap-3">
               <div>
                 <span className="font-medium">{line.qty}x </span>
-                <span>{localizeText(getLineLabel(line, menu ?? undefined), lang)}</span>
+                <span className="font-display-serif">
+                  {localizeText(getLineLabel(line, menu ?? undefined), lang)}
+                </span>
               </div>
               <div className="whitespace-nowrap font-medium">
                 {menu ? centsToCurrency(getLineTotalCents(line, menu)) : "—"}
@@ -361,7 +363,7 @@ export default function CheckoutPage() {
       </label>
 
       <div className="rounded border border-amber-900/20 p-3">
-        <div className="font-semibold">{lang === "zh" ? "取餐時間" : "Pickup Time"}</div>
+        <div className="font-display-serif font-semibold">{lang === "zh" ? "取餐時間" : "Pickup Time"}</div>
         <label className="mr-4 inline-flex items-center gap-2">
           <input
             type="radio"
@@ -397,12 +399,12 @@ export default function CheckoutPage() {
       </div>
 
       <div className="rounded border border-amber-900/20 p-3">
-        <div className="font-semibold">{lang === "zh" ? "取餐地點" : "Pickup Location"}</div>
+        <div className="font-display-serif font-semibold">{lang === "zh" ? "取餐地點" : "Pickup Location"}</div>
         <div className="mt-2 text-sm text-gray-700">9425 Leslie St, Richmond Hill, ON L4B 3N7</div>
       </div>
 
       <div className="rounded border border-amber-900/20 p-3">
-        <div className="font-semibold">{lang === "zh" ? "付款方式" : "Payment Method"}</div>
+        <div className="font-display-serif font-semibold">{lang === "zh" ? "付款方式" : "Payment Method"}</div>
         <label className="mt-2 inline-flex items-center gap-2">
           <input type="radio" checked readOnly />
           {lang === "zh" ? "到店付款（現金）" : "Pay in Person (Cash)"}

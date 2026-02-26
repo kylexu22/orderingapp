@@ -47,7 +47,7 @@ export default async function ComboPage({ params }: { params: { id: string } }) 
       >
         {lang === "zh" ? "← 返回餐牌" : "← Back to Menu"}
       </Link>
-      <h1 className="text-2xl font-bold">{localizeText(combo.name, lang)}</h1>
+      <h1 className="font-display-serif text-2xl font-bold">{localizeText(combo.name, lang)}</h1>
       <p className="text-gray-600">{localizeText(combo.description, lang)}</p>
       <ComboBuilder combo={combo} groups={combo.groups} items={items} lang={lang} />
     </div>

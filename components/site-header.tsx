@@ -210,7 +210,7 @@ export function SiteHeader() {
           >
             <div className="flex h-full flex-col">
               <div className="mb-5 flex items-center justify-between">
-                <div className="text-lg font-semibold">Hong Far Cafe</div>
+                <div className="font-display-serif text-lg font-semibold">Hong Far Cafe</div>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}

@@ -67,7 +67,9 @@ export default async function MenuPage() {
 
         <section id={combosAnchorId} className="space-y-3 scroll-mt-24">
           <div className="rounded-lg border border-[#6b221a] bg-[#8b2e24] px-3 py-2">
-            <h2 className="text-xl font-semibold text-[#f5f0e8]">{lang === "zh" ? "套餐" : "Combos"}</h2>
+            <h2 className="font-display-serif text-xl font-semibold text-[#f5f0e8]">
+              {lang === "zh" ? "套餐" : "Combos"}
+            </h2>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {combos.map((combo) => (
@@ -76,7 +78,7 @@ export default async function MenuPage() {
                 href={`/combo/${combo.id}`}
                 className="menu-food-card rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
               >
-                <div className="text-lg font-semibold">{localizeText(combo.name, lang)}</div>
+                <div className="font-display-serif text-lg font-semibold">{localizeText(combo.name, lang)}</div>
                 <div className="text-sm text-gray-600">{localizeText(combo.description, lang)}</div>
                 <div className="mt-2 font-medium text-[var(--brand)]">
                   {centsToCurrency(combo.basePriceCents)}
@@ -89,7 +91,9 @@ export default async function MenuPage() {
         {visibleCategories.map((category) => (
           <section id={`category-${category.id}`} key={category.id} className="space-y-3 scroll-mt-24">
             <div className="rounded-lg border border-[#6b221a] bg-[#8b2e24] px-3 py-2">
-              <h2 className="text-xl font-semibold text-[#f5f0e8]">{localizeText(category.name, lang)}</h2>
+              <h2 className="font-display-serif text-xl font-semibold text-[#f5f0e8]">
+                {localizeText(category.name, lang)}
+              </h2>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {category.items.map((item) => (
@@ -98,7 +102,9 @@ export default async function MenuPage() {
                   href={`/item/${item.id}`}
                   className="menu-food-card rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
                 >
-                  <div className="text-base font-semibold">{localizeText(item.name, lang)}</div>
+                  <div className="font-display-serif text-base font-semibold">
+                    {localizeText(item.name, lang)}
+                  </div>
                   <div className="text-sm text-gray-600">{localizeText(item.description, lang)}</div>
                   <div className="mt-2 font-medium text-[var(--brand)]">
                     {centsToCurrency(item.basePriceCents)}

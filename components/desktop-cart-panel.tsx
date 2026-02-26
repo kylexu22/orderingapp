@@ -101,7 +101,7 @@ export function DesktopCartPanel({ menu, lang }: { menu: MenuData; lang: Lang })
 
   return (
     <aside className="sticky top-20 hidden h-fit rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm lg:block">
-      <div className="mb-2 text-lg font-semibold">{lang === "zh" ? "購物車" : "Cart"}</div>
+      <div className="font-display-serif mb-2 text-lg font-semibold">{lang === "zh" ? "購物車" : "Cart"}</div>
       {lines.length === 0 ? (
         <div className="text-sm text-gray-600">{lang === "zh" ? "尚未加入任何項目。" : "No items yet."}</div>
       ) : (
@@ -116,7 +116,7 @@ export function DesktopCartPanel({ menu, lang }: { menu: MenuData; lang: Lang })
                 : localizeText(menu.combos.find((c) => c.id === line.refId)?.name, lang);
             return (
               <div key={`${line.refId}-${idx}`} className="rounded border border-gray-200 p-2 text-sm">
-                <div className="font-medium">{itemName ?? line.refId}</div>
+                <div className="font-display-serif font-medium">{itemName ?? line.refId}</div>
                 <div className="text-gray-600">{lang === "zh" ? "數量" : "Qty"}: {line.qty}</div>
                 <div className="font-semibold text-[var(--brand)]">
                   {centsToCurrency(getLineTotalCents(line, menu))}

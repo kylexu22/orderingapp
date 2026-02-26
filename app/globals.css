@@ -17,10 +17,29 @@ html {
 }
 
 body {
-  font-family: var(--font-lora), "Noto Serif SC", Georgia, serif;
+  font-family:
+    var(--font-noto-sans),
+    "Noto Sans",
+    "Noto Sans SC",
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   background: linear-gradient(165deg, #faf8f4 0%, #f2ede6 35%, #ebe6df 100%);
   color: var(--ink);
   min-height: 100vh;
+}
+
+.font-display-serif {
+  font-family:
+    var(--font-lora),
+    var(--font-noto-serif-sc),
+    "Noto Sans SC",
+    "PingFang SC",
+    "Microsoft YaHei",
+    Georgia,
+    serif;
 }
 
 a {

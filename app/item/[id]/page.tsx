@@ -31,7 +31,7 @@ export default async function ItemPage({ params }: { params: { id: string } }) {
       >
         {lang === "zh" ? "← 返回餐牌" : "← Back to Menu"}
       </Link>
-      <h1 className="text-2xl font-bold">{localizeText(item.name, lang)}</h1>
+      <h1 className="font-display-serif text-2xl font-bold">{localizeText(item.name, lang)}</h1>
       <p className="text-gray-600">{localizeText(item.description, lang)}</p>
       <ItemBuilder item={item} lang={lang} />
     </div>
