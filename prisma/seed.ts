@@ -1260,8 +1260,7 @@ async function main() {
             "6": [{ open: "11:00", close: "21:00" }]
           },
           closedDates: [],
-          acceptingOrders: true,
-          debugNoPrint: false
+          acceptingOrders: true
         }
       : {},
     create: {
@@ -1279,8 +1278,7 @@ async function main() {
         "6": [{ open: "11:00", close: "21:00" }]
       },
       closedDates: [],
-      acceptingOrders: true,
-      debugNoPrint: false
+      acceptingOrders: true
     }
   });
 

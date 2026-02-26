@@ -146,7 +146,6 @@ model StoreSettings {
   storeHours           Json
   closedDates          Json
   acceptingOrders      Boolean @default(true)
-  debugNoPrint         Boolean @default(false)
 }
 
 model Order {

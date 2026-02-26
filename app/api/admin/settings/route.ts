@@ -17,8 +17,7 @@ const dayHoursSchema = z.object({
 const payloadSchema = z.object({
   prepTimeMinutes: z.number().int().min(1).max(180),
   acceptingOrders: z.boolean(),
-  storeHoursByDay: z.record(dayHoursSchema),
-  debugNoPrint: z.boolean().optional()
+  storeHoursByDay: z.record(dayHoursSchema)
 });
 
 function toMinutes(hhmm: string) {
@@ -46,8 +45,7 @@ export async function GET(req: NextRequest) {
       slotIntervalMinutes: settings.slotIntervalMinutes,
       timezone: settings.timezone,
       storeHours: settings.storeHours,
-      acceptingOrders: settings.acceptingOrders,
-      debugNoPrint: settings.debugNoPrint
+      acceptingOrders: settings.acceptingOrders
     }
   });
 }
@@ -82,8 +80,7 @@ export async function PATCH(req: NextRequest) {
     data: {
       prepTimeMinutes: payload.prepTimeMinutes,
       acceptingOrders: payload.acceptingOrders,
-      storeHours: nextStoreHours,
-      debugNoPrint: payload.debugNoPrint
+      storeHours: nextStoreHours
     }
   });
 
@@ -94,8 +91,7 @@ export async function PATCH(req: NextRequest) {
       slotIntervalMinutes: updated.slotIntervalMinutes,
       timezone: updated.timezone,
       storeHours: updated.storeHours,
-      acceptingOrders: updated.acceptingOrders,
-      debugNoPrint: updated.debugNoPrint
+      acceptingOrders: updated.acceptingOrders
     }
   });
 }
