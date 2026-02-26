@@ -64,7 +64,7 @@ export default function ProfilePage() {
         <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
       </label>
       <label className="block text-sm">
-        {lang === "zh" ? "電郵（選填）" : "Email (optional)"}
+        {lang === "zh" ? "電郵" : "Email"}
         <input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
       </label>
       <label className="block text-sm">
