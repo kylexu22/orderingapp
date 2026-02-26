@@ -1261,7 +1261,9 @@ async function main() {
           },
           closedDates: [],
           acceptingOrders: true,
-          autoPrintEnabled: false
+          autoPrintEnabled: false,
+          defaultAutoPrintPrinterId: null,
+          receiptDebugMode: false
         }
       : {},
     create: {
@@ -1280,7 +1282,9 @@ async function main() {
       },
       closedDates: [],
       acceptingOrders: true,
-      autoPrintEnabled: false
+      autoPrintEnabled: false,
+      defaultAutoPrintPrinterId: null,
+      receiptDebugMode: false
     }
   });
 

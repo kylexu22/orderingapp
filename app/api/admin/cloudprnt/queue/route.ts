@@ -3,9 +3,7 @@ import { PrintCopyType, PrintJobStatus } from "@prisma/client";
 import { z } from "zod";
 import { isAuthedRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { logInfo } from "@/lib/logger";
-import { buildReceiptRenderPayload } from "@/lib/cloudprnt-payload";
-import { renderReceiptToPng } from "@/lib/cloudprnt-render";
+import { queuePrintJob } from "@/lib/print-job-queue";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -21,19 +19,8 @@ const createPrintJobSchema = z.object({
   requestedMime: z.string().default("image/png")
 });
 
-function normalizeMac(raw: string | null | undefined) {
-  if (!raw) return null;
-  const hex = raw.replace(/[^a-fA-F0-9]/g, "").toUpperCase();
-  if (hex.length !== 12) return null;
-  return hex.match(/.{1,2}/g)?.join(":") ?? null;
-}
-
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-}
-
-function newJobToken() {
-  return `${Date.now()}-${crypto.randomUUID()}`;
 }
 
 export async function GET(req: NextRequest) {
@@ -85,87 +72,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid print job payload." }, { status: 400 });
   }
 
-  if (!payload.orderId && !payload.orderNumber) {
-    return NextResponse.json({ error: "orderId or orderNumber is required." }, { status: 400 });
-  }
-  if (!payload.printerId && !payload.printerMac) {
-    return NextResponse.json({ error: "printerId or printerMac is required." }, { status: 400 });
-  }
-  if (payload.source === "AUTO") {
-    const settings = await prisma.storeSettings.findUnique({
-      where: { id: "default" },
-      select: { autoPrintEnabled: true }
-    });
-    if (!settings?.autoPrintEnabled) {
-      return NextResponse.json({ error: "Global auto print is disabled." }, { status: 409 });
-    }
-  }
-
-  const printerMac = normalizeMac(payload.printerMac ?? null);
-  let printer =
-    payload.printerId
-      ? await prisma.printer.findUnique({ where: { id: payload.printerId } })
-      : null;
-
-  if (!printer && printerMac) {
-    printer = await prisma.printer.upsert({
-      where: { macAddress: printerMac },
-      create: {
-        macAddress: printerMac,
-        name: payload.printerName ?? undefined
-      },
-      update: {
-        name: payload.printerName ?? undefined
-      }
-    });
-  }
-
-  if (!printer) {
-    return NextResponse.json({ error: "Printer not found." }, { status: 404 });
-  }
-
-  const order = await prisma.order.findFirst({
-    where: payload.orderId
-      ? { id: payload.orderId }
-      : { orderNumber: payload.orderNumber }
+  const result = await queuePrintJob({
+    printerId: payload.printerId,
+    printerMac: payload.printerMac ?? null,
+    printerName: payload.printerName ?? null,
+    orderId: payload.orderId,
+    orderNumber: payload.orderNumber,
+    copyType: payload.copyType,
+    source: payload.source,
+    preRenderPayload: true
   });
-  if (!order) {
-    return NextResponse.json({ error: "Order not found." }, { status: 404 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
-
-  let payloadCacheBase64: string | null = null;
-  try {
-    const restaurantName = process.env.RESTAURANT_NAME ?? "Restaurant";
-    const renderPayload = await buildReceiptRenderPayload({
-      orderNumber: order.orderNumber,
-      copyType: payload.copyType,
-      restaurantName
-    });
-    const png = await renderReceiptToPng(renderPayload);
-    payloadCacheBase64 = png.toString("base64");
-  } catch {
-    return NextResponse.json({ error: "Failed to render print payload." }, { status: 500 });
-  }
-
-  const created = await prisma.printJob.create({
-    data: {
-      printerId: printer.id,
-      orderId: order.id,
-      orderNumberSnapshot: order.orderNumber,
-      copyType: payload.copyType,
-      status: PrintJobStatus.QUEUED,
-      requestedMime: "image/png",
-      jobToken: newJobToken(),
-      payloadCache: payloadCacheBase64
-    }
-  });
-
-  logInfo("cloudprnt.job_queued", {
-    printJobId: created.id,
-    printerId: printer.id,
-    orderNumber: order.orderNumber,
-    copyType: created.copyType
-  });
-
-  return NextResponse.json({ ok: true, job: created });
+  return NextResponse.json({ ok: true, job: result.job, deduped: result.deduped ?? false });
 }

@@ -28,9 +28,15 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [prepTimeMinutes, setPrepTimeMinutes] = useState(25);
   const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [receiptDebugMode, setReceiptDebugMode] = useState(false);
   const [storeHoursByDay, setStoreHoursByDay] = useState<Record<string, DayConfig>>(() =>
     Object.fromEntries(DAYS.map((d) => [d.key, defaultDayConfig()]))
   );
+  const [previewOrderNumber, setPreviewOrderNumber] = useState("");
+  const [previewCopyType, setPreviewCopyType] = useState<"FRONT" | "KITCHEN">("FRONT");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewMeta, setPreviewMeta] = useState("");
+  const [previewError, setPreviewError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -47,6 +53,7 @@ export default function AdminSettingsPage() {
         }
         setPrepTimeMinutes(data.settings.prepTimeMinutes ?? 25);
         setAcceptingOrders(Boolean(data.settings.acceptingOrders));
+        setReceiptDebugMode(Boolean(data.settings.receiptDebugMode));
 
         const incoming = data.settings.storeHours as
           | Record<string, Array<{ open: string; close: string }>>
@@ -97,7 +104,7 @@ export default function AdminSettingsPage() {
       const res = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prepTimeMinutes, acceptingOrders, storeHoursByDay })
+        body: JSON.stringify({ prepTimeMinutes, acceptingOrders, storeHoursByDay, receiptDebugMode })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -110,6 +117,20 @@ export default function AdminSettingsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function previewReceiptPng() {
+    setPreviewError("");
+    setPreviewMeta("");
+    const orderNumber = previewOrderNumber.trim();
+    if (!orderNumber) {
+      setPreviewError("Enter an order number first.");
+      return;
+    }
+    const nextUrl = `/api/admin/cloudprnt/preview?orderNumber=${encodeURIComponent(
+      orderNumber
+    )}&copyType=${previewCopyType}&format=png&t=${Date.now()}`;
+    setPreviewUrl(nextUrl);
   }
 
   return (
@@ -198,6 +219,80 @@ export default function AdminSettingsPage() {
             );
           })}
         </div>
+
+        <section className="space-y-3 border-t pt-4">
+          <h2 className="text-lg font-semibold">Receipt Debug</h2>
+          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+            <input
+              type="checkbox"
+              checked={receiptDebugMode}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setReceiptDebugMode(checked);
+                if (!checked) {
+                  setPreviewUrl("");
+                  setPreviewError("");
+                  setPreviewMeta("");
+                }
+              }}
+            />
+            Receipt Debug Mode (preview final PNG output)
+          </label>
+
+          {receiptDebugMode ? (
+            <section className="space-y-3 rounded border bg-white p-3">
+              <h3 className="text-lg font-semibold">Receipt PNG Preview</h3>
+              <p className="text-sm text-gray-700">
+                Render the exact final PNG that CloudPRNT serves. Use this to check whitespace and
+                overall receipt height.
+              </p>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto]">
+                <input
+                  type="text"
+                  value={previewOrderNumber}
+                  onChange={(e) => setPreviewOrderNumber(e.target.value)}
+                  placeholder="Order number (e.g. 260225-6119)"
+                  className="rounded border px-3 py-2 text-sm"
+                />
+                <select
+                  value={previewCopyType}
+                  onChange={(e) => setPreviewCopyType(e.target.value as "FRONT" | "KITCHEN")}
+                  className="rounded border px-3 py-2 text-sm"
+                >
+                  <option value="FRONT">Front</option>
+                  <option value="KITCHEN">Kitchen</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={previewReceiptPng}
+                  className="rounded bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Preview PNG
+                </button>
+              </div>
+              {previewError ? <p className="text-sm text-red-700">{previewError}</p> : null}
+              {previewMeta ? <p className="text-sm text-gray-700">{previewMeta}</p> : null}
+              {previewUrl ? (
+                <div className="overflow-auto rounded border bg-[#f7f7f7] p-2">
+                  <img
+                    src={previewUrl}
+                    alt="Receipt PNG preview"
+                    className="max-w-full"
+                    onLoad={(event) =>
+                      setPreviewMeta(
+                        `Rendered image size: ${event.currentTarget.naturalWidth} x ${event.currentTarget.naturalHeight}px`
+                      )
+                    }
+                    onError={() => {
+                      setPreviewMeta("");
+                      setPreviewError("Preview failed. Check order number and try again.");
+                    }}
+                  />
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+        </section>
 
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
         {success ? <p className="text-sm text-green-700">{success}</p> : null}

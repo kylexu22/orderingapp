@@ -83,6 +83,8 @@ export default function AdminOrdersPage() {
   const [prepSaveError, setPrepSaveError] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
+  const [defaultAutoPrintPrinterId, setDefaultAutoPrintPrinterId] = useState("");
+  const [cloudPrntPrinters, setCloudPrntPrinters] = useState<CloudPrntPrinter[]>([]);
   const [cloudPrntPrinterId, setCloudPrntPrinterId] = useState("");
   const [cloudPrntPrinterName, setCloudPrntPrinterName] = useState("");
   const [printBusyByOrderId, setPrintBusyByOrderId] = useState<Record<string, boolean>>({});
@@ -105,7 +107,6 @@ export default function AdminOrdersPage() {
   const reconnectTimerRef = useRef<number | null>(null);
   const lastRealtimeMessageAtRef = useRef<number>(Date.now());
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
-  const autoPrintedOrderIdsRef = useRef<Set<string>>(new Set());
   const hasHydratedOrdersRef = useRef(false);
   const SWIPE_REVEAL_PX = 180;
   const PAST_PAGE_SIZE = 20;
@@ -128,6 +129,7 @@ export default function AdminOrdersPage() {
     autoPrint: lang === "zh" ? "自動打印" : "Auto Print",
     autoPrintOn: lang === "zh" ? "自動打印已啟用" : "Auto print enabled",
     autoPrintOff: lang === "zh" ? "自動打印已關閉" : "Auto print disabled",
+    autoPrintPrinter: lang === "zh" ? "自動打印機" : "Auto-Print Printer",
     orderTime: lang === "zh" ? "備餐時間" : "Order Time",
     readyTime: lang === "zh" ? "出餐時間" : "Ready Time",
     current: lang === "zh" ? "目前" : "Current",
@@ -170,6 +172,7 @@ export default function AdminOrdersPage() {
       setPrepTimeMinutes(data.settings.prepTimeMinutes ?? null);
       setAcceptingOrders(Boolean(data.settings.acceptingOrders));
       setAutoPrintEnabled(Boolean(data.settings.autoPrintEnabled));
+      setDefaultAutoPrintPrinterId(data.settings.defaultAutoPrintPrinterId ?? "");
       setStoreTimezone(data.settings.timezone ?? "America/Toronto");
 
       const incoming = (data.settings.storeHours ?? {}) as StoreHoursPayload;
@@ -429,35 +432,10 @@ export default function AdminOrdersPage() {
       setHighlightedOrderIds((prev) => new Set([...prev, ...newIds]));
       setAttentionOrderIds((prev) => new Set([...prev, ...newIds]));
       void playNewOrderSound();
-      if (autoPrintEnabled && cloudPrntPrinterId) {
-        for (const order of newlySeenActiveOrders) {
-          if (autoPrintedOrderIdsRef.current.has(order.id)) continue;
-          autoPrintedOrderIdsRef.current.add(order.id);
-          // Auto queue both front and kitchen copies for new orders.
-          // Errors are suppressed here to avoid interrupting the console flow.
-          void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.FRONT, {
-            clearAttention: false,
-            showSentMessage: false,
-            suppressAlert: true,
-            source: "AUTO"
-          }).then((ok) => {
-            if (!ok) {
-              autoPrintedOrderIdsRef.current.delete(order.id);
-              return;
-            }
-            void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.KITCHEN, {
-              clearAttention: false,
-              showSentMessage: false,
-              suppressAlert: true,
-              source: "AUTO"
-            });
-          });
-        }
-      }
     }
 
     knownOrderIdsRef.current = nextKnownIds;
-  }, [autoPrintEnabled, cloudPrntPrinterId, playNewOrderSound, queueCloudPrntPrint]);
+  }, [playNewOrderSound]);
 
   const loadCloudPrntPrinters = useCallback(async () => {
     try {
@@ -465,18 +443,18 @@ export default function AdminOrdersPage() {
       if (!res.ok) return;
       const data = await res.json();
       const printers = ((data?.printers ?? []) as CloudPrntPrinter[]).filter((printer) => printer.isActive);
+      setCloudPrntPrinters(printers);
       if (!printers.length) {
         setCloudPrntPrinterId("");
         setCloudPrntPrinterName("");
         return;
       }
 
-      const selectedExists = cloudPrntPrinterId
-        ? printers.some((printer) => printer.id === cloudPrntPrinterId)
-        : false;
-      if (selectedExists) {
-        const selected = printers.find((printer) => printer.id === cloudPrntPrinterId);
-        setCloudPrntPrinterName(selected?.name ?? selected?.macAddress ?? "");
+      const preferredId = defaultAutoPrintPrinterId || cloudPrntPrinterId;
+      const preferred = preferredId ? printers.find((printer) => printer.id === preferredId) : null;
+      if (preferred) {
+        setCloudPrntPrinterId(preferred.id);
+        setCloudPrntPrinterName(preferred.name ?? preferred.macAddress);
         return;
       }
 
@@ -485,13 +463,13 @@ export default function AdminOrdersPage() {
         const bSeen = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : 0;
         return bSeen - aSeen;
       });
-      const preferred = sorted[0];
-      setCloudPrntPrinterId(preferred.id);
-      setCloudPrntPrinterName(preferred.name ?? preferred.macAddress);
+      const fallbackPreferred = sorted[0];
+      setCloudPrntPrinterId(fallbackPreferred.id);
+      setCloudPrntPrinterName(fallbackPreferred.name ?? fallbackPreferred.macAddress);
     } catch {
       // no-op
     }
-  }, [cloudPrntPrinterId]);
+  }, [cloudPrntPrinterId, defaultAutoPrintPrinterId]);
 
   useEffect(() => {
     loadOrders();
@@ -583,7 +561,8 @@ export default function AdminOrdersPage() {
           prepTimeMinutes: nextPrep,
           acceptingOrders,
           storeHoursByDay,
-          autoPrintEnabled
+          autoPrintEnabled,
+          defaultAutoPrintPrinterId: defaultAutoPrintPrinterId || null
         })
       });
       const data = await res.json();
@@ -618,7 +597,8 @@ export default function AdminOrdersPage() {
           prepTimeMinutes,
           acceptingOrders,
           storeHoursByDay,
-          autoPrintEnabled: nextValue
+          autoPrintEnabled: nextValue,
+          defaultAutoPrintPrinterId: defaultAutoPrintPrinterId || null
         })
       });
       if (!res.ok) {
@@ -627,6 +607,47 @@ export default function AdminOrdersPage() {
         return;
       }
       setAutoPrintEnabled(nextValue);
+    } catch {
+      setPrepSaveError(t.autoPrintSaveFailed);
+    } finally {
+      setAutoPrintSaveLoading(false);
+    }
+  }
+
+  async function setAutoPrintPrinterGlobal(nextPrinterId: string) {
+    if (
+      prepTimeMinutes === null ||
+      acceptingOrders === null ||
+      Object.keys(storeHoursByDay).length === 0 ||
+      autoPrintSaveLoading
+    ) {
+      return;
+    }
+    setAutoPrintSaveLoading(true);
+    setPrepSaveError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prepTimeMinutes,
+          acceptingOrders,
+          storeHoursByDay,
+          autoPrintEnabled,
+          defaultAutoPrintPrinterId: nextPrinterId || null
+        })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setPrepSaveError(data?.error ?? t.autoPrintSaveFailed);
+        return;
+      }
+      setDefaultAutoPrintPrinterId(nextPrinterId);
+      const selected = cloudPrntPrinters.find((printer) => printer.id === nextPrinterId);
+      if (selected) {
+        setCloudPrntPrinterId(selected.id);
+        setCloudPrntPrinterName(selected.name ?? selected.macAddress);
+      }
     } catch {
       setPrepSaveError(t.autoPrintSaveFailed);
     } finally {
@@ -1218,6 +1239,24 @@ export default function AdminOrdersPage() {
           ) : null}
           <div className="rounded border border-[#c4a57433] p-3 text-sm">
             <div className="mb-2 font-semibold">{t.autoPrint}</div>
+            <label className="mb-2 block text-xs text-[#d6d0c8]">
+              {t.autoPrintPrinter}
+              <select
+                value={defaultAutoPrintPrinterId}
+                disabled={autoPrintSaveLoading || cloudPrntPrinters.length === 0}
+                onChange={(e) => void setAutoPrintPrinterGlobal(e.target.value)}
+                className="mt-1 w-full rounded border border-[#c4a57455] bg-[#16181b] px-2 py-2 text-sm text-[#f5f0e8] disabled:opacity-60"
+              >
+                <option value="">
+                  {lang === "zh" ? "自動選擇（最近連線）" : "Auto-select (most recently seen)"}
+                </option>
+                {cloudPrntPrinters.map((printer) => (
+                  <option key={printer.id} value={printer.id}>
+                    {printer.name ?? printer.macAddress}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button
               type="button"
               onClick={() => void setAutoPrintGlobal(!autoPrintEnabled)}

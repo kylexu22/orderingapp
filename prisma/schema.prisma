@@ -147,6 +147,8 @@ model StoreSettings {
   closedDates          Json
   acceptingOrders      Boolean @default(true)
   autoPrintEnabled     Boolean @default(false)
+  defaultAutoPrintPrinterId String?
+  receiptDebugMode     Boolean @default(false)
 }
 
 model Order {

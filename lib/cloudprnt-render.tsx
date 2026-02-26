@@ -130,6 +130,53 @@ function estimateReceiptHeight(payload: ReceiptRenderPayload) {
   return Math.min(Math.max(total + 140, 800), 15000);
 }
 
+async function trimBottomWhitespaceOnly(inputPng: Buffer, minKeepHeight = 280, bottomPadding = 14) {
+  const { data, info } = await sharp(inputPng)
+    .removeAlpha()
+    .grayscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const width = info.width;
+  const height = info.height;
+  const channels = info.channels;
+  let lastInkRow = -1;
+
+  for (let y = height - 1; y >= 0; y -= 1) {
+    const rowStart = y * width * channels;
+    let hasInk = false;
+    for (let x = 0; x < width; x += 1) {
+      const idx = rowStart + x * channels;
+      const value = data[idx] ?? 255;
+      if (value < 245) {
+        hasInk = true;
+        break;
+      }
+    }
+    if (hasInk) {
+      lastInkRow = y;
+      break;
+    }
+  }
+
+  if (lastInkRow < 0) {
+    return inputPng;
+  }
+
+  const nextHeight = Math.max(minKeepHeight, Math.min(height, lastInkRow + 1 + bottomPadding));
+  if (nextHeight >= height) return inputPng;
+
+  return sharp(inputPng)
+    .extract({
+      left: 0,
+      top: 0,
+      width,
+      height: nextHeight
+    })
+    .png()
+    .toBuffer();
+}
+
 export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise<Buffer> {
   const [scRegular, scBold, tcRegular, tcBold] = await Promise.all([
     loadSCRegularFont(),
@@ -301,9 +348,10 @@ export async function renderReceiptToPng(payload: ReceiptRenderPayload): Promise
   });
   const pngData = resvg.render();
   const basePng = Buffer.from(pngData.asPng());
+  const croppedPng = await trimBottomWhitespaceOnly(basePng);
 
   // Force a high-contrast 1-bit-like output to avoid printer-side anti-alias ambiguity.
-  const bwPng = await sharp(basePng)
+  const bwPng = await sharp(croppedPng)
     .removeAlpha()
     .grayscale()
     .threshold(140, { grayscale: true })

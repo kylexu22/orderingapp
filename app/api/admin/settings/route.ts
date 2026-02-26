@@ -18,7 +18,9 @@ const payloadSchema = z.object({
   prepTimeMinutes: z.number().int().min(1).max(180),
   acceptingOrders: z.boolean(),
   storeHoursByDay: z.record(dayHoursSchema),
-  autoPrintEnabled: z.boolean().optional()
+  autoPrintEnabled: z.boolean().optional(),
+  defaultAutoPrintPrinterId: z.string().min(1).nullable().optional(),
+  receiptDebugMode: z.boolean().optional()
 });
 
 function toMinutes(hhmm: string) {
@@ -47,7 +49,9 @@ export async function GET(req: NextRequest) {
       timezone: settings.timezone,
       storeHours: settings.storeHours,
       acceptingOrders: settings.acceptingOrders,
-      autoPrintEnabled: settings.autoPrintEnabled
+      autoPrintEnabled: settings.autoPrintEnabled,
+      defaultAutoPrintPrinterId: settings.defaultAutoPrintPrinterId,
+      receiptDebugMode: settings.receiptDebugMode
     }
   });
 }
@@ -83,7 +87,9 @@ export async function PATCH(req: NextRequest) {
       prepTimeMinutes: payload.prepTimeMinutes,
       acceptingOrders: payload.acceptingOrders,
       storeHours: nextStoreHours,
-      autoPrintEnabled: payload.autoPrintEnabled
+      autoPrintEnabled: payload.autoPrintEnabled,
+      defaultAutoPrintPrinterId: payload.defaultAutoPrintPrinterId,
+      receiptDebugMode: payload.receiptDebugMode
     }
   });
 
@@ -95,7 +101,9 @@ export async function PATCH(req: NextRequest) {
       timezone: updated.timezone,
       storeHours: updated.storeHours,
       acceptingOrders: updated.acceptingOrders,
-      autoPrintEnabled: updated.autoPrintEnabled
+      autoPrintEnabled: updated.autoPrintEnabled,
+      defaultAutoPrintPrinterId: updated.defaultAutoPrintPrinterId,
+      receiptDebugMode: updated.receiptDebugMode
     }
   });
 }
