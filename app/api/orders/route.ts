@@ -49,7 +49,7 @@ const lineSchema = z.discriminatedUnion("lineType", [
 
 const createOrderSchema = z.object({
   customerName: z.string().min(1),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().trim().min(1).max(254).email(),
   phone: z.string().min(1),
   notes: z.string().optional(),
   pickupType: z.nativeEnum(PickupType),

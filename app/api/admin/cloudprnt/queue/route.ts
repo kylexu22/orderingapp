@@ -16,6 +16,7 @@ const createPrintJobSchema = z.object({
   printerName: z.string().min(1).optional(),
   orderId: z.string().min(1).optional(),
   orderNumber: z.string().min(1).optional(),
+  source: z.enum(["AUTO", "MANUAL"]).default("MANUAL"),
   copyType: z.nativeEnum(PrintCopyType).default(PrintCopyType.FRONT),
   requestedMime: z.string().default("image/png")
 });
@@ -89,6 +90,15 @@ export async function POST(req: NextRequest) {
   }
   if (!payload.printerId && !payload.printerMac) {
     return NextResponse.json({ error: "printerId or printerMac is required." }, { status: 400 });
+  }
+  if (payload.source === "AUTO") {
+    const settings = await prisma.storeSettings.findUnique({
+      where: { id: "default" },
+      select: { autoPrintEnabled: true }
+    });
+    if (!settings?.autoPrintEnabled) {
+      return NextResponse.json({ error: "Global auto print is disabled." }, { status: 409 });
+    }
   }
 
   const printerMac = normalizeMac(payload.printerMac ?? null);

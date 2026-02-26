@@ -41,6 +41,10 @@ const CLIENT_TAX_RATE = (() => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0.13;
 })();
 
+function isLikelyValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function getLineLabel(line: { lineType: "ITEM" | "COMBO"; refId: string }, menu?: MenuPayload) {
   if (!menu) return line.refId;
   if (line.lineType === "ITEM") {
@@ -122,6 +126,7 @@ export default function CheckoutPage() {
   const [phoneLocked, setPhoneLocked] = useState(false);
   const [hasKnownProfile, setHasKnownProfile] = useState(false);
   const [lang, setLang] = useState<Lang>("en");
+  const emailLocked = hasKnownProfile && email.trim().length > 0;
 
   useEffect(() => {
     async function loadVerifySession() {
@@ -228,6 +233,15 @@ export default function CheckoutPage() {
       setError(lang === "zh" ? "請先完成電話驗證。" : "Please complete phone verification first.");
       return;
     }
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setError(lang === "zh" ? "請填寫電郵地址。" : "Email is required.");
+      return;
+    }
+    if (!isLikelyValidEmail(normalizedEmail)) {
+      setError(lang === "zh" ? "請輸入有效電郵地址。" : "Please enter a valid email address.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -236,7 +250,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerName,
-          email,
+          email: normalizedEmail,
           phone,
           notes,
           pickupType,
@@ -315,11 +329,14 @@ export default function CheckoutPage() {
         />
       </label>
       <label className="block text-sm">
-        {lang === "zh" ? "電郵（選填）" : "Email (optional)"}
+        {lang === "zh" ? "電郵（必填）" : "Email (required)"}
         <input
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          readOnly={hasKnownProfile}
+          readOnly={emailLocked}
+          required
+          autoComplete="email"
           className="mt-1 w-full rounded border px-3 py-2 read-only:bg-gray-100"
         />
       </label>
@@ -415,7 +432,7 @@ export default function CheckoutPage() {
       ) : null}
       <button
         onClick={submit}
-        disabled={submitting || orderState !== "OPEN" || !phoneLocked}
+        disabled={submitting || orderState !== "OPEN" || !phoneLocked || !email.trim()}
         className="rounded bg-[var(--brand)] px-4 py-2 text-white disabled:opacity-50"
       >
         {submitting ? (lang === "zh" ? "提交中..." : "Submitting...") : lang === "zh" ? "提交訂單" : "Place Order"}

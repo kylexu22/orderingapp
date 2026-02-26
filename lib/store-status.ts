@@ -51,6 +51,42 @@ function getDatePartsInTimezone(now: Date, timezone?: string) {
   }
 }
 
+function formatMinutesTo12h(totalMinutes: number): string {
+  const hours24 = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const suffix = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  if (minutes === 0) return `${hours12}${suffix}`;
+  return `${hours12}:${String(minutes).padStart(2, "0")}${suffix}`;
+}
+
+function formatWindow(window: { open: string; close: string }) {
+  return `${formatMinutesTo12h(toMinutes(window.open))} - ${formatMinutesTo12h(toMinutes(window.close))}`;
+}
+
+export function getStoreStatusLabel(input: StoreStatusInput, now = new Date()): string {
+  if (!input.acceptingOrders) return "ORDERING PAUSED";
+
+  const { dateKey, dayKey, minutes } = getDatePartsInTimezone(now, input.timezone);
+  if (input.closedDates.includes(dateKey)) return "CLOSED TODAY";
+
+  const windows = (input.storeHours[dayKey] ?? [])
+    .map((window) => ({
+      ...window,
+      openMinutes: toMinutes(window.open),
+      closeMinutes: toMinutes(window.close)
+    }))
+    .sort((a, b) => a.openMinutes - b.openMinutes);
+
+  if (!windows.length) return "CLOSED TODAY";
+
+  const activeWindow = windows.find((window) => minutes >= window.openMinutes && minutes <= window.closeMinutes);
+  const todayHoursLabel = windows.map((window) => formatWindow(window)).join(", ");
+
+  if (activeWindow) return `OPEN NOW - ${todayHoursLabel}`;
+  return `CLOSED, OPEN ${todayHoursLabel}`;
+}
+
 export function isStoreOpenNow(input: Omit<StoreStatusInput, "acceptingOrders">, now = new Date()) {
   const { dateKey, dayKey, minutes } = getDatePartsInTimezone(now, input.timezone);
   if (input.closedDates.includes(dateKey)) return false;

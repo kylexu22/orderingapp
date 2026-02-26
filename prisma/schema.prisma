@@ -146,6 +146,7 @@ model StoreSettings {
   storeHours           Json
   closedDates          Json
   acceptingOrders      Boolean @default(true)
+  autoPrintEnabled     Boolean @default(false)
 }
 
 model Order {

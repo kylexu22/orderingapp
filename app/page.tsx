@@ -1,7 +1,7 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
 import { getMenuData } from "@/lib/menu";
-import { getStoreOrderState } from "@/lib/store-status";
+import { getStoreOrderState, getStoreStatusLabel } from "@/lib/store-status";
 import { StoreHours } from "@/lib/types";
 
 const galleryImages = [
@@ -18,14 +18,21 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   const { settings } = await getMenuData();
-  const orderState = settings
-    ? getStoreOrderState({
+  const statusInput = settings
+    ? {
         acceptingOrders: settings.acceptingOrders,
         timezone: settings.timezone,
         storeHours: settings.storeHours as StoreHours,
         closedDates: settings.closedDates as string[]
-      })
-    : "OPEN";
+      }
+    : {
+        acceptingOrders: true,
+        timezone: "America/Toronto",
+        storeHours: {} as StoreHours,
+        closedDates: []
+      };
+  const orderState = getStoreOrderState(statusInput);
+  const statusLabel = getStoreStatusLabel(statusInput);
 
   const isOpenNow = orderState === "OPEN";
   const orderCta = isOpenNow ? "ORDER NOW" : "VIEW MENU";
@@ -47,7 +54,11 @@ export default async function HomePage() {
             <p className="hf-hero-tagline">
               Traditional Hong Kong cha chaan teng and Cantonese diner in Richmond Hill.
             </p>
-            {isOpenNow ? <div className="hf-open-now">OPEN NOW</div> : <div className="hf-closed-now">CLOSED</div>}
+            {isOpenNow ? (
+              <div className="hf-open-now">{statusLabel}</div>
+            ) : (
+              <div className="hf-closed-now">{statusLabel}</div>
+            )}
             <Link href="/menu" className="hf-order-btn">
               {orderCta}
             </Link>

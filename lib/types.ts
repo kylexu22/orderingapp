@@ -38,7 +38,7 @@ export type CartLineInput =
 
 export type CreateOrderInput = {
   customerName: string;
-  email?: string;
+  email: string;
   phone: string;
   notes?: string;
   pickupType: PickupType;

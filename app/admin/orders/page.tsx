@@ -79,6 +79,7 @@ export default function AdminOrdersPage() {
   const [storeTimezone, setStoreTimezone] = useState("America/Toronto");
   const [statusNow, setStatusNow] = useState(() => new Date());
   const [prepSaveLoading, setPrepSaveLoading] = useState(false);
+  const [autoPrintSaveLoading, setAutoPrintSaveLoading] = useState(false);
   const [prepSaveError, setPrepSaveError] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
@@ -150,7 +151,8 @@ export default function AdminOrdersPage() {
     cloudprntReady: lang === "zh" ? "CloudPRNT 已連接" : "CloudPRNT connected",
     cloudprntMissing: lang === "zh" ? "未找到 CloudPRNT 打印機" : "No CloudPRNT printer found",
     printQueueFailed: lang === "zh" ? "加入打印隊列失敗。" : "Failed to queue print job.",
-    sentToPrinter: lang === "zh" ? "已發送至打印機" : "Sent to Printer"
+    sentToPrinter: lang === "zh" ? "已發送至打印機" : "Sent to Printer",
+    autoPrintSaveFailed: lang === "zh" ? "更新自動打印設定失敗。" : "Failed to update auto print setting."
   };
 
   const loadSettings = useCallback(async () => {
@@ -160,6 +162,7 @@ export default function AdminOrdersPage() {
       if (!res.ok || !data?.settings) return;
       setPrepTimeMinutes(data.settings.prepTimeMinutes ?? null);
       setAcceptingOrders(Boolean(data.settings.acceptingOrders));
+      setAutoPrintEnabled(Boolean(data.settings.autoPrintEnabled));
       setStoreTimezone(data.settings.timezone ?? "America/Toronto");
 
       const incoming = (data.settings.storeHours ?? {}) as StoreHoursPayload;
@@ -319,7 +322,12 @@ export default function AdminOrdersPage() {
       orderNumber: string,
       orderId: string,
       copyType: PrintCopyType,
-      options?: { clearAttention?: boolean; showSentMessage?: boolean; suppressAlert?: boolean }
+      options?: {
+        clearAttention?: boolean;
+        showSentMessage?: boolean;
+        suppressAlert?: boolean;
+        source?: "AUTO" | "MANUAL";
+      }
     ) => {
       if (!cloudPrntPrinterId) {
         if (!options?.suppressAlert) {
@@ -353,7 +361,8 @@ export default function AdminOrdersPage() {
             printerId: cloudPrntPrinterId,
             orderId,
             orderNumber,
-            copyType
+            copyType,
+            source: options?.source ?? "MANUAL"
           })
         });
         if (!res.ok) {
@@ -422,7 +431,8 @@ export default function AdminOrdersPage() {
           void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.FRONT, {
             clearAttention: false,
             showSentMessage: false,
-            suppressAlert: true
+            suppressAlert: true,
+            source: "AUTO"
           }).then((ok) => {
             if (!ok) {
               autoPrintedOrderIdsRef.current.delete(order.id);
@@ -431,7 +441,8 @@ export default function AdminOrdersPage() {
             void queueCloudPrntPrint(order.orderNumber, order.id, PrintCopyType.KITCHEN, {
               clearAttention: false,
               showSentMessage: false,
-              suppressAlert: true
+              suppressAlert: true,
+              source: "AUTO"
             });
           });
         }
@@ -489,6 +500,10 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     void loadSettings();
+    const timer = window.setInterval(() => {
+      void loadSettings();
+    }, 15000);
+    return () => window.clearInterval(timer);
   }, [loadSettings]);
 
   useEffect(() => {
@@ -498,8 +513,6 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const shouldAutoEnable = localStorage.getItem("admin_sound_enabled") === "1";
-    const autoPrintSaved = localStorage.getItem("admin_auto_print_enabled") === "1";
-    setAutoPrintEnabled(autoPrintSaved);
     if (shouldAutoEnable) {
       void ensureAudioReady().then(async (ready) => {
         if (ready) {
@@ -522,10 +535,6 @@ export default function AdminOrdersPage() {
       window.removeEventListener("keydown", unlock);
     };
   }, [ensureAudioReady, startSilentKeepAliveLoop]);
-
-  useEffect(() => {
-    localStorage.setItem("admin_auto_print_enabled", autoPrintEnabled ? "1" : "0");
-  }, [autoPrintEnabled]);
 
   useEffect(() => {
     const prevHtmlOverflowX = document.documentElement.style.overflowX;
@@ -566,7 +575,8 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({
           prepTimeMinutes: nextPrep,
           acceptingOrders,
-          storeHoursByDay
+          storeHoursByDay,
+          autoPrintEnabled
         })
       });
       const data = await res.json();
@@ -579,6 +589,41 @@ export default function AdminOrdersPage() {
       setPrepSaveError("Failed to update order time.");
     } finally {
       setPrepSaveLoading(false);
+    }
+  }
+
+  async function setAutoPrintGlobal(nextValue: boolean) {
+    if (
+      prepTimeMinutes === null ||
+      acceptingOrders === null ||
+      Object.keys(storeHoursByDay).length === 0 ||
+      autoPrintSaveLoading
+    ) {
+      return;
+    }
+    setAutoPrintSaveLoading(true);
+    setPrepSaveError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prepTimeMinutes,
+          acceptingOrders,
+          storeHoursByDay,
+          autoPrintEnabled: nextValue
+        })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setPrepSaveError(data?.error ?? t.autoPrintSaveFailed);
+        return;
+      }
+      setAutoPrintEnabled(nextValue);
+    } catch {
+      setPrepSaveError(t.autoPrintSaveFailed);
+    } finally {
+      setAutoPrintSaveLoading(false);
     }
   }
 
@@ -894,10 +939,16 @@ export default function AdminOrdersPage() {
         )}
         <button
           type="button"
-          onClick={() => setAutoPrintEnabled((prev) => !prev)}
+          onClick={() => void setAutoPrintGlobal(!autoPrintEnabled)}
+          disabled={
+            autoPrintSaveLoading ||
+            prepTimeMinutes === null ||
+            acceptingOrders === null ||
+            Object.keys(storeHoursByDay).length === 0
+          }
           className={`rounded border px-4 py-2 text-sm font-semibold ${
             autoPrintEnabled ? "bg-green-700 text-white" : "bg-white text-black"
-          }`}
+          } disabled:opacity-60`}
         >
           {t.autoPrint}
         </button>

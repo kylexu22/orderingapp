@@ -476,6 +476,8 @@ async function resolvePickup(
 
 export async function createOrder(input: CreateOrderInput) {
   if (!input.customerName?.trim()) throw new Error("Customer name is required.");
+  const normalizedEmail = input.email?.trim();
+  if (!normalizedEmail) throw new Error("Email is required.");
   const normalizedPhone = normalizePhoneToE164(input.phone ?? "");
   if (!normalizedPhone) throw new Error("Phone number is invalid.");
   if (input.honeypot?.trim()) throw new Error("Spam check failed.");
@@ -515,11 +517,11 @@ export async function createOrder(input: CreateOrderInput) {
     create: {
       phone: normalizedPhone,
       name: input.customerName.trim(),
-      email: input.email?.trim() ? input.email.trim() : null
+      email: normalizedEmail
     },
     update: {
       name: input.customerName.trim(),
-      email: input.email?.trim() ? input.email.trim() : null
+      email: normalizedEmail
     },
     select: {
       id: true,
