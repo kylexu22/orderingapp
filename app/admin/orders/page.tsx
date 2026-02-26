@@ -127,7 +127,9 @@ export default function AdminOrdersPage() {
     soundOn: lang === "zh" ? "聲音提示已啟用" : "Sound alerts enabled",
     autoPrint: lang === "zh" ? "自動打印" : "Auto Print",
     autoPrintOn: lang === "zh" ? "自動打印已啟用" : "Auto print enabled",
+    autoPrintOff: lang === "zh" ? "自動打印已關閉" : "Auto print disabled",
     orderTime: lang === "zh" ? "備餐時間" : "Order Time",
+    readyTime: lang === "zh" ? "出餐時間" : "Ready Time",
     current: lang === "zh" ? "目前" : "Current",
     today: lang === "zh" ? "今日" : "Today",
     allTime: lang === "zh" ? "全部" : "All Time",
@@ -150,9 +152,14 @@ export default function AdminOrdersPage() {
       lang === "zh" ? "已手動暫停接單（不接受訂單）" : "Ordering turned off (not accepting orders)",
     cloudprntReady: lang === "zh" ? "CloudPRNT 已連接" : "CloudPRNT connected",
     cloudprntMissing: lang === "zh" ? "未找到 CloudPRNT 打印機" : "No CloudPRNT printer found",
+    printerStatus: lang === "zh" ? "打印機狀態" : "Printer Status",
     printQueueFailed: lang === "zh" ? "加入打印隊列失敗。" : "Failed to queue print job.",
     sentToPrinter: lang === "zh" ? "已發送至打印機" : "Sent to Printer",
-    autoPrintSaveFailed: lang === "zh" ? "更新自動打印設定失敗。" : "Failed to update auto print setting."
+    autoPrintSaveFailed: lang === "zh" ? "更新自動打印設定失敗。" : "Failed to update auto print setting.",
+    shiftControls: lang === "zh" ? "當值控制" : "Shift Controls",
+    soundControl: lang === "zh" ? "聲音提醒" : "Sound Alerts",
+    language: lang === "zh" ? "語言" : "Language",
+    soundStatus: lang === "zh" ? "聲音提醒狀態" : "Sound Alert Status"
   };
 
   const loadSettings = useCallback(async () => {
@@ -862,135 +869,103 @@ export default function AdminOrdersPage() {
         >
           {t.orders}
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex overflow-hidden rounded-full border border-[#c4a574]">
-            <button
-              type="button"
-              onClick={() => setLanguage("zh")}
-              className={`px-3 py-1.5 text-xs font-semibold ${
-                lang === "zh" ? "bg-[#c4a574] text-black" : "bg-white text-black"
+        <button
+          type="button"
+          onClick={() => setDrawerOpen((prev) => !prev)}
+          className="relative inline-flex h-9 w-9 items-center justify-center border"
+          aria-label="Open admin menu"
+        >
+          <span
+            className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
+              drawerOpen ? "translate-y-0 rotate-45" : "-translate-y-1.5"
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
+              drawerOpen ? "opacity-0" : "opacity-100"
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
+              drawerOpen ? "translate-y-0 -rotate-45" : "translate-y-1.5"
+            }`}
+          />
+        </button>
+      </div>
+      <section className="space-y-4 rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {storeOrderState ? (
+            <div
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                storeOrderState === "OPEN"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
               }`}
             >
-              中文
-            </button>
+              {storeOrderState === "OPEN"
+                ? t.statusOpen
+                : storeOrderState === "CLOSED"
+                  ? t.statusClosed
+                  : t.statusOrderingOff}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setTab("CURRENT")}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold ${
+              tab === "CURRENT" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+            }`}
+          >
+            {t.currentOrders}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("PAST")}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold ${
+              tab === "PAST" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+            }`}
+          >
+            {t.pastOrders}
+          </button>
+        </div>
+
+        {!soundEnabled ? (
+          <div className="grid gap-2 sm:grid-cols-1">
             <button
               type="button"
-              onClick={() => setLanguage("en")}
-              className={`px-3 py-1.5 text-xs font-semibold ${
-                lang === "en" ? "bg-[#c4a574] text-black" : "bg-white text-black"
-              }`}
+              onClick={() => void enableSoundAlerts()}
+              className="rounded border bg-white px-4 py-2 text-left text-sm font-semibold text-black"
             >
-              EN
+              {t.soundControl}: {t.enableSound}
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen((prev) => !prev)}
-            className="relative inline-flex h-9 w-9 items-center justify-center border"
-            aria-label="Open admin menu"
-          >
-            <span
-              className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
-                drawerOpen ? "translate-y-0 rotate-45" : "-translate-y-1.5"
-              }`}
-            />
-            <span
-              className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
-                drawerOpen ? "opacity-0" : "opacity-100"
-              }`}
-            />
-            <span
-              className={`absolute h-0.5 w-5 bg-black transition-all duration-300 ${
-                drawerOpen ? "translate-y-0 -rotate-45" : "translate-y-1.5"
-              }`}
-            />
-          </button>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold">{t.readyTime}:</span>
+          {[15, 30, 45, 60].map((minutes) => (
+            <button
+              key={minutes}
+              type="button"
+              disabled={prepSaveLoading}
+              onClick={() => void setPrepTimeQuick(minutes)}
+              className={`rounded-full border px-4 py-2 text-base font-semibold ${
+                prepTimeMinutes === minutes ? "bg-[var(--brand)] text-white" : "bg-white text-black"
+              } ${prepSaveLoading ? "opacity-60" : ""}`}
+            >
+              {minutes}
+            </button>
+          ))}
+          {prepTimeMinutes ? (
+            <span className="text-sm text-gray-600">
+              {t.current}: {prepTimeMinutes} min
+            </span>
+          ) : null}
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setTab("CURRENT")}
-          className={`border px-4 py-2 text-sm font-semibold ${
-            tab === "CURRENT" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
-          }`}
-        >
-          {t.currentOrders}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("PAST")}
-          className={`border px-4 py-2 text-sm font-semibold ${
-            tab === "PAST" ? "bg-[var(--brand)] text-white" : "bg-white text-black"
-          }`}
-        >
-          {t.pastOrders}
-        </button>
-        {!soundEnabled ? (
-          <button
-            type="button"
-            onClick={() => void enableSoundAlerts()}
-            className="border px-4 py-2 text-sm font-semibold"
-          >
-            {t.enableSound}
-          </button>
-        ) : (
-          <span className="text-xs text-green-700">{t.soundOn}</span>
-        )}
-        <button
-          type="button"
-          onClick={() => void setAutoPrintGlobal(!autoPrintEnabled)}
-          disabled={
-            autoPrintSaveLoading ||
-            prepTimeMinutes === null ||
-            acceptingOrders === null ||
-            Object.keys(storeHoursByDay).length === 0
-          }
-          className={`rounded border px-4 py-2 text-sm font-semibold ${
-            autoPrintEnabled ? "bg-green-700 text-white" : "bg-white text-black"
-          } disabled:opacity-60`}
-        >
-          {t.autoPrint}
-        </button>
-        {autoPrintEnabled ? <span className="text-xs text-green-700">{t.autoPrintOn}</span> : null}
-        <span className={`text-xs ${cloudPrntPrinterId ? "text-green-700" : "text-red-700"}`}>
-          {cloudPrntPrinterId
-            ? `${t.cloudprntReady}: ${cloudPrntPrinterName || cloudPrntPrinterId}`
-            : t.cloudprntMissing}
-        </span>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-base font-semibold">{t.orderTime}:</span>
-        {[15, 30, 45, 60].map((minutes) => (
-          <button
-            key={minutes}
-            type="button"
-            disabled={prepSaveLoading}
-            onClick={() => void setPrepTimeQuick(minutes)}
-            className={`rounded border px-4 py-2 text-base font-semibold ${
-              prepTimeMinutes === minutes ? "bg-[var(--brand)] text-white" : "bg-white text-black"
-            } ${prepSaveLoading ? "opacity-60" : ""}`}
-          >
-            {minutes}
-          </button>
-        ))}
-        {prepTimeMinutes ? <span className="text-sm text-gray-600">{t.current}: {prepTimeMinutes} min</span> : null}
-      </div>
-      {storeOrderState ? (
-        <div
-          className={`rounded border px-3 py-2 text-sm font-semibold ${
-            storeOrderState === "OPEN"
-              ? "border-green-700 bg-green-50 text-green-800"
-              : "border-red-700 bg-red-50 text-red-800"
-          }`}
-        >
-          {storeOrderState === "OPEN"
-            ? t.statusOpen
-            : storeOrderState === "CLOSED"
-              ? t.statusClosed
-              : t.statusOrderingOff}
-        </div>
-      ) : null}
+      </section>
       {tab === "PAST" ? (
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -1204,6 +1179,63 @@ export default function AdminOrdersPage() {
           </button>
         </div>
         <div className="space-y-3 text-base">
+          <div className="rounded border border-[#c4a57433] p-3">
+            <div className="mb-2 text-sm font-semibold">{t.language}</div>
+            <div className="inline-flex overflow-hidden rounded-full border border-[#c4a574]">
+              <button
+                type="button"
+                onClick={() => setLanguage("zh")}
+                className={`px-3 py-1.5 text-xs font-semibold ${
+                  lang === "zh" ? "bg-[#c4a574] text-black" : "bg-white text-black"
+                }`}
+              >
+                中文
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                className={`px-3 py-1.5 text-xs font-semibold ${
+                  lang === "en" ? "bg-[#c4a574] text-black" : "bg-white text-black"
+                }`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+          <div className="rounded border border-[#c4a57433] p-3 text-sm">
+            <div className="mb-1 font-semibold">{t.printerStatus}</div>
+            <div className={cloudPrntPrinterId ? "text-green-300" : "text-red-300"}>
+              {cloudPrntPrinterId
+                ? `${t.cloudprntReady}: ${cloudPrntPrinterName || cloudPrntPrinterId}`
+                : t.cloudprntMissing}
+            </div>
+          </div>
+          {soundEnabled ? (
+            <div className="rounded border border-[#c4a57433] p-3 text-sm">
+              <div className="mb-1 font-semibold">{t.soundStatus}</div>
+              <div className="text-green-300">{t.soundOn}</div>
+            </div>
+          ) : null}
+          <div className="rounded border border-[#c4a57433] p-3 text-sm">
+            <div className="mb-2 font-semibold">{t.autoPrint}</div>
+            <button
+              type="button"
+              onClick={() => void setAutoPrintGlobal(!autoPrintEnabled)}
+              disabled={
+                autoPrintSaveLoading ||
+                prepTimeMinutes === null ||
+                acceptingOrders === null ||
+                Object.keys(storeHoursByDay).length === 0
+              }
+              className={`w-full rounded border px-4 py-2 text-left text-sm font-semibold ${
+                autoPrintEnabled
+                  ? "border-green-700 bg-green-50 text-green-800"
+                  : "border-gray-300 bg-white text-black"
+              } disabled:opacity-60`}
+            >
+              {autoPrintEnabled ? t.autoPrintOn : t.autoPrintOff}
+            </button>
+          </div>
           <Link
             href="/admin/analytics"
             onClick={() => setDrawerOpen(false)}

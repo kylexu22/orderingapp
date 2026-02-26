@@ -66,20 +66,20 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="space-y-4 pb-8">
       <div className="flex items-center gap-2">
-        <Link href="/admin/orders" className="rounded border px-4 py-2 text-sm font-semibold">
+        <Link href="/admin/orders" className="inline-flex w-28 justify-center rounded border px-4 py-2 text-sm font-semibold">
           Orders
         </Link>
-        <Link href="/admin/menu" className="rounded border px-4 py-2 text-sm font-semibold">
+        <Link href="/admin/menu" className="inline-flex w-28 justify-center rounded border px-4 py-2 text-sm font-semibold">
           Menu
-        </Link>
-        <Link href="/admin/settings" className="rounded border px-4 py-2 text-sm font-semibold">
-          Settings
         </Link>
         <Link
           href="/admin/analytics"
-          className="rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+          className="inline-flex w-28 justify-center rounded border bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
         >
           Analytics
+        </Link>
+        <Link href="/admin/settings" className="inline-flex w-28 justify-center rounded border px-4 py-2 text-sm font-semibold">
+          Settings
         </Link>
       </div>
 
@@ -202,4 +202,3 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
-
