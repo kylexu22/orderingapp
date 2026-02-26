@@ -16,6 +16,19 @@ export type FormattedSelectionLine = {
   indent: 0 | 1;
 };
 
+function stripComboItemPrefix(value: string) {
+  // Remove leading combo numbering markers like "1*.", "12.", "3、", "2)".
+  return value.replace(/^\s*\d+\s*\*?\s*[.)．。、]?\s*/u, "").trim();
+}
+
+function stripComboPrefixFromLabel(value: string) {
+  const slashIndex = value.indexOf("/");
+  if (slashIndex === -1) return value;
+  const left = value.slice(0, slashIndex).trimEnd();
+  const right = value.slice(slashIndex + 1).trimStart();
+  return `${stripComboItemPrefix(left)} / ${right}`;
+}
+
 function classifyDrinkSelection(selection: SelectionLike) {
   const label = (selection.label ?? "").toLowerCase();
   const optionId = (selection.selectedModifierOptionId ?? "").toLowerCase();
@@ -52,7 +65,7 @@ export function formatOrderSelectionsForDisplay(params: {
 
   for (const selection of selections) {
     if (selection.selectionKind === "COMBO_PICK") {
-      const selected = localize(selection.selectedItemNameSnapshot);
+      const selected = stripComboItemPrefix(localize(selection.selectedItemNameSnapshot));
       const delta = selection.priceDeltaSnapshotCents
         ? ` (${centsToCurrency(selection.priceDeltaSnapshotCents)})`
         : "";
@@ -81,7 +94,7 @@ export function formatOrderSelectionsForDisplay(params: {
       continue;
     }
 
-    const label = localize(selection.label);
+    const label = stripComboPrefixFromLabel(localize(selection.label));
     const selected = localize(selection.selectedModifierOptionNameSnapshot);
     const delta = selection.priceDeltaSnapshotCents
       ? ` (${centsToCurrency(selection.priceDeltaSnapshotCents)})`
@@ -140,4 +153,3 @@ export function formatOrderSelectionsForDisplay(params: {
   const insertAt = firstDrinkInsertIndex ?? baseLines.length;
   return [...baseLines.slice(0, insertAt), ...drinkLines, ...baseLines.slice(insertAt)];
 }
-
