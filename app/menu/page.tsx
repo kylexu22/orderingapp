@@ -71,7 +71,7 @@ export default async function MenuPage() {
         <section id={combosAnchorId} className="space-y-3 scroll-mt-24">
           <div className="rounded-lg border border-[#6b221a] bg-[#8b2e24] px-3 py-2">
             <h2 className="font-display-serif text-xl font-semibold text-[#f5f0e8]">
-              {lang === "zh" ? "套餐" : "Combos"}
+              {lang === "zh" ? "和菜（配白飯及今日例湯)" : "Set Meal (Includes white rice and soup of the day)"}
             </h2>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
