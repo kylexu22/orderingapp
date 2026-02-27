@@ -3,8 +3,6 @@ import { Resend } from "resend";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 
 const ORDER_EMAIL_FROM = "Hong Far Cafe <orders@hongfarcafe.ca>";
-const DEFAULT_NEW_ORDER_NOTIFY_TO = "";
-const DEFAULT_NEW_ORDER_NOTIFY_CC = "";
 const ORDER_EMAIL_CONTACT_PHONE = process.env.ORDER_EMAIL_CONTACT_PHONE?.trim() ?? "";
 const ORDER_EMAIL_CONTACT_EMAIL =
   process.env.ORDER_EMAIL_CONTACT_EMAIL?.trim() ?? "orders@hongfarcafe.ca";
@@ -333,8 +331,11 @@ export async function sendNewOrderNotificationEmail(params: {
   order: OrderForEmail;
 }) {
   if (!process.env.RESEND_API_KEY) return { skipped: true as const, reason: "missing_api_key" as const };
-  const toRecipients = parseRecipients(process.env.ORDER_NOTIFY_TO, [DEFAULT_NEW_ORDER_NOTIFY_TO]);
-  const ccRecipients = parseRecipients(process.env.ORDER_NOTIFY_CC, [DEFAULT_NEW_ORDER_NOTIFY_CC]);
+  const toRecipients = parseRecipients(process.env.ORDER_NOTIFY_TO, []);
+  const ccRecipients = parseRecipients(process.env.ORDER_NOTIFY_CC, []);
+  if (!toRecipients.length) {
+    return { skipped: true as const, reason: "missing_notify_recipients" as const };
+  }
 
   const { data, error } = await resend.emails.send({
     from: ORDER_EMAIL_FROM,
