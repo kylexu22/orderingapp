@@ -62,6 +62,24 @@ type ItemModifierRule = {
   options: Array<{ name: string; priceDeltaCents?: number; isDefault?: boolean }>;
 };
 
+type ScrapedSeedItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  basePriceCents: number;
+  categoryId: string;
+  isComboOnly: boolean;
+  sourceSlug: string;
+};
+
+type SoupSize = "PER_PERSON" | "REGULAR" | null;
+
+type SoupSizeConfig = {
+  itemId: string;
+  perPersonPriceCents: number | null;
+  regularPriceCents: number | null;
+};
+
 const SCRAPED_MENU_PATH = path.join(process.cwd(), "data", "hongfarcafe-menu-scrape.json");
 const COMBO_MENU_PATH = path.join(process.cwd(), "data", "combo-special-items.json");
 const SPECIAL_SET_DESCRIPTION = "Includes hot drink or soft drink. (Cold +$1.50)";
@@ -516,6 +534,97 @@ function normalizeDescription(value?: string): string | null {
   return text.length > 500 ? text.slice(0, 500) : text;
 }
 
+function detectSoupSizeFromSlugOrName(slug: string, name: string): SoupSize {
+  if (/-per-person$/i.test(slug)) return "PER_PERSON";
+  if (/-regular$/i.test(slug)) return "REGULAR";
+  if (/(?:\u6bcf\u4f4d|\u6bce\u4f4d|\u6bcf\u500b\u4eba|per\s*person|1\s*person)/i.test(name)) {
+    return "PER_PERSON";
+  }
+  if (/(?:\u4f8b|regular)/i.test(name)) return "REGULAR";
+  return null;
+}
+
+function stripSoupSizeFromName(name: string): string {
+  return name
+    .replace(
+      /\s*[\(\uff08]\s*(?:\u6bcf\u4f4d|\u6bce\u4f4d|\u6bcf\u500b\u4eba|per\s*person|1\s*person|\u4f8b|regular)\s*[\)\uff09]\s*/gi,
+      " "
+    )
+    .replace(/\s*-\s*(?:\u6bcf\u4f4d|\u6bce\u4f4d|\u6bcf\u500b\u4eba|\u4f8b)\s*/g, " ")
+    .replace(/\s+\(1\u500b\u4eba\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function mergeSoupItems(
+  rawItems: ScrapedSeedItem[],
+  soupCategoryId: string | null | undefined
+): {
+  items: Array<Omit<ScrapedSeedItem, "sourceSlug">>;
+  soupSizeConfigs: SoupSizeConfig[];
+  legacyVariantItemIds: string[];
+} {
+  if (!soupCategoryId) {
+    return {
+      items: rawItems.map(({ sourceSlug: _sourceSlug, ...rest }) => rest),
+      soupSizeConfigs: [],
+      legacyVariantItemIds: []
+    };
+  }
+
+  const nonSoup = rawItems.filter((item) => item.categoryId !== soupCategoryId);
+  const soup = rawItems.filter((item) => item.categoryId === soupCategoryId);
+
+  const grouped = new Map<string, ScrapedSeedItem[]>();
+  for (const item of soup) {
+    const baseSlug = item.sourceSlug.replace(/-(?:per-person|regular)$/i, "");
+    const arr = grouped.get(baseSlug) ?? [];
+    arr.push(item);
+    grouped.set(baseSlug, arr);
+  }
+
+  const mergedSoup: Array<Omit<ScrapedSeedItem, "sourceSlug">> = [];
+  const soupSizeConfigs: SoupSizeConfig[] = [];
+  const legacyVariantItemIds: string[] = [];
+
+  for (const variants of grouped.values()) {
+    const perPerson = variants.find(
+      (item) => detectSoupSizeFromSlugOrName(item.sourceSlug, item.name) === "PER_PERSON"
+    );
+    const regular = variants.find(
+      (item) => detectSoupSizeFromSlugOrName(item.sourceSlug, item.name) === "REGULAR"
+    );
+    const primary = perPerson ?? regular ?? variants[0];
+    const basePriceCents =
+      perPerson?.basePriceCents ?? Math.min(...variants.map((variant) => variant.basePriceCents));
+
+    mergedSoup.push({
+      id: primary.id,
+      name: stripSoupSizeFromName(primary.name),
+      description: primary.description,
+      basePriceCents,
+      categoryId: primary.categoryId,
+      isComboOnly: false
+    });
+
+    soupSizeConfigs.push({
+      itemId: primary.id,
+      perPersonPriceCents: perPerson?.basePriceCents ?? null,
+      regularPriceCents: regular?.basePriceCents ?? null
+    });
+
+    for (const variant of variants) {
+      if (variant.id !== primary.id) legacyVariantItemIds.push(variant.id);
+    }
+  }
+
+  return {
+    items: [...nonSoup.map(({ sourceSlug: _sourceSlug, ...rest }) => rest), ...mergedSoup],
+    soupSizeConfigs,
+    legacyVariantItemIds
+  };
+}
+
 async function loadJson<T>(filePath: string): Promise<T> {
   const raw = await fs.readFile(filePath, "utf8");
   return JSON.parse(raw) as T;
@@ -580,7 +689,7 @@ async function main() {
     categoryByName.set(category.name, category.id);
   }
 
-  const scrapedItems = scraped.products
+  const rawScrapedItems = scraped.products
     .map((product) => {
       const categoryName = normalizeCategoryName(product.categories[0] ?? "");
       const categoryId = categoryByName.get(categoryName);
@@ -595,10 +704,18 @@ async function main() {
           : normalizeDescription(product.descriptionText),
         basePriceCents: parsePriceCents(product.priceText),
         categoryId,
-        isComboOnly: false
+        isComboOnly: false,
+        sourceSlug: product.slug
       };
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const soupCategoryId = scrapedCategories.find((category) => category.slug === "-soup")?.id;
+  const {
+    items: scrapedItems,
+    soupSizeConfigs,
+    legacyVariantItemIds
+  } = mergeSoupItems(rawScrapedItems, soupCategoryId);
 
   const comboItems = comboMenu.categories.flatMap((category) =>
     category.dishes.map((dish, index) => ({
@@ -644,6 +761,105 @@ async function main() {
     ],
     skipDuplicates: true
   });
+
+  for (const soupItem of scrapedItems.filter((item) => item.categoryId === soupCategoryId)) {
+    await prisma.item.upsert({
+      where: { id: soupItem.id },
+      create: {
+        id: soupItem.id,
+        name: soupItem.name,
+        description: soupItem.description,
+        basePriceCents: soupItem.basePriceCents,
+        categoryId: soupItem.categoryId,
+        isActive: true,
+        isComboOnly: false
+      },
+      update: {
+        name: soupItem.name,
+        description: soupItem.description,
+        basePriceCents: soupItem.basePriceCents,
+        categoryId: soupItem.categoryId,
+        isActive: true,
+        isComboOnly: false
+      }
+    });
+  }
+
+  if (legacyVariantItemIds.length > 0) {
+    await prisma.item.updateMany({
+      where: { id: { in: legacyVariantItemIds } },
+      data: { isActive: false }
+    });
+  }
+
+  for (const soupSize of soupSizeConfigs) {
+    const groupId = `modgrp_soup_size_${soupSize.itemId}`;
+    await prisma.modifierGroup.upsert({
+      where: { id: groupId },
+      create: {
+        id: groupId,
+        itemId: soupSize.itemId,
+        name: "\u4efd\u91cf | Size",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 5
+      },
+      update: {
+        itemId: soupSize.itemId,
+        name: "\u4efd\u91cf | Size",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 5
+      }
+    });
+
+    const basePrice =
+      soupSize.perPersonPriceCents ?? soupSize.regularPriceCents ?? 0;
+
+    if (soupSize.perPersonPriceCents !== null) {
+      await prisma.modifierOption.upsert({
+        where: { id: `modopt_soup_size_per_person_${soupSize.itemId}` },
+        create: {
+          id: `modopt_soup_size_per_person_${soupSize.itemId}`,
+          groupId,
+          name: "\u6bcf\u4f4d | Per Person",
+          priceDeltaCents: soupSize.perPersonPriceCents - basePrice,
+          sortOrder: 1,
+          isDefault: soupSize.perPersonPriceCents === basePrice
+        },
+        update: {
+          groupId,
+          name: "\u6bcf\u4f4d | Per Person",
+          priceDeltaCents: soupSize.perPersonPriceCents - basePrice,
+          sortOrder: 1,
+          isDefault: soupSize.perPersonPriceCents === basePrice
+        }
+      });
+    }
+
+    if (soupSize.regularPriceCents !== null) {
+      await prisma.modifierOption.upsert({
+        where: { id: `modopt_soup_size_regular_${soupSize.itemId}` },
+        create: {
+          id: `modopt_soup_size_regular_${soupSize.itemId}`,
+          groupId,
+          name: "\u5927\u4efd | Regular",
+          priceDeltaCents: soupSize.regularPriceCents - basePrice,
+          sortOrder: 2,
+          isDefault: soupSize.regularPriceCents === basePrice
+        },
+        update: {
+          groupId,
+          name: "\u5927\u4efd | Regular",
+          priceDeltaCents: soupSize.regularPriceCents - basePrice,
+          sortOrder: 2,
+          isDefault: soupSize.regularPriceCents === basePrice
+        }
+      });
+    }
+  }
 
   for (const drink of manualDrinks) {
     if (!noTemperatureModifierDrinkIds.has(drink.id)) {
@@ -1197,14 +1413,14 @@ async function main() {
       create: {
         id: sideGroupId,
         itemId: item.id,
-        name: "選配 | Choose Side",
+        name: "\u9078\u914d | Choose Side",
         required: true,
         minSelect: 1,
         maxSelect: 1,
         sortOrder: 61
       },
       update: {
-        name: "選配 | Choose Side",
+        name: "\u9078\u914d | Choose Side",
         required: true,
         minSelect: 1,
         maxSelect: 1,
@@ -1240,14 +1456,14 @@ async function main() {
       create: {
         id: sauceGroupId,
         itemId: item.id,
-        name: "醬汁 | Choose Sauce",
+        name: "\u91ac\u6c41 | Choose Sauce",
         required: true,
         minSelect: 1,
         maxSelect: 1,
         sortOrder: 62
       },
       update: {
-        name: "醬汁 | Choose Sauce",
+        name: "\u91ac\u6c41 | Choose Sauce",
         required: true,
         minSelect: 1,
         maxSelect: 1,

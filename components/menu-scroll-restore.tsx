@@ -13,10 +13,21 @@ export function MenuScrollRestore() {
     if (!Number.isFinite(y) || y < 0) return;
 
     requestAnimationFrame(() => {
+      const html = document.documentElement;
+      const body = document.body;
+      const prevHtmlBehavior = html.style.scrollBehavior;
+      const prevBodyBehavior = body.style.scrollBehavior;
+
+      html.style.scrollBehavior = "auto";
+      body.style.scrollBehavior = "auto";
       window.scrollTo(0, y);
+
+      requestAnimationFrame(() => {
+        html.style.scrollBehavior = prevHtmlBehavior;
+        body.style.scrollBehavior = prevBodyBehavior;
+      });
     });
   }, []);
 
   return null;
 }
-
