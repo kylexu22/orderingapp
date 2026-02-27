@@ -1179,6 +1179,105 @@ async function main() {
     });
   }
 
+  const hotPlateCategoryIds = new Set(
+    scrapedCategories
+      .filter((c) => c.name.toUpperCase().includes("HOT PLATE COMBO"))
+      .map((c) => c.id)
+  );
+  const hotPlateItems = scrapedItems.filter((item) => hotPlateCategoryIds.has(item.categoryId));
+
+  for (const item of hotPlateItems) {
+    await prisma.modifierGroup.deleteMany({
+      where: { id: `modgrp_hotplate_sirloin_side_${item.id}` }
+    });
+
+    const sideGroupId = `modgrp_hotplate_side_${item.id}`;
+    await prisma.modifierGroup.upsert({
+      where: { id: sideGroupId },
+      create: {
+        id: sideGroupId,
+        itemId: item.id,
+        name: "Choose Side (Choose 1)",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 61
+      },
+      update: {
+        name: "Choose Side (Choose 1)",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 61
+      }
+    });
+
+    const sideOptions = ["Rice", "Spaghetti", "Fries", "Mixed Vegetables"];
+    for (const [index, optionName] of sideOptions.entries()) {
+      await prisma.modifierOption.upsert({
+        where: { id: `modopt_hotplate_side_${item.id}_${index + 1}` },
+        create: {
+          id: `modopt_hotplate_side_${item.id}_${index + 1}`,
+          groupId: sideGroupId,
+          name: optionName,
+          priceDeltaCents: 0,
+          sortOrder: index + 1,
+          isDefault: false
+        },
+        update: {
+          groupId: sideGroupId,
+          name: optionName,
+          priceDeltaCents: 0,
+          sortOrder: index + 1,
+          isDefault: false
+        }
+      });
+    }
+
+    const sauceGroupId = `modgrp_hotplate_sauce_${item.id}`;
+    await prisma.modifierGroup.upsert({
+      where: { id: sauceGroupId },
+      create: {
+        id: sauceGroupId,
+        itemId: item.id,
+        name: "Choose Sauce (Choose 1)",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 62
+      },
+      update: {
+        name: "Choose Sauce (Choose 1)",
+        required: true,
+        minSelect: 1,
+        maxSelect: 1,
+        sortOrder: 62
+      }
+    });
+
+    const sauceOptions = ["BBQ", "Garlic", "Onion", "Tomato", "Black Pepper"];
+    for (const [index, optionName] of sauceOptions.entries()) {
+      await prisma.modifierOption.upsert({
+        where: { id: `modopt_hotplate_sauce_${item.id}_${index + 1}` },
+        create: {
+          id: `modopt_hotplate_sauce_${item.id}_${index + 1}`,
+          groupId: sauceGroupId,
+          name: optionName,
+          priceDeltaCents: 0,
+          sortOrder: index + 1,
+          isDefault: false
+        },
+        update: {
+          groupId: sauceGroupId,
+          name: optionName,
+          priceDeltaCents: 0,
+          sortOrder: index + 1,
+          isDefault: false
+        }
+      });
+    }
+  }
+
   const combos = [
     { id: "combo_for_2", people: 2, basePriceCents: 3599 },
     { id: "combo_for_3", people: 3, basePriceCents: 5199 },
@@ -1289,7 +1388,7 @@ async function main() {
   });
 
   console.log(
-    `Seeded (${SEED_MODE}) ${scrapedCategories.length} scraped categories, ${scrapedItems.length} scraped items, ${manualDrinks.length} drinks, ${comboItems.length} combo-only items, ${drinkBundleEligibleItems.length} drink-bundle items, ${congeeAddonEligibleItems.length} congee add-on items, ${teaTimeSelectionItems.length} tea-time selection items, ${itemModifierSelectionItems.length} item-level selection rules, ${bakedComboItems.length} baked-combo base rules, and ${combos.length} combos.`
+    `Seeded (${SEED_MODE}) ${scrapedCategories.length} scraped categories, ${scrapedItems.length} scraped items, ${manualDrinks.length} drinks, ${comboItems.length} combo-only items, ${drinkBundleEligibleItems.length} drink-bundle items, ${congeeAddonEligibleItems.length} congee add-on items, ${teaTimeSelectionItems.length} tea-time selection items, ${itemModifierSelectionItems.length} item-level selection rules, ${bakedComboItems.length} baked-combo base rules, ${hotPlateItems.length} hot-plate side/sauce rules, and ${combos.length} combos.`
   );
 }
 
