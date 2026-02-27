@@ -1197,14 +1197,14 @@ async function main() {
       create: {
         id: sideGroupId,
         itemId: item.id,
-        name: "Choose Side (Choose 1)",
+        name: "選配 | Choose Side",
         required: true,
         minSelect: 1,
         maxSelect: 1,
         sortOrder: 61
       },
       update: {
-        name: "Choose Side (Choose 1)",
+        name: "選配 | Choose Side",
         required: true,
         minSelect: 1,
         maxSelect: 1,
@@ -1240,14 +1240,14 @@ async function main() {
       create: {
         id: sauceGroupId,
         itemId: item.id,
-        name: "Choose Sauce (Choose 1)",
+        name: "醬汁 | Choose Sauce",
         required: true,
         minSelect: 1,
         maxSelect: 1,
         sortOrder: 62
       },
       update: {
-        name: "Choose Sauce (Choose 1)",
+        name: "醬汁 | Choose Sauce",
         required: true,
         minSelect: 1,
         maxSelect: 1,

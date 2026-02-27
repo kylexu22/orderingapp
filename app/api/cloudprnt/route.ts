@@ -4,12 +4,64 @@ import { prisma } from "@/lib/prisma";
 import { renderReceiptToPng } from "@/lib/cloudprnt-render";
 import { buildReceiptRenderPayload } from "@/lib/cloudprnt-payload";
 import { logError, logInfo } from "@/lib/logger";
+import { getStoreOrderState } from "@/lib/store-status";
+import type { StoreHours } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
 
 const CLOUDPRNT_POLL_INTERVAL_MS = 2000;
+const CLOUDPRNT_POLL_INTERVAL_CLOSED_MS = 30000;
+const CLOUDPRNT_POLL_INTERVAL_ORDERING_OFF_MS = 60000;
+
+function asStoreHours(value: Prisma.JsonValue | null | undefined): StoreHours {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: StoreHours = {};
+  for (const [day, windowsRaw] of Object.entries(value)) {
+    if (!Array.isArray(windowsRaw)) continue;
+    out[day] = windowsRaw
+      .filter(
+        (window): window is { open: string; close: string } =>
+          typeof window === "object" &&
+          window !== null &&
+          typeof (window as { open?: unknown }).open === "string" &&
+          typeof (window as { close?: unknown }).close === "string"
+      )
+      .map((window) => ({ open: window.open, close: window.close }));
+  }
+  return out;
+}
+
+function asClosedDates(value: Prisma.JsonValue | null | undefined): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+async function resolveCloudPrntPollIntervalMs() {
+  const settings = await prisma.storeSettings.findUnique({
+    where: { id: "default" },
+    select: {
+      acceptingOrders: true,
+      timezone: true,
+      storeHours: true,
+      closedDates: true
+    }
+  });
+
+  if (!settings) return CLOUDPRNT_POLL_INTERVAL_MS;
+
+  const orderState = getStoreOrderState({
+    acceptingOrders: settings.acceptingOrders,
+    timezone: settings.timezone,
+    storeHours: asStoreHours(settings.storeHours),
+    closedDates: asClosedDates(settings.closedDates)
+  });
+
+  if (orderState === "ORDERING_OFF") return CLOUDPRNT_POLL_INTERVAL_ORDERING_OFF_MS;
+  if (orderState === "CLOSED") return CLOUDPRNT_POLL_INTERVAL_CLOSED_MS;
+  return CLOUDPRNT_POLL_INTERVAL_MS;
+}
 
 function normalizeMac(raw: string | null | undefined) {
   if (!raw) return null;
@@ -265,10 +317,11 @@ export async function POST(req: Request) {
   const nextJob = queuedJob ?? retryDeliveredJob;
 
   if (!nextJob) {
+    const pollInterval = await resolveCloudPrntPollIntervalMs();
     return NextResponse.json({
       jobReady: false,
       clientAction: "POST",
-      pollInterval: CLOUDPRNT_POLL_INTERVAL_MS
+      pollInterval
     });
   }
 

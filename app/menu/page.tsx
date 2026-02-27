@@ -6,6 +6,8 @@ import { localizeText } from "@/lib/i18n";
 import { getServerLang } from "@/lib/i18n-server";
 import { getStoreOrderState } from "@/lib/store-status";
 import { StoreHours } from "@/lib/types";
+import { MenuScrollLink } from "@/components/menu-scroll-link";
+import { MenuScrollRestore } from "@/components/menu-scroll-restore";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -33,6 +35,7 @@ export default async function MenuPage() {
 
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      <MenuScrollRestore />
       <div className="space-y-6">
         {showStoreBanner ? (
           <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -97,7 +100,7 @@ export default async function MenuPage() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {category.items.map((item) => (
-                <Link
+                <MenuScrollLink
                   key={item.id}
                   href={`/item/${item.id}`}
                   className="menu-food-card rounded-xl border border-amber-900/20 bg-[var(--card)] p-4 shadow-sm"
@@ -109,7 +112,7 @@ export default async function MenuPage() {
                   <div className="mt-2 font-medium text-[var(--brand)]">
                     {centsToCurrency(item.basePriceCents)}
                   </div>
-                </Link>
+                </MenuScrollLink>
               ))}
             </div>
           </section>
