@@ -156,6 +156,7 @@ model Order {
   orderNumber         String      @unique
   createdAt           DateTime    @default(now())
   status              OrderStatus @default(NEW)
+  orderLanguage       String      @default("en")
   customerName        String
   phone               String
   notes               String?

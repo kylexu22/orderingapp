@@ -19,6 +19,16 @@ import {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function getOrderLanguageFromCookieHeader(cookieHeader: string | null): "en" | "zh" {
+  if (!cookieHeader) return "en";
+  const langCookie = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("lang="));
+  if (!langCookie) return "en";
+  return langCookie.slice("lang=".length) === "zh" ? "zh" : "en";
+}
+
 const modifierSchema = z.object({
   groupId: z.string().min(1),
   optionId: z.string().min(1)
@@ -81,6 +91,7 @@ export async function POST(req: Request) {
   }
 
   try {
+    const orderLanguage = getOrderLanguageFromCookieHeader(req.headers.get("cookie"));
     const verifiedPhone = getVerifiedPhoneFromCookieHeader(req.headers.get("cookie"));
     const submittedPhone = normalizePhoneToE164(parsed.phone);
     if (!verifiedPhone || !submittedPhone || verifiedPhone !== submittedPhone) {
@@ -90,9 +101,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const order = await createOrder(parsed);
+    const order = await createOrder(parsed, { orderLanguage });
     logInfo("order.created", {
       orderNumber: order.orderNumber,
+      orderLanguage: order.orderLanguage,
       totalCents: order.totalCents
     });
     broadcastOrderEvent({

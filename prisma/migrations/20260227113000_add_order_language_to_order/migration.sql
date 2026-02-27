@@ -1,0 +1,3 @@
+ALTER TABLE "Order"
+ADD COLUMN "orderLanguage" TEXT NOT NULL DEFAULT 'en';
+

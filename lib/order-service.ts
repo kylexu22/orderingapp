@@ -474,7 +474,10 @@ async function resolvePickup(
   };
 }
 
-export async function createOrder(input: CreateOrderInput) {
+export async function createOrder(
+  input: CreateOrderInput,
+  options?: { orderLanguage?: "en" | "zh" }
+) {
   if (!input.customerName?.trim()) throw new Error("Customer name is required.");
   const normalizedEmail = input.email?.trim();
   if (!normalizedEmail) throw new Error("Email is required.");
@@ -533,6 +536,7 @@ export async function createOrder(input: CreateOrderInput) {
   const order = await prisma.order.create({
     data: {
       orderNumber,
+      orderLanguage: options?.orderLanguage ?? "en",
       customerName: customer.name,
       phone: normalizedPhone,
       notes: input.notes?.trim() || null,
