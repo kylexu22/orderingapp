@@ -3,6 +3,8 @@ import { Resend } from "resend";
 import { centsToCurrency, fmtDateTime, fmtTime } from "@/lib/format";
 
 const ORDER_EMAIL_FROM = "Hong Far Cafe <orders@hongfarcafe.ca>";
+const DEFAULT_NEW_ORDER_NOTIFY_TO = "";
+const DEFAULT_NEW_ORDER_NOTIFY_CC = "";
 const ORDER_EMAIL_CONTACT_PHONE = process.env.ORDER_EMAIL_CONTACT_PHONE?.trim() ?? "";
 const ORDER_EMAIL_CONTACT_EMAIL =
   process.env.ORDER_EMAIL_CONTACT_EMAIL?.trim() ?? "orders@hongfarcafe.ca";
@@ -37,6 +39,14 @@ type OrderForEmail = {
     }>;
   }>;
 };
+
+function parseRecipients(raw: string | undefined, fallback: string[]) {
+  const values = (raw ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return values.length ? values : fallback;
+}
 
 function escapeHtml(value: string) {
   return value
@@ -314,6 +324,29 @@ export async function sendOrderConfirmationEmail(params: {
 
   if (error) {
     throw new Error(error.message || "Failed to send order confirmation email.");
+  }
+
+  return { skipped: false as const, messageId: data?.id ?? null };
+}
+
+export async function sendNewOrderNotificationEmail(params: {
+  order: OrderForEmail;
+}) {
+  if (!process.env.RESEND_API_KEY) return { skipped: true as const, reason: "missing_api_key" as const };
+  const toRecipients = parseRecipients(process.env.ORDER_NOTIFY_TO, [DEFAULT_NEW_ORDER_NOTIFY_TO]);
+  const ccRecipients = parseRecipients(process.env.ORDER_NOTIFY_CC, [DEFAULT_NEW_ORDER_NOTIFY_CC]);
+
+  const { data, error } = await resend.emails.send({
+    from: ORDER_EMAIL_FROM,
+    to: toRecipients,
+    cc: ccRecipients,
+    subject: `New Order Received #${params.order.orderNumber}`,
+    html: buildEmailHtml(params.order),
+    text: `New order received.\n\n${buildEmailText(params.order)}`
+  });
+
+  if (error) {
+    throw new Error(error.message || "Failed to send new order notification email.");
   }
 
   return { skipped: false as const, messageId: data?.id ?? null };

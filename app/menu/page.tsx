@@ -54,7 +54,7 @@ export default async function MenuPage() {
               href={`#${combosAnchorId}`}
               className="inline-block rounded-full border border-amber-900/20 bg-white px-4 py-1.5 text-sm"
             >
-              {lang === "zh" ? "套餐" : "Combos"}
+              {lang === "zh" ? "和菜" : "Set Meal"}
             </a>
             {visibleCategories.map((category) => (
               <a

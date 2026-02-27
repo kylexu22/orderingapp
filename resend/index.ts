@@ -1,6 +1,7 @@
 export type SendEmailPayload = {
   from: string;
   to: string | string[];
+  cc?: string | string[];
   subject: string;
   html?: string;
   text?: string;

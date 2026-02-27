@@ -4,7 +4,7 @@ import { OrderStatus, PickupType, PrintCopyType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createOrder } from "@/lib/order-service";
-import { sendOrderConfirmationEmail } from "@/lib/order-confirmation-email";
+import { sendNewOrderNotificationEmail, sendOrderConfirmationEmail } from "@/lib/order-confirmation-email";
 import { broadcastOrderEvent } from "@/lib/sse";
 import { logError, logInfo } from "@/lib/logger";
 import { queuePrintJob } from "@/lib/print-job-queue";
@@ -129,6 +129,28 @@ export async function POST(req: Request) {
       }
     })();
 
+    const notifyRestaurantTask = (async () => {
+      try {
+        const notifyResult = await sendNewOrderNotificationEmail({ order });
+        if (notifyResult.skipped) {
+          logInfo("order.notification_email.skipped", {
+            orderNumber: order.orderNumber,
+            reason: notifyResult.reason
+          });
+        } else {
+          logInfo("order.notification_email.sent", {
+            orderNumber: order.orderNumber,
+            messageId: notifyResult.messageId
+          });
+        }
+      } catch (notifyError) {
+        logError("order.notification_email_failed", {
+          orderNumber: order.orderNumber,
+          message: notifyError instanceof Error ? notifyError.message : "unknown"
+        });
+      }
+    })();
+
     const autoPrintTask = (async () => {
       const [frontResult, kitchenResult] = await Promise.all([
         queuePrintJob({
@@ -175,7 +197,7 @@ export async function POST(req: Request) {
       });
     });
 
-    await Promise.allSettled([emailTask, autoPrintTask]);
+    await Promise.allSettled([emailTask, notifyRestaurantTask, autoPrintTask]);
 
     const res = NextResponse.json({
       id: order.id,

@@ -24,7 +24,7 @@ export async function getMenuData() {
     }),
     prisma.combo.findMany({
       where: { isActive: true },
-      orderBy: { name: "asc" },
+      orderBy: { basePriceCents: "asc" },
       include: {
         groups: {
           orderBy: { sortOrder: "asc" },

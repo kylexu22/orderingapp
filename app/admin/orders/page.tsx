@@ -8,6 +8,7 @@ import { getClientLang, localizeText, type Lang } from "@/lib/i18n";
 import { getStoreOrderState } from "@/lib/store-status";
 import type { StoreHours } from "@/lib/types";
 import { formatOrderSelectionsForDisplay } from "@/lib/order-selection-display";
+import { ClockIcon } from "@/components/icons/clock-icon";
 
 type AdminOrder = {
   id: string;
@@ -549,7 +550,7 @@ export default function AdminOrdersPage() {
     await startSilentKeepAliveLoop();
   }
 
-  async function setPrepTimeQuick(nextPrep: number) {
+  async function savePrepTime(nextPrep: number) {
     if (acceptingOrders === null || Object.keys(storeHoursByDay).length === 0 || prepSaveLoading) return;
     setPrepSaveLoading(true);
     setPrepSaveError("");
@@ -577,6 +578,8 @@ export default function AdminOrdersPage() {
       setPrepSaveLoading(false);
     }
   }
+
+  const sliderPrepTime = Math.min(60, Math.max(15, prepTimeMinutes ?? 15));
 
   async function setAutoPrintGlobal(nextValue: boolean) {
     if (
@@ -966,26 +969,30 @@ export default function AdminOrdersPage() {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-semibold">{t.readyTime}:</span>
-          {[15, 30, 45, 60].map((minutes) => (
-            <button
-              key={minutes}
-              type="button"
-              disabled={prepSaveLoading}
-              onClick={() => void setPrepTimeQuick(minutes)}
-              className={`rounded-full border px-4 py-2 text-base font-semibold ${
-                prepTimeMinutes === minutes ? "bg-[var(--brand)] text-white" : "bg-white text-black"
-              } ${prepSaveLoading ? "opacity-60" : ""}`}
-            >
-              {minutes}
-            </button>
-          ))}
-          {prepTimeMinutes ? (
-            <span className="text-sm text-gray-600">
-              {t.current}: {prepTimeMinutes} min
-            </span>
-          ) : null}
+          <input
+            type="range"
+            min={15}
+            max={60}
+            step={5}
+            disabled={prepSaveLoading}
+            value={sliderPrepTime}
+            onChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
+            onMouseUp={() => void savePrepTime(sliderPrepTime)}
+            onTouchEnd={() => void savePrepTime(sliderPrepTime)}
+            onKeyUp={(e) => {
+              if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Home" || e.key === "End") {
+                void savePrepTime(sliderPrepTime);
+              }
+            }}
+            className={`h-2 w-52 cursor-pointer accent-[var(--brand)] ${prepSaveLoading ? "opacity-60" : ""}`}
+            aria-label={t.readyTime}
+          />
+          <span className="inline-flex items-center gap-1 text-sm text-gray-700">
+            <ClockIcon className="h-4 w-4" />
+            {sliderPrepTime} min
+          </span>
         </div>
       </section>
       {tab === "PAST" ? (
