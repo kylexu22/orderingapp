@@ -15,6 +15,12 @@ function esc(value: string) {
     .replaceAll('"', "&quot;");
 }
 
+function isDrinkCategory(category: { id: string; name: string } | null | undefined) {
+  if (!category) return false;
+  if (category.id === "cat_manual_drinks") return true;
+  return /\bdrinks?\b|\bbeverages?\b|飲品|飲料/i.test(category.name);
+}
+
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const { searchParams } = new URL(req.url);
   const format = searchParams.get("format");
@@ -39,6 +45,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   logInfo("order.print_requested", { orderNumber: order.orderNumber });
 
   const toZh = (value: string | null | undefined) => localizeText(value, "zh");
+  const lineRefIds = Array.from(new Set(order.lines.map((line) => line.refId)));
+  const itemCategoryRows = lineRefIds.length
+    ? await prisma.item.findMany({
+        where: { id: { in: lineRefIds } },
+        select: {
+          id: true,
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      })
+    : [];
+  const drinkItemIds = new Set(
+    itemCategoryRows.filter((item) => isDrinkCategory(item.category)).map((item) => item.id)
+  );
+  const printableLines = order.lines.filter((line) => !(kitchen && drinkItemIds.has(line.refId)));
   const isDrinkModifier = (selection: (typeof order.lines)[number]["selections"][number]) => {
     const optionId = selection.selectedModifierOptionId ?? "";
     const label = selection.label ?? "";
@@ -48,7 +73,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     );
   };
 
-  const lineHtml = order.lines
+  const lineHtml = printableLines
     .map((line) => {
       const selectionHtml = formatOrderSelectionsForDisplay({
         selections: line.selections
@@ -85,7 +110,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     lines.push(`${order.customerName} | ${order.phone}`);
     lines.push(`Notes: ${order.notes ?? "-"}`);
     lines.push("------------------------------");
-    for (const line of order.lines) {
+    for (const line of printableLines) {
       const lineName = kitchen ? toZh(line.nameSnapshot) : line.nameSnapshot;
       lines.push(`${line.qty} x ${lineName}`);
       for (const row of formatOrderSelectionsForDisplay({

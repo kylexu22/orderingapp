@@ -19,6 +19,12 @@ function isDrinkModifier(
   );
 }
 
+function isDrinkCategory(category: { id: string; name: string } | null | undefined) {
+  if (!category) return false;
+  if (category.id === "cat_manual_drinks") return true;
+  return /\bdrinks?\b|\bbeverages?\b|飲品|飲料/i.test(category.name);
+}
+
 export async function buildReceiptRenderPayload(params: {
   orderNumber: string;
   copyType: PrintCopyType;
@@ -49,8 +55,28 @@ export async function buildReceiptRenderPayload(params: {
     order.pickupType === "ASAP"
       ? `ASAP ~ ${fmtTime(order.estimatedReadyTime)}`
       : fmtDateTime(order.pickupTime as Date);
+  const lineRefIds = Array.from(new Set(order.lines.map((line) => line.refId)));
+  const itemCategoryRows = lineRefIds.length
+    ? await prisma.item.findMany({
+        where: { id: { in: lineRefIds } },
+        select: {
+          id: true,
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      })
+    : [];
+  const drinkItemIds = new Set(
+    itemCategoryRows.filter((item) => isDrinkCategory(item.category)).map((item) => item.id)
+  );
 
-  const lines: ReceiptRenderLine[] = order.lines.map((line) => {
+  const lines: ReceiptRenderLine[] = order.lines
+    .filter((line) => !(kitchen && drinkItemIds.has(line.refId)))
+    .map((line) => {
     const displaySelections = formatOrderSelectionsForDisplay({
       selections: line.selections
         .filter((sel) => !(kitchen && sel.selectionKind === "MODIFIER" && isDrinkModifier(sel)))

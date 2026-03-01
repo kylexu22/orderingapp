@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma, PrintCopyType, PrintJobStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { renderReceiptToPng } from "@/lib/cloudprnt-render";
-import { buildReceiptRenderPayload } from "@/lib/cloudprnt-payload";
 import { logError, logInfo } from "@/lib/logger";
 import { getStoreOrderState } from "@/lib/store-status";
 import type { StoreHours } from "@/lib/types";
@@ -14,6 +12,56 @@ export const runtime = "nodejs";
 const CLOUDPRNT_POLL_INTERVAL_MS = 2000;
 const CLOUDPRNT_POLL_INTERVAL_CLOSED_MS = 30000;
 const CLOUDPRNT_POLL_INTERVAL_ORDERING_OFF_MS = 60000;
+const CLOUDPRNT_POLL_INTERVAL_QUIET_MS = Number(process.env.CLOUDPRNT_POLL_INTERVAL_QUIET_MS ?? "60000");
+const CLOUDPRNT_QUIET_HOURS_START = process.env.CLOUDPRNT_QUIET_HOURS_START ?? "22:30";
+const CLOUDPRNT_QUIET_HOURS_END = process.env.CLOUDPRNT_QUIET_HOURS_END ?? "10:00";
+const CLOUDPRNT_QUIET_HOURS_TIMEZONE =
+  process.env.CLOUDPRNT_QUIET_HOURS_TIMEZONE ?? "America/Toronto";
+const CLOUDPRNT_HEARTBEAT_WRITE_INTERVAL_MS = Number(
+  process.env.CLOUDPRNT_HEARTBEAT_WRITE_INTERVAL_MS ?? "300000"
+);
+
+function parseClockToMinutes(raw: string) {
+  const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(raw.trim());
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour * 60 + minute;
+}
+
+function getMinutesInTimezone(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit"
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
+  return hour * 60 + minute;
+}
+
+function isWithinQuietHours(now = new Date()) {
+  const startMinutes = parseClockToMinutes(CLOUDPRNT_QUIET_HOURS_START);
+  const endMinutes = parseClockToMinutes(CLOUDPRNT_QUIET_HOURS_END);
+  if (startMinutes === null || endMinutes === null) return false;
+  const currentMinutes = getMinutesInTimezone(now, CLOUDPRNT_QUIET_HOURS_TIMEZONE);
+  if (startMinutes === endMinutes) return true;
+  if (startMinutes < endMinutes) {
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }
+  return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+}
+
+function isFinitePositiveNumber(value: number) {
+  return Number.isFinite(value) && value > 0;
+}
+
+function shouldRefreshHeartbeat(lastSeenAt: Date | null, nowMs: number) {
+  if (!lastSeenAt) return true;
+  if (!isFinitePositiveNumber(CLOUDPRNT_HEARTBEAT_WRITE_INTERVAL_MS)) return true;
+  return nowMs - lastSeenAt.getTime() >= CLOUDPRNT_HEARTBEAT_WRITE_INTERVAL_MS;
+}
 
 function asStoreHours(value: Prisma.JsonValue | null | undefined): StoreHours {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -201,6 +249,10 @@ async function buildPrintPayload(orderNumber: string, copyType: PrintCopyType, m
     throw new Error(`Unsupported CloudPRNT mime type for Satori renderer: ${mimeType}`);
   }
 
+  const [{ buildReceiptRenderPayload }, { renderReceiptToPng }] = await Promise.all([
+    import("@/lib/cloudprnt-payload"),
+    import("@/lib/cloudprnt-render")
+  ]);
   const payload = await buildReceiptRenderPayload({
     orderNumber,
     copyType,
@@ -264,8 +316,19 @@ async function findJobByTokenOrPrinter(
 }
 
 export async function POST(req: Request) {
-  const body = await readBodyAsJson(req);
   const isBasicAuthed = isCloudPrntAuthorized(req);
+  if (isWithinQuietHours()) {
+    if (!isBasicAuthed) {
+      return getCloudPrntUnauthorizedResponse();
+    }
+    return NextResponse.json({
+      jobReady: false,
+      clientAction: "POST",
+      pollInterval: CLOUDPRNT_POLL_INTERVAL_QUIET_MS
+    });
+  }
+
+  const body = await readBodyAsJson(req);
   const { macAddress, uid, name } = extractPrinterIdentity(req, body);
   if (!isBasicAuthed) {
     const knownPrinter = await isKnownPrinterMac(macAddress);
@@ -280,27 +343,57 @@ export async function POST(req: Request) {
     );
   }
 
-  const printer = await prisma.printer.upsert({
+  const now = new Date();
+  const existingPrinter = await prisma.printer.findUnique({
     where: { macAddress },
-    create: {
-      macAddress,
-      uid: uid ?? undefined,
-      name: name ?? undefined,
-      lastSeenAt: new Date(),
-      lastStatusJson: body as Prisma.InputJsonValue
-    },
-    update: {
-      uid: uid ?? undefined,
-      name: name ?? undefined,
-      lastSeenAt: new Date(),
-      lastStatusJson: body as Prisma.InputJsonValue,
-      lastError: null
+    select: {
+      id: true,
+      uid: true,
+      name: true,
+      lastSeenAt: true,
+      lastError: true
     }
   });
 
+  let printerId = existingPrinter?.id;
+  if (!existingPrinter) {
+    const createdPrinter = await prisma.printer.create({
+      data: {
+        macAddress,
+        uid: uid ?? undefined,
+        name: name ?? undefined,
+        lastSeenAt: now,
+        lastStatusJson: body as Prisma.InputJsonValue
+      },
+      select: { id: true }
+    });
+    printerId = createdPrinter.id;
+  } else {
+    const shouldTouchHeartbeat = shouldRefreshHeartbeat(existingPrinter.lastSeenAt, now.getTime());
+    const uidChanged = uid !== null && uid !== existingPrinter.uid;
+    const nameChanged = name !== null && name !== existingPrinter.name;
+    const shouldClearError = Boolean(existingPrinter.lastError);
+
+    if (shouldTouchHeartbeat || uidChanged || nameChanged || shouldClearError) {
+      await prisma.printer.update({
+        where: { id: existingPrinter.id },
+        data: {
+          uid: uidChanged ? uid : undefined,
+          name: nameChanged ? name : undefined,
+          lastSeenAt: shouldTouchHeartbeat ? now : undefined,
+          lastStatusJson: shouldTouchHeartbeat ? (body as Prisma.InputJsonValue) : undefined,
+          lastError: shouldClearError ? null : undefined
+        }
+      });
+    }
+  }
+  if (!printerId) {
+    return NextResponse.json({ error: "Failed to resolve printer." }, { status: 500 });
+  }
+
   const queuedJob = await prisma.printJob.findFirst({
     where: {
-      printerId: printer.id,
+      printerId,
       status: PrintJobStatus.QUEUED
     },
     orderBy: { requestedAt: "asc" }
@@ -309,7 +402,7 @@ export async function POST(req: Request) {
     ? null
     : await prisma.printJob.findFirst({
         where: {
-          printerId: printer.id,
+          printerId,
           status: PrintJobStatus.DELIVERED
         },
         orderBy: { requestedAt: "asc" }
@@ -326,7 +419,7 @@ export async function POST(req: Request) {
   }
 
   logInfo("cloudprnt.job_ready", {
-    printerId: printer.id,
+    printerId,
     macAddress,
     jobId: nextJob.id,
     jobToken: nextJob.jobToken,
