@@ -317,9 +317,15 @@ async function findJobByTokenOrPrinter(
 
 export async function POST(req: Request) {
   const isBasicAuthed = isCloudPrntAuthorized(req);
+  const body = await readBodyAsJson(req);
+  const { macAddress, uid, name } = extractPrinterIdentity(req, body);
+
   if (isWithinQuietHours()) {
     if (!isBasicAuthed) {
-      return getCloudPrntUnauthorizedResponse();
+      const knownPrinter = await isKnownPrinterMac(macAddress);
+      if (!knownPrinter) {
+        return getCloudPrntUnauthorizedResponse();
+      }
     }
     return NextResponse.json({
       jobReady: false,
@@ -328,8 +334,6 @@ export async function POST(req: Request) {
     });
   }
 
-  const body = await readBodyAsJson(req);
-  const { macAddress, uid, name } = extractPrinterIdentity(req, body);
   if (!isBasicAuthed) {
     const knownPrinter = await isKnownPrinterMac(macAddress);
     if (!knownPrinter) {

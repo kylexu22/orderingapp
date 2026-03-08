@@ -65,6 +65,8 @@ type DayHours = {
 type StoreHoursPayload = Record<string, Array<{ open: string; close: string }>>;
 
 const ET_TIMEZONE = "America/Toronto";
+const ADMIN_CLOUDPRNT_QUEUE_POLL_MS = 60_000;
+const ADMIN_SETTINGS_POLL_MS = 60_000;
 
 export default function AdminOrdersPage() {
   const [lang, setLang] = useState<Lang>("en");
@@ -478,18 +480,38 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     void loadCloudPrntPrinters();
-    const timer = window.setInterval(() => {
+    const refreshPrinters = () => {
+      if (document.visibilityState !== "visible") return;
       void loadCloudPrntPrinters();
-    }, 15000);
-    return () => window.clearInterval(timer);
+    };
+    const timer = window.setInterval(refreshPrinters, ADMIN_CLOUDPRNT_QUEUE_POLL_MS);
+    document.addEventListener("visibilitychange", refreshPrinters);
+    window.addEventListener("focus", refreshPrinters);
+    window.addEventListener("pageshow", refreshPrinters);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshPrinters);
+      window.removeEventListener("focus", refreshPrinters);
+      window.removeEventListener("pageshow", refreshPrinters);
+    };
   }, [loadCloudPrntPrinters]);
 
   useEffect(() => {
     void loadSettings();
-    const timer = window.setInterval(() => {
+    const refreshSettings = () => {
+      if (document.visibilityState !== "visible") return;
       void loadSettings();
-    }, 15000);
-    return () => window.clearInterval(timer);
+    };
+    const timer = window.setInterval(refreshSettings, ADMIN_SETTINGS_POLL_MS);
+    document.addEventListener("visibilitychange", refreshSettings);
+    window.addEventListener("focus", refreshSettings);
+    window.addEventListener("pageshow", refreshSettings);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshSettings);
+      window.removeEventListener("focus", refreshSettings);
+      window.removeEventListener("pageshow", refreshSettings);
+    };
   }, [loadSettings]);
 
   useEffect(() => {
